@@ -147,7 +147,7 @@ function checkRemote(s: ServerConfig, loc: string): Finding[] {
 
 export function auditServerConfig(s: ServerConfig): Finding[] {
   const loc = describeServer(s);
-  return [...checkSecrets(s, loc), ...checkRemote(s, loc), ...checkShell(s, loc), ...checkUnpinned(s, loc), ...checkDocker(s, loc)];
+  return [...checkSecrets(s, loc), ...checkRemote(s, loc), ...checkShell(s, loc), ...checkUnpinned(s, loc), ...checkDocker(s, loc)].map((f) => ({ ...f, file: s.source, server: s.name }));
 }
 
 /** The same server name defined in several scopes: the one that wins may not be the one you reviewed. */
@@ -161,6 +161,8 @@ export function auditDuplicates(servers: ServerConfig[]): Finding[] {
       rule: "config/duplicate-name",
       title: `Server name "${name}" is defined in ${list.length} scopes (${list.map((s) => s.scope).join(", ")})`,
       location: list.map((s) => s.source).join(", "),
+      file: list[0].source,
+      server: name,
       remediation: "Keep one definition. Claude Code picks one by scope precedence (local > project > user), so a project .mcp.json can silently replace a server you trust.",
     }));
 }

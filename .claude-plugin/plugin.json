@@ -1,6 +1,6 @@
 {
   "name": "mcp-security",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Audits the MCP servers you have installed: tool poisoning, invisible Unicode, cross-server shadowing, rug pulls (tool pinning) and risky configuration such as plaintext secrets and unpinned packages. Runs locally.",
   "author": {
     "name": "Stefan Petrovici"

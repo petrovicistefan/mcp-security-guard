@@ -37148,6 +37148,357 @@ var StdioServerTransport = class {
   }
 };
 
+// src/config.ts
+import { existsSync, readFileSync } from "node:fs";
+import { homedir, platform } from "node:os";
+import { join, resolve } from "node:path";
+function claudeDesktopConfigPath(home) {
+  switch (platform()) {
+    case "darwin":
+      return join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json");
+    case "win32":
+      return join(process.env.APPDATA ?? join(home, "AppData", "Roaming"), "Claude", "claude_desktop_config.json");
+    default:
+      return join(home, ".config", "Claude", "claude_desktop_config.json");
+  }
+}
+function readJson(path, sources) {
+  if (!existsSync(path)) {
+    sources.push({ path, status: "missing" });
+    return void 0;
+  }
+  try {
+    const data = JSON.parse(readFileSync(path, "utf8"));
+    sources.push({ path, status: "ok" });
+    return data;
+  } catch {
+    sources.push({ path, status: "unreadable" });
+    return void 0;
+  }
+}
+function toServers(block, scope, source) {
+  if (!block || typeof block !== "object") return [];
+  return Object.entries(block).map(([name, raw]) => ({
+    name,
+    scope,
+    source,
+    type: typeof raw?.type === "string" ? raw.type : void 0,
+    command: typeof raw?.command === "string" ? raw.command : void 0,
+    args: Array.isArray(raw?.args) ? raw.args.map(String) : void 0,
+    env: raw?.env && typeof raw.env === "object" ? stringRecord(raw.env) : void 0,
+    url: typeof raw?.url === "string" ? raw.url : void 0,
+    headers: raw?.headers && typeof raw.headers === "object" ? stringRecord(raw.headers) : void 0
+  }));
+}
+function stringRecord(obj) {
+  return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, String(v)]));
+}
+function discoverServers(projectDir2, home = homedir()) {
+  const sources = [];
+  const servers = [];
+  const project = resolve(projectDir2);
+  const claudeJsonPath = join(home, ".claude.json");
+  const claudeJson = readJson(claudeJsonPath, sources);
+  if (claudeJson) {
+    servers.push(...toServers(claudeJson.mcpServers, "user", claudeJsonPath));
+    servers.push(...toServers(claudeJson.projects?.[project]?.mcpServers, "local", claudeJsonPath));
+  }
+  const projectMcpPath = join(project, ".mcp.json");
+  servers.push(...toServers(readJson(projectMcpPath, sources)?.mcpServers, "project", projectMcpPath));
+  servers.push(...discoverPluginServers(project, home, sources));
+  const desktopPath = claudeDesktopConfigPath(home);
+  servers.push(...toServers(readJson(desktopPath, sources)?.mcpServers, "claude-desktop", desktopPath));
+  return { servers, sources };
+}
+function enabledPlugins(project, home, sources) {
+  const merged = {};
+  for (const p of [join(home, ".claude", "settings.json"), join(project, ".claude", "settings.json"), join(project, ".claude", "settings.local.json")]) {
+    if (!existsSync(p)) continue;
+    const ep = readJson(p, sources)?.enabledPlugins;
+    if (ep && typeof ep === "object") Object.assign(merged, ep);
+  }
+  return merged;
+}
+function substitutePluginRoot(s, root) {
+  const sub = (v) => v.replaceAll("${CLAUDE_PLUGIN_ROOT}", root);
+  const subRec = (r) => r ? Object.fromEntries(Object.entries(r).map(([k, v]) => [k, sub(v)])) : void 0;
+  return { ...s, command: s.command && sub(s.command), args: s.args?.map(sub), env: subRec(s.env), url: s.url && sub(s.url), headers: subRec(s.headers) };
+}
+function discoverPluginServers(project, home, sources) {
+  const installedPath = join(home, ".claude", "plugins", "installed_plugins.json");
+  if (!existsSync(installedPath)) return [];
+  const installed = readJson(installedPath, sources)?.plugins;
+  if (!installed || typeof installed !== "object") return [];
+  const enabled = enabledPlugins(project, home, sources);
+  const out = [];
+  for (const [key, entries] of Object.entries(installed)) {
+    if (enabled[key] === false || !Array.isArray(entries)) continue;
+    const pluginName = key.split("@")[0];
+    for (const e of entries) {
+      if (typeof e?.installPath !== "string") continue;
+      if (e.scope && e.scope !== "user" && e.projectPath && resolve(e.projectPath) !== project) continue;
+      const root = e.installPath;
+      const blocks = [];
+      const mcpPath = join(root, ".mcp.json");
+      if (existsSync(mcpPath)) blocks.push({ block: readJson(mcpPath, sources)?.mcpServers, source: mcpPath });
+      const manifestPath = join(root, ".claude-plugin", "plugin.json");
+      const field = existsSync(manifestPath) ? readJson(manifestPath, sources)?.mcpServers : void 0;
+      for (const f of Array.isArray(field) ? field : [field]) {
+        if (typeof f === "string") {
+          const p = resolve(root, f.replaceAll("${CLAUDE_PLUGIN_ROOT}", root));
+          if (p.startsWith(resolve(root)) && p !== mcpPath && existsSync(p)) {
+            const data = readJson(p, sources);
+            blocks.push({ block: data?.mcpServers ?? data, source: p });
+          }
+        } else if (f && typeof f === "object") {
+          blocks.push({ block: f, source: manifestPath });
+        }
+      }
+      for (const { block, source } of blocks) {
+        for (const s of toServers(block, "plugin", source)) {
+          out.push(substitutePluginRoot({ ...s, name: `${pluginName}:${s.name}` }, root));
+        }
+      }
+    }
+  }
+  return out;
+}
+function describeServer(s) {
+  return `server "${s.name}" (${s.scope})`;
+}
+function transportOf(s) {
+  if (s.type === "sse") return "sse";
+  if (s.url) return "http";
+  if (s.command) return "stdio";
+  return "unknown";
+}
+
+// src/sanitize.ts
+var INVISIBLE_RE = /[­͏؜ᅟᅠ឴឵᠋-᠏​-‏‪-‮⁠-⁯ㅤ︀-️﻿ﾠ\u{E0000}-\u{E007F}\u{E0100}-\u{E01EF}]/gu;
+function revealInvisible(text2) {
+  return text2.replace(INVISIBLE_RE, (ch) => `<U+${ch.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")}>`);
+}
+function truncate(text2, max = 160) {
+  return text2.length > max ? `${text2.slice(0, max)}\u2026 (+${text2.length - max} chars)` : text2;
+}
+function maskSecret(value) {
+  if (value.length <= 8) return "****";
+  const keep = Math.min(6, Math.floor(value.length / 6));
+  return `${value.slice(0, keep)}\u2026${value.slice(-4)}`;
+}
+function excerpt(text2, max = 160) {
+  return truncate(revealInvisible(text2).replace(/\s+/g, " ").replace(/`/g, "\u02CB").trim(), max);
+}
+function excerptAround(text2, index, length, radius = 70) {
+  const start = Math.max(0, index - radius);
+  const end = Math.min(text2.length, index + length + radius);
+  return `${start > 0 ? "\u2026" : ""}${excerpt(text2.slice(start, end), radius * 2 + length + 20)}${end < text2.length ? "\u2026" : ""}`;
+}
+
+// src/secrets.ts
+var SECRET_PATTERNS = [
+  { name: "Anthropic API key", re: /sk-ant-[A-Za-z0-9_-]{20,}/ },
+  { name: "OpenAI API key", re: /sk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{32,}/ },
+  { name: "GitHub token", re: /gh[pousr]_[A-Za-z0-9]{36,}/ },
+  { name: "GitHub fine-grained token", re: /github_pat_[A-Za-z0-9_]{22,}/ },
+  { name: "AWS access key ID", re: /(?:AKIA|ASIA)[0-9A-Z]{16}/ },
+  { name: "Slack token", re: /xox[abposr]-[A-Za-z0-9-]{10,}/ },
+  { name: "Stripe live key", re: /(?:sk|rk)_live_[A-Za-z0-9]{20,}/ },
+  { name: "Google API key", re: /AIza[0-9A-Za-z_-]{35}/ },
+  { name: "Private key", re: /-----BEGIN [A-Z ]*PRIVATE KEY-----/ },
+  { name: "JWT", re: /eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/ },
+  { name: "Bearer token", re: /\bBearer\s+[A-Za-z0-9._~+/-]{20,}=*/ }
+];
+var SECRET_KEY_NAME_RE = /(KEY|TOKEN|SECRET|PASSWORD|PASSWD|PWD|CREDENTIAL|AUTH|COOKIE|SESSION)/i;
+function isEnvReference(value) {
+  return /^\$\{[A-Za-z_][A-Za-z0-9_]*(:-[^}]*)?\}$|^\$[A-Za-z_][A-Za-z0-9_]*$/.test(value.trim());
+}
+function findKnownSecret(value) {
+  for (const { name, re } of SECRET_PATTERNS) {
+    const m = value.match(re);
+    if (m) return { kind: name, masked: maskSecret(m[0]) };
+  }
+  return void 0;
+}
+function shannonEntropy(s) {
+  const counts = /* @__PURE__ */ new Map();
+  for (const ch of s) counts.set(ch, (counts.get(ch) ?? 0) + 1);
+  let h = 0;
+  for (const c of counts.values()) {
+    const p = c / s.length;
+    h -= p * Math.log2(p);
+  }
+  return h;
+}
+function looksLikeSecretValue(key, value) {
+  if (isEnvReference(value)) return void 0;
+  const known = findKnownSecret(value);
+  if (known) return known;
+  const v = value.trim();
+  if (SECRET_KEY_NAME_RE.test(key) && v.length >= 8 && !/^(true|false|\d+|https?:\/\/\S+)$/i.test(v)) {
+    return { kind: "Literal credential", masked: maskSecret(v) };
+  }
+  if (v.length >= 32 && !/\s/.test(v) && shannonEntropy(v) > 4.2) {
+    return { kind: "High-entropy string", masked: maskSecret(v) };
+  }
+  return void 0;
+}
+
+// src/rules/config-rules.ts
+var NODE_RUNNERS = /* @__PURE__ */ new Set(["npx", "bunx", "pnpx"]);
+var PY_RUNNERS = /* @__PURE__ */ new Set(["uvx", "pipx"]);
+var SHELLS = /* @__PURE__ */ new Set(["sh", "bash", "zsh", "fish", "cmd", "cmd.exe", "powershell", "pwsh"]);
+var EXACT_NPM_VERSION = /@\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
+function baseCommand(cmd) {
+  return cmd.split(/[\\/]/).pop().toLowerCase();
+}
+function packageSpec(args) {
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === "--") continue;
+    if (a === "--from" || a === "-p" || a === "--package") return args[i + 1];
+    if (a.startsWith("-")) continue;
+    if (["dlx", "exec", "run"].includes(a)) continue;
+    return a;
+  }
+  return void 0;
+}
+function checkUnpinned(s, loc) {
+  if (!s.command) return [];
+  const cmd = baseCommand(s.command);
+  const args = s.args ?? [];
+  const isNode = NODE_RUNNERS.has(cmd) || (cmd === "npm" || cmd === "pnpm") && (args[0] === "exec" || args[0] === "dlx");
+  const isPy = PY_RUNNERS.has(cmd);
+  if (!isNode && !isPy) return [];
+  const spec = packageSpec(args);
+  if (!spec || spec.startsWith(".") || spec.startsWith("/")) return [];
+  const pinned = isNode ? EXACT_NPM_VERSION.test(spec) : /==\d|@\d/.test(spec);
+  if (pinned) return [];
+  return [
+    {
+      severity: "medium",
+      rule: "config/unpinned-package",
+      title: `Package "${excerpt(spec, 80)}" is not pinned to an exact version`,
+      location: `${loc} \u203A args`,
+      evidence: excerpt([s.command, ...args].join(" ")),
+      remediation: isNode ? `Pin an exact version (e.g. "${spec.replace(/@[^@/]*$/, "")}@1.2.3"). Every launch otherwise runs whatever the registry serves today, including a compromised release.` : `Pin an exact version (e.g. "${spec.split(/[=@]/)[0]}==1.2.3").`
+    }
+  ];
+}
+function checkDocker(s, loc) {
+  if (!s.command || !["docker", "podman"].includes(baseCommand(s.command))) return [];
+  const args = s.args ?? [];
+  const out = [];
+  const joined = args.join(" ");
+  if (args.includes("--privileged")) {
+    out.push({ severity: "high", rule: "config/docker-privileged", title: "Container runs with --privileged", location: loc, evidence: excerpt(joined), remediation: "Remove --privileged; grant only the specific capabilities the server needs." });
+  }
+  if (/(^|\s)(-v|--volume)[ =]\/:/.test(joined) || /(^|\s)(-v|--volume)[ =](~|\$HOME|\/Users\/[^/:]+|\/home\/[^/:]+):/.test(joined)) {
+    out.push({ severity: "high", rule: "config/docker-broad-mount", title: "Container mounts the root or home directory", location: loc, evidence: excerpt(joined), remediation: "Mount only the project directory the server needs, read-only (:ro) when possible." });
+  }
+  if (/--network[ =]host|--net[ =]host/.test(joined)) {
+    out.push({ severity: "medium", rule: "config/docker-host-network", title: "Container uses host networking", location: loc, evidence: excerpt(joined), remediation: "Use the default bridge network unless host networking is required." });
+  }
+  const runIdx = args.indexOf("run");
+  if (runIdx >= 0) {
+    for (let i = runIdx + 1; i < args.length; i++) {
+      const a = args[i];
+      if (a.startsWith("-")) {
+        if (!a.includes("=") && /^(-e|--env|-v|--volume|--name|--network|--net|-p|--publish|--mount|-w|--workdir|-u|--user|--entrypoint)$/.test(a)) i++;
+        continue;
+      }
+      if (!a.includes("@sha256:") && (!/:[^/]+$/.test(a) || a.endsWith(":latest"))) {
+        out.push({ severity: "medium", rule: "config/docker-unpinned-image", title: `Image "${excerpt(a, 80)}" has no fixed tag or digest`, location: loc, evidence: excerpt(joined), remediation: "Reference the image by digest (image@sha256:\u2026) or at least an immutable version tag." });
+      }
+      break;
+    }
+  }
+  return out;
+}
+function checkShell(s, loc) {
+  if (!s.command) return [];
+  const full = [s.command, ...s.args ?? []].join(" ");
+  const out = [];
+  if (/\b(curl|wget|iwr|Invoke-WebRequest)\b[^|]*\|\s*(sh|bash|zsh|python3?|node|iex)\b/i.test(full)) {
+    out.push({ severity: "high", rule: "config/pipe-to-shell", title: "Launch command downloads and executes a remote script", location: loc, evidence: excerpt(full), remediation: "Install the server from a pinned package or a reviewed local checkout instead of piping a download into a shell." });
+  } else if (SHELLS.has(baseCommand(s.command)) && (s.args ?? []).some((a) => /^(-c|\/c|-Command)$/i.test(a))) {
+    out.push({ severity: "medium", rule: "config/shell-wrapper", title: "Server is launched through an inline shell command", location: loc, evidence: excerpt(full), remediation: "Call the server binary directly so the launched command is explicit and auditable." });
+  }
+  return out;
+}
+function checkSecrets(s, loc) {
+  const out = [];
+  for (const [k, v] of Object.entries(s.env ?? {})) {
+    const hit = looksLikeSecretValue(k, v);
+    if (hit) {
+      const fix = s.scope === "claude-desktop" ? `Claude Desktop does not reliably expand variables here, so launch the server through a small wrapper script that reads ${k} from the OS keychain (e.g. \`security find-generic-password\` on macOS) instead of storing it in this file.` : `Replace the literal with a reference such as "\${${k}}" and set the variable in your shell or a secret manager.`;
+      out.push({ severity: "high", rule: "config/plaintext-secret", title: `${hit.kind} stored in plain text in env.${k}`, location: `${loc} \u203A env.${k}`, evidence: hit.masked, remediation: `${fix} Rotate the key if this file was ever shared, synced or committed.` });
+    }
+  }
+  for (const [k, v] of Object.entries(s.headers ?? {})) {
+    if (isEnvReference(v.replace(/^Bearer\s+/i, ""))) continue;
+    const hit = looksLikeSecretValue(k, v) ?? (/^authorization$/i.test(k) && v.length > 12 ? { kind: "Authorization header", masked: excerpt(v, 12) + "\u2026" } : void 0);
+    if (hit) {
+      out.push({ severity: "high", rule: "config/plaintext-secret", title: `${hit.kind} stored in plain text in headers.${k}`, location: `${loc} \u203A headers.${k}`, evidence: hit.masked, remediation: `Use an environment variable reference (e.g. "Bearer \${TOKEN}") or the server's OAuth flow. Rotate the token if it was exposed.` });
+    }
+  }
+  (s.args ?? []).forEach((a, i) => {
+    const hit = findKnownSecret(a);
+    if (hit) {
+      out.push({ severity: "high", rule: "config/secret-in-args", title: `${hit.kind} passed as a command-line argument`, location: `${loc} \u203A args[${i}]`, evidence: hit.masked, remediation: "Pass secrets via env references, not args: args are visible to every local process (ps) and end up in logs." });
+    }
+  });
+  if (s.url) {
+    const hit = findKnownSecret(s.url);
+    const qs = /[?&](api[_-]?key|token|access_token|key|secret)=([^&]+)/i.exec(s.url);
+    if (hit || qs && !isEnvReference(decodeURIComponent(qs[2]))) {
+      out.push({ severity: "high", rule: "config/secret-in-url", title: "Credential embedded in the server URL", location: `${loc} \u203A url`, evidence: hit?.masked ?? `${qs[1]}=****`, remediation: "Move the credential into a header that references an environment variable." });
+    }
+  }
+  return out;
+}
+function checkRemote(s, loc) {
+  if (!s.url) return [];
+  let u;
+  try {
+    u = new URL(s.url.replace(/\$\{[^}]+\}/g, "x"));
+  } catch {
+    return [{ severity: "low", rule: "config/invalid-url", title: "Server URL could not be parsed", location: `${loc} \u203A url`, evidence: excerpt(s.url), remediation: "Fix the URL." }];
+  }
+  const local = ["localhost", "127.0.0.1", "[::1]", "::1"].includes(u.hostname) || u.hostname.endsWith(".localhost");
+  if (u.protocol === "http:" && !local) {
+    return [{ severity: "high", rule: "config/insecure-transport", title: "Remote MCP server reached over plain HTTP", location: `${loc} \u203A url`, evidence: `${u.protocol}//${u.host}`, remediation: "Use https://. Over plain HTTP anyone on the network can read your requests and rewrite tool definitions in transit." }];
+  }
+  return [];
+}
+function auditServerConfig(s) {
+  const loc = describeServer(s);
+  return [...checkSecrets(s, loc), ...checkRemote(s, loc), ...checkShell(s, loc), ...checkUnpinned(s, loc), ...checkDocker(s, loc)].map((f) => ({ ...f, file: s.source, server: s.name }));
+}
+function auditDuplicates(servers) {
+  const byName = /* @__PURE__ */ new Map();
+  for (const s of servers.filter((s2) => s2.scope !== "claude-desktop")) byName.set(s.name, [...byName.get(s.name) ?? [], s]);
+  return [...byName.entries()].filter(([, list]) => list.length > 1).map(([name, list]) => ({
+    severity: "low",
+    rule: "config/duplicate-name",
+    title: `Server name "${name}" is defined in ${list.length} scopes (${list.map((s) => s.scope).join(", ")})`,
+    location: list.map((s) => s.source).join(", "),
+    file: list[0].source,
+    server: name,
+    remediation: "Keep one definition. Claude Code picks one by scope precedence (local > project > user), so a project .mcp.json can silently replace a server you trust."
+  }));
+}
+
+// src/audit.ts
+function auditConfig(projectDir2, opts = {}) {
+  const discovered = discoverServers(projectDir2);
+  const servers = opts.projectOnly ? discovered.servers.filter((s) => s.scope === "project") : discovered.servers;
+  return { ...discovered, servers, findings: [...servers.flatMap(auditServerConfig), ...auditDuplicates(servers)] };
+}
+
+// src/version.ts
+var VERSION = "0.3.0";
+
 // node_modules/@modelcontextprotocol/sdk/dist/esm/experimental/tasks/client.js
 var ExperimentalClientTasks = class {
   constructor(_client) {
@@ -40108,138 +40459,13 @@ var StreamableHTTPClientTransport = class {
   }
 };
 
-// src/config.ts
-import { existsSync, readFileSync } from "node:fs";
-import { homedir, platform } from "node:os";
-import { join, resolve } from "node:path";
-function claudeDesktopConfigPath(home) {
-  switch (platform()) {
-    case "darwin":
-      return join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json");
-    case "win32":
-      return join(process.env.APPDATA ?? join(home, "AppData", "Roaming"), "Claude", "claude_desktop_config.json");
-    default:
-      return join(home, ".config", "Claude", "claude_desktop_config.json");
-  }
-}
-function readJson(path, sources) {
-  if (!existsSync(path)) {
-    sources.push({ path, status: "missing" });
-    return void 0;
-  }
-  try {
-    const data = JSON.parse(readFileSync(path, "utf8"));
-    sources.push({ path, status: "ok" });
-    return data;
-  } catch {
-    sources.push({ path, status: "unreadable" });
-    return void 0;
-  }
-}
-function toServers(block, scope, source) {
-  if (!block || typeof block !== "object") return [];
-  return Object.entries(block).map(([name, raw]) => ({
-    name,
-    scope,
-    source,
-    type: typeof raw?.type === "string" ? raw.type : void 0,
-    command: typeof raw?.command === "string" ? raw.command : void 0,
-    args: Array.isArray(raw?.args) ? raw.args.map(String) : void 0,
-    env: raw?.env && typeof raw.env === "object" ? stringRecord(raw.env) : void 0,
-    url: typeof raw?.url === "string" ? raw.url : void 0,
-    headers: raw?.headers && typeof raw.headers === "object" ? stringRecord(raw.headers) : void 0
-  }));
-}
-function stringRecord(obj) {
-  return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, String(v)]));
-}
-function discoverServers(projectDir2, home = homedir()) {
-  const sources = [];
-  const servers = [];
-  const project = resolve(projectDir2);
-  const claudeJsonPath = join(home, ".claude.json");
-  const claudeJson = readJson(claudeJsonPath, sources);
-  if (claudeJson) {
-    servers.push(...toServers(claudeJson.mcpServers, "user", claudeJsonPath));
-    servers.push(...toServers(claudeJson.projects?.[project]?.mcpServers, "local", claudeJsonPath));
-  }
-  const projectMcpPath = join(project, ".mcp.json");
-  servers.push(...toServers(readJson(projectMcpPath, sources)?.mcpServers, "project", projectMcpPath));
-  servers.push(...discoverPluginServers(project, home, sources));
-  const desktopPath = claudeDesktopConfigPath(home);
-  servers.push(...toServers(readJson(desktopPath, sources)?.mcpServers, "claude-desktop", desktopPath));
-  return { servers, sources };
-}
-function enabledPlugins(project, home, sources) {
-  const merged = {};
-  for (const p of [join(home, ".claude", "settings.json"), join(project, ".claude", "settings.json"), join(project, ".claude", "settings.local.json")]) {
-    if (!existsSync(p)) continue;
-    const ep = readJson(p, sources)?.enabledPlugins;
-    if (ep && typeof ep === "object") Object.assign(merged, ep);
-  }
-  return merged;
-}
-function substitutePluginRoot(s, root) {
-  const sub = (v) => v.replaceAll("${CLAUDE_PLUGIN_ROOT}", root);
-  const subRec = (r) => r ? Object.fromEntries(Object.entries(r).map(([k, v]) => [k, sub(v)])) : void 0;
-  return { ...s, command: s.command && sub(s.command), args: s.args?.map(sub), env: subRec(s.env), url: s.url && sub(s.url), headers: subRec(s.headers) };
-}
-function discoverPluginServers(project, home, sources) {
-  const installedPath = join(home, ".claude", "plugins", "installed_plugins.json");
-  if (!existsSync(installedPath)) return [];
-  const installed = readJson(installedPath, sources)?.plugins;
-  if (!installed || typeof installed !== "object") return [];
-  const enabled = enabledPlugins(project, home, sources);
-  const out = [];
-  for (const [key, entries] of Object.entries(installed)) {
-    if (enabled[key] === false || !Array.isArray(entries)) continue;
-    const pluginName = key.split("@")[0];
-    for (const e of entries) {
-      if (typeof e?.installPath !== "string") continue;
-      if (e.scope && e.scope !== "user" && e.projectPath && resolve(e.projectPath) !== project) continue;
-      const root = e.installPath;
-      const blocks = [];
-      const mcpPath = join(root, ".mcp.json");
-      if (existsSync(mcpPath)) blocks.push({ block: readJson(mcpPath, sources)?.mcpServers, source: mcpPath });
-      const manifestPath = join(root, ".claude-plugin", "plugin.json");
-      const field = existsSync(manifestPath) ? readJson(manifestPath, sources)?.mcpServers : void 0;
-      for (const f of Array.isArray(field) ? field : [field]) {
-        if (typeof f === "string") {
-          const p = resolve(root, f.replaceAll("${CLAUDE_PLUGIN_ROOT}", root));
-          if (p.startsWith(resolve(root)) && p !== mcpPath && existsSync(p)) {
-            const data = readJson(p, sources);
-            blocks.push({ block: data?.mcpServers ?? data, source: p });
-          }
-        } else if (f && typeof f === "object") {
-          blocks.push({ block: f, source: manifestPath });
-        }
-      }
-      for (const { block, source } of blocks) {
-        for (const s of toServers(block, "plugin", source)) {
-          out.push(substitutePluginRoot({ ...s, name: `${pluginName}:${s.name}` }, root));
-        }
-      }
-    }
-  }
-  return out;
-}
-function describeServer(s) {
-  return `server "${s.name}" (${s.scope})`;
-}
-function transportOf(s) {
-  if (s.type === "sse") return "sse";
-  if (s.url) return "http";
-  if (s.command) return "stdio";
-  return "unknown";
-}
-
 // src/client.ts
 function expand(value) {
   return value.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}/g, (_, name, def) => process.env[name] ?? def ?? "");
 }
 var expandRecord = (r) => r ? Object.fromEntries(Object.entries(r).map(([k, v]) => [k, expand(v)])) : void 0;
 async function fetchTools(s, timeoutMs = 2e4) {
-  const client = new Client({ name: "mcp-security-scanner", version: "0.2.0" });
+  const client = new Client({ name: "mcp-security-scanner", version: VERSION });
   const kind = transportOf(s);
   const transport = kind === "stdio" ? new StdioClientTransport({ command: expand(s.command), args: (s.args ?? []).map(expand), env: { ...getDefaultEnvironment(), ...expandRecord(s.env) }, stderr: "ignore" }) : kind === "sse" ? new SSEClientTransport(new URL(expand(s.url)), { requestInit: { headers: expandRecord(s.headers) } }) : kind === "http" ? new StreamableHTTPClientTransport(new URL(expand(s.url)), { requestInit: { headers: expandRecord(s.headers) } }) : void 0;
   if (!transport) throw new Error("no command or url configured");
@@ -40347,220 +40573,6 @@ function formatFindings(findings) {
 }
 function report(title, findings, sections = []) {
   return [`# ${title}`, `**Summary:** ${summarize(findings)}`, ...sections, findings.length ? UNTRUSTED_NOTICE : void 0, formatFindings(findings)].filter(Boolean).join("\n\n");
-}
-
-// src/sanitize.ts
-var INVISIBLE_RE = /[­͏؜ᅟᅠ឴឵᠋-᠏​-‏‪-‮⁠-⁯ㅤ︀-️﻿ﾠ\u{E0000}-\u{E007F}\u{E0100}-\u{E01EF}]/gu;
-function revealInvisible(text2) {
-  return text2.replace(INVISIBLE_RE, (ch) => `<U+${ch.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")}>`);
-}
-function truncate(text2, max = 160) {
-  return text2.length > max ? `${text2.slice(0, max)}\u2026 (+${text2.length - max} chars)` : text2;
-}
-function maskSecret(value) {
-  if (value.length <= 8) return "****";
-  const keep = Math.min(6, Math.floor(value.length / 6));
-  return `${value.slice(0, keep)}\u2026${value.slice(-4)}`;
-}
-function excerpt(text2, max = 160) {
-  return truncate(revealInvisible(text2).replace(/\s+/g, " ").replace(/`/g, "\u02CB").trim(), max);
-}
-function excerptAround(text2, index, length, radius = 70) {
-  const start = Math.max(0, index - radius);
-  const end = Math.min(text2.length, index + length + radius);
-  return `${start > 0 ? "\u2026" : ""}${excerpt(text2.slice(start, end), radius * 2 + length + 20)}${end < text2.length ? "\u2026" : ""}`;
-}
-
-// src/secrets.ts
-var SECRET_PATTERNS = [
-  { name: "Anthropic API key", re: /sk-ant-[A-Za-z0-9_-]{20,}/ },
-  { name: "OpenAI API key", re: /sk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{32,}/ },
-  { name: "GitHub token", re: /gh[pousr]_[A-Za-z0-9]{36,}/ },
-  { name: "GitHub fine-grained token", re: /github_pat_[A-Za-z0-9_]{22,}/ },
-  { name: "AWS access key ID", re: /(?:AKIA|ASIA)[0-9A-Z]{16}/ },
-  { name: "Slack token", re: /xox[abposr]-[A-Za-z0-9-]{10,}/ },
-  { name: "Stripe live key", re: /(?:sk|rk)_live_[A-Za-z0-9]{20,}/ },
-  { name: "Google API key", re: /AIza[0-9A-Za-z_-]{35}/ },
-  { name: "Private key", re: /-----BEGIN [A-Z ]*PRIVATE KEY-----/ },
-  { name: "JWT", re: /eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/ },
-  { name: "Bearer token", re: /\bBearer\s+[A-Za-z0-9._~+/-]{20,}=*/ }
-];
-var SECRET_KEY_NAME_RE = /(KEY|TOKEN|SECRET|PASSWORD|PASSWD|PWD|CREDENTIAL|AUTH|COOKIE|SESSION)/i;
-function isEnvReference(value) {
-  return /^\$\{[A-Za-z_][A-Za-z0-9_]*(:-[^}]*)?\}$|^\$[A-Za-z_][A-Za-z0-9_]*$/.test(value.trim());
-}
-function findKnownSecret(value) {
-  for (const { name, re } of SECRET_PATTERNS) {
-    const m = value.match(re);
-    if (m) return { kind: name, masked: maskSecret(m[0]) };
-  }
-  return void 0;
-}
-function shannonEntropy(s) {
-  const counts = /* @__PURE__ */ new Map();
-  for (const ch of s) counts.set(ch, (counts.get(ch) ?? 0) + 1);
-  let h = 0;
-  for (const c of counts.values()) {
-    const p = c / s.length;
-    h -= p * Math.log2(p);
-  }
-  return h;
-}
-function looksLikeSecretValue(key, value) {
-  if (isEnvReference(value)) return void 0;
-  const known = findKnownSecret(value);
-  if (known) return known;
-  const v = value.trim();
-  if (SECRET_KEY_NAME_RE.test(key) && v.length >= 8 && !/^(true|false|\d+|https?:\/\/\S+)$/i.test(v)) {
-    return { kind: "Literal credential", masked: maskSecret(v) };
-  }
-  if (v.length >= 32 && !/\s/.test(v) && shannonEntropy(v) > 4.2) {
-    return { kind: "High-entropy string", masked: maskSecret(v) };
-  }
-  return void 0;
-}
-
-// src/rules/config-rules.ts
-var NODE_RUNNERS = /* @__PURE__ */ new Set(["npx", "bunx", "pnpx"]);
-var PY_RUNNERS = /* @__PURE__ */ new Set(["uvx", "pipx"]);
-var SHELLS = /* @__PURE__ */ new Set(["sh", "bash", "zsh", "fish", "cmd", "cmd.exe", "powershell", "pwsh"]);
-var EXACT_NPM_VERSION = /@\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
-function baseCommand(cmd) {
-  return cmd.split(/[\\/]/).pop().toLowerCase();
-}
-function packageSpec(args) {
-  for (let i = 0; i < args.length; i++) {
-    const a = args[i];
-    if (a === "--") continue;
-    if (a === "--from" || a === "-p" || a === "--package") return args[i + 1];
-    if (a.startsWith("-")) continue;
-    if (["dlx", "exec", "run"].includes(a)) continue;
-    return a;
-  }
-  return void 0;
-}
-function checkUnpinned(s, loc) {
-  if (!s.command) return [];
-  const cmd = baseCommand(s.command);
-  const args = s.args ?? [];
-  const isNode = NODE_RUNNERS.has(cmd) || (cmd === "npm" || cmd === "pnpm") && (args[0] === "exec" || args[0] === "dlx");
-  const isPy = PY_RUNNERS.has(cmd);
-  if (!isNode && !isPy) return [];
-  const spec = packageSpec(args);
-  if (!spec || spec.startsWith(".") || spec.startsWith("/")) return [];
-  const pinned = isNode ? EXACT_NPM_VERSION.test(spec) : /==\d|@\d/.test(spec);
-  if (pinned) return [];
-  return [
-    {
-      severity: "medium",
-      rule: "config/unpinned-package",
-      title: `Package "${excerpt(spec, 80)}" is not pinned to an exact version`,
-      location: `${loc} \u203A args`,
-      evidence: excerpt([s.command, ...args].join(" ")),
-      remediation: isNode ? `Pin an exact version (e.g. "${spec.replace(/@[^@/]*$/, "")}@1.2.3"). Every launch otherwise runs whatever the registry serves today, including a compromised release.` : `Pin an exact version (e.g. "${spec.split(/[=@]/)[0]}==1.2.3").`
-    }
-  ];
-}
-function checkDocker(s, loc) {
-  if (!s.command || !["docker", "podman"].includes(baseCommand(s.command))) return [];
-  const args = s.args ?? [];
-  const out = [];
-  const joined = args.join(" ");
-  if (args.includes("--privileged")) {
-    out.push({ severity: "high", rule: "config/docker-privileged", title: "Container runs with --privileged", location: loc, evidence: excerpt(joined), remediation: "Remove --privileged; grant only the specific capabilities the server needs." });
-  }
-  if (/(^|\s)(-v|--volume)[ =]\/:/.test(joined) || /(^|\s)(-v|--volume)[ =](~|\$HOME|\/Users\/[^/:]+|\/home\/[^/:]+):/.test(joined)) {
-    out.push({ severity: "high", rule: "config/docker-broad-mount", title: "Container mounts the root or home directory", location: loc, evidence: excerpt(joined), remediation: "Mount only the project directory the server needs, read-only (:ro) when possible." });
-  }
-  if (/--network[ =]host|--net[ =]host/.test(joined)) {
-    out.push({ severity: "medium", rule: "config/docker-host-network", title: "Container uses host networking", location: loc, evidence: excerpt(joined), remediation: "Use the default bridge network unless host networking is required." });
-  }
-  const runIdx = args.indexOf("run");
-  if (runIdx >= 0) {
-    for (let i = runIdx + 1; i < args.length; i++) {
-      const a = args[i];
-      if (a.startsWith("-")) {
-        if (!a.includes("=") && /^(-e|--env|-v|--volume|--name|--network|--net|-p|--publish|--mount|-w|--workdir|-u|--user|--entrypoint)$/.test(a)) i++;
-        continue;
-      }
-      if (!a.includes("@sha256:") && (!/:[^/]+$/.test(a) || a.endsWith(":latest"))) {
-        out.push({ severity: "medium", rule: "config/docker-unpinned-image", title: `Image "${excerpt(a, 80)}" has no fixed tag or digest`, location: loc, evidence: excerpt(joined), remediation: "Reference the image by digest (image@sha256:\u2026) or at least an immutable version tag." });
-      }
-      break;
-    }
-  }
-  return out;
-}
-function checkShell(s, loc) {
-  if (!s.command) return [];
-  const full = [s.command, ...s.args ?? []].join(" ");
-  const out = [];
-  if (/\b(curl|wget|iwr|Invoke-WebRequest)\b[^|]*\|\s*(sh|bash|zsh|python3?|node|iex)\b/i.test(full)) {
-    out.push({ severity: "high", rule: "config/pipe-to-shell", title: "Launch command downloads and executes a remote script", location: loc, evidence: excerpt(full), remediation: "Install the server from a pinned package or a reviewed local checkout instead of piping a download into a shell." });
-  } else if (SHELLS.has(baseCommand(s.command)) && (s.args ?? []).some((a) => /^(-c|\/c|-Command)$/i.test(a))) {
-    out.push({ severity: "medium", rule: "config/shell-wrapper", title: "Server is launched through an inline shell command", location: loc, evidence: excerpt(full), remediation: "Call the server binary directly so the launched command is explicit and auditable." });
-  }
-  return out;
-}
-function checkSecrets(s, loc) {
-  const out = [];
-  for (const [k, v] of Object.entries(s.env ?? {})) {
-    const hit = looksLikeSecretValue(k, v);
-    if (hit) {
-      const fix = s.scope === "claude-desktop" ? `Claude Desktop does not reliably expand variables here, so launch the server through a small wrapper script that reads ${k} from the OS keychain (e.g. \`security find-generic-password\` on macOS) instead of storing it in this file.` : `Replace the literal with a reference such as "\${${k}}" and set the variable in your shell or a secret manager.`;
-      out.push({ severity: "high", rule: "config/plaintext-secret", title: `${hit.kind} stored in plain text in env.${k}`, location: `${loc} \u203A env.${k}`, evidence: hit.masked, remediation: `${fix} Rotate the key if this file was ever shared, synced or committed.` });
-    }
-  }
-  for (const [k, v] of Object.entries(s.headers ?? {})) {
-    if (isEnvReference(v.replace(/^Bearer\s+/i, ""))) continue;
-    const hit = looksLikeSecretValue(k, v) ?? (/^authorization$/i.test(k) && v.length > 12 ? { kind: "Authorization header", masked: excerpt(v, 12) + "\u2026" } : void 0);
-    if (hit) {
-      out.push({ severity: "high", rule: "config/plaintext-secret", title: `${hit.kind} stored in plain text in headers.${k}`, location: `${loc} \u203A headers.${k}`, evidence: hit.masked, remediation: `Use an environment variable reference (e.g. "Bearer \${TOKEN}") or the server's OAuth flow. Rotate the token if it was exposed.` });
-    }
-  }
-  (s.args ?? []).forEach((a, i) => {
-    const hit = findKnownSecret(a);
-    if (hit) {
-      out.push({ severity: "high", rule: "config/secret-in-args", title: `${hit.kind} passed as a command-line argument`, location: `${loc} \u203A args[${i}]`, evidence: hit.masked, remediation: "Pass secrets via env references, not args: args are visible to every local process (ps) and end up in logs." });
-    }
-  });
-  if (s.url) {
-    const hit = findKnownSecret(s.url);
-    const qs = /[?&](api[_-]?key|token|access_token|key|secret)=([^&]+)/i.exec(s.url);
-    if (hit || qs && !isEnvReference(decodeURIComponent(qs[2]))) {
-      out.push({ severity: "high", rule: "config/secret-in-url", title: "Credential embedded in the server URL", location: `${loc} \u203A url`, evidence: hit?.masked ?? `${qs[1]}=****`, remediation: "Move the credential into a header that references an environment variable." });
-    }
-  }
-  return out;
-}
-function checkRemote(s, loc) {
-  if (!s.url) return [];
-  let u;
-  try {
-    u = new URL(s.url.replace(/\$\{[^}]+\}/g, "x"));
-  } catch {
-    return [{ severity: "low", rule: "config/invalid-url", title: "Server URL could not be parsed", location: `${loc} \u203A url`, evidence: excerpt(s.url), remediation: "Fix the URL." }];
-  }
-  const local = ["localhost", "127.0.0.1", "[::1]", "::1"].includes(u.hostname) || u.hostname.endsWith(".localhost");
-  if (u.protocol === "http:" && !local) {
-    return [{ severity: "high", rule: "config/insecure-transport", title: "Remote MCP server reached over plain HTTP", location: `${loc} \u203A url`, evidence: `${u.protocol}//${u.host}`, remediation: "Use https://. Over plain HTTP anyone on the network can read your requests and rewrite tool definitions in transit." }];
-  }
-  return [];
-}
-function auditServerConfig(s) {
-  const loc = describeServer(s);
-  return [...checkSecrets(s, loc), ...checkRemote(s, loc), ...checkShell(s, loc), ...checkUnpinned(s, loc), ...checkDocker(s, loc)];
-}
-function auditDuplicates(servers) {
-  const byName = /* @__PURE__ */ new Map();
-  for (const s of servers.filter((s2) => s2.scope !== "claude-desktop")) byName.set(s.name, [...byName.get(s.name) ?? [], s]);
-  return [...byName.entries()].filter(([, list]) => list.length > 1).map(([name, list]) => ({
-    severity: "low",
-    rule: "config/duplicate-name",
-    title: `Server name "${name}" is defined in ${list.length} scopes (${list.map((s) => s.scope).join(", ")})`,
-    location: list.map((s) => s.source).join(", "),
-    remediation: "Keep one definition. Claude Code picks one by scope precedence (local > project > user), so a project .mcp.json can silently replace a server you trust."
-  }));
 }
 
 // src/rules/tool-rules.ts
@@ -40699,7 +40711,6 @@ function analyzeTools(serverName, tools, otherServersTools = {}) {
 }
 
 // src/index.ts
-var VERSION = "0.2.0";
 var projectDir = () => process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 var text = (t) => ({ content: [{ type: "text", text: t }] });
 function select(all, names) {
@@ -40766,8 +40777,7 @@ server.registerTool(
     annotations: { readOnlyHint: true, openWorldHint: false }
   },
   async ({ project_dir }) => {
-    const { servers, sources } = discoverServers(project_dir ?? projectDir());
-    const findings = [...servers.flatMap(auditServerConfig), ...auditDuplicates(servers)];
+    const { servers, sources, findings } = auditConfig(project_dir ?? projectDir());
     return text(
       report("MCP configuration audit", findings, [
         `Scanned **${servers.length}** server(s) from ${sources.filter((s) => s.status === "ok").length} config file(s).`,
@@ -40820,6 +40830,10 @@ server.registerTool(
       if (d.changed.length) findings.push({ severity: "high", rule: "drift/tool-changed", title: `${d.changed.length} tool definition(s) changed since pinning: ${list(d.changed)}`, location: `server "${r.server.name}" (${r.server.scope})`, remediation: "A server that rewrites tool descriptions after approval is the rug-pull pattern. Review the findings for these tools, and re-pin only once you trust the new wording." });
       if (d.added.length) findings.push({ severity: "medium", rule: "drift/tool-added", title: `${d.added.length} new tool(s) since pinning: ${list(d.added)}`, location: `server "${r.server.name}" (${r.server.scope})`, remediation: "Check that the new tools match a release you expected, then re-pin." });
       if (d.removed.length) findings.push({ severity: "low", rule: "drift/tool-removed", title: `${d.removed.length} tool(s) removed since pinning: ${list(d.removed)}`, location: `server "${r.server.name}" (${r.server.scope})`, remediation: "Usually a normal upgrade. Re-pin after reviewing." });
+    }
+    for (const f of findings) {
+      const owner = ok.find((r) => f.location.startsWith(`server "${r.server.name}"`));
+      if (owner) Object.assign(f, { file: owner.server.source, server: owner.server.name });
     }
     const errors = results.filter((r) => "error" in r).map((r) => `- **${excerpt(r.server.name, 50)}** (${r.server.scope}): ${r.error}`);
     return text(

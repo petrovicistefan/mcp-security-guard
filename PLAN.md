@@ -27,7 +27,7 @@
 - [x] **Hook `SessionStart`**: verifică drift-ul la fiecare sesiune și afișează un avertisment scurt doar când s-a schimbat ceva
 - [x] **Scanarea serverelor MCP aduse de plugin-uri** (`~/.claude/plugins/**/.mcp.json`), nu doar a celor configurate manual
 - [ ] **Scanarea skill-urilor, comenzilor și fișierelor CLAUDE.md** pentru prompt injection, pentru că și ele ajung în context
-- [ ] **Ieșire SARIF** pentru GitHub Code Scanning, plus JSON pentru scripturi
+- [x] **Ieșire SARIF** pentru GitHub Code Scanning, plus JSON pentru scripturi
 - [ ] **Lockfile pentru `.mcp.json`** (`mcp-security.lock`), comis în repo, ca toată echipa să ruleze exact aceleași versiuni și definiții
 
 ### Faza 3: Protecție la runtime
@@ -47,7 +47,7 @@
 ### Faza 5: Publicare
 - [ ] Repo public pe GitHub, `marketplace.json`, release-uri semver, changelog
 - [ ] Trimitere în Anthropic Directory
-- [ ] **GitHub Action gratuit** (varianta de bază): rulează `audit_mcp_config` în CI
+- [x] **GitHub Action gratuit** (varianta de bază): rulează `audit_mcp_config` în CI
 - [ ] Badge pentru autorii de servere: „Scanned by mcp-security”, ca reclamă gratuită
 
 ---
@@ -108,13 +108,19 @@ Prețurile trebuie validate cu utilizatori reali înainte de lansare. Mai jos, l
 1. [x] Commit pentru MVP
 2. [x] **Hook `SessionStart` pentru drift**: verificare rapidă la fiecare sesiune, cu avertisment doar când se schimbă ceva
 3. [x] **Scanarea serverelor MCP din plugin-uri** (`~/.claude/plugins/`)
-4. [ ] **Ieșire SARIF/JSON** + GitHub Action de bază
+4. [x] **Ieșire SARIF/JSON** + GitHub Action de bază + CLI pentru CI
 5. [ ] **Test pe 10–20 de servere MCP populare** pentru calibrarea fals pozitivelor
 6. [ ] **Repo public pe GitHub** + instalare prin `/plugin marketplace add`
 7. [ ] **Trimitere în Anthropic Directory**
 8. [ ] **Waitlist pentru Pro/Team** în README, ca să validezi cererea
 9. [ ] Hook `PostToolUse` pentru scanarea răspunsurilor tool-urilor (protecție la runtime)
 10. [ ] Primul raport de cercetare: „Am scanat N servere MCP populare”
+
+## Interfață vizuală (board)
+- **Gratuit, faza 3:** raport HTML local generat de `generate_report`, care se deschide în browser și merge în orice IDE.
+- **Gratuit, faza 4:** **MCP App**, adică un UI interactiv afișat direct în Claude (Desktop/claude.ai și clienții care suportă MCP Apps): tabel de servere, severități, buton „pin” per server.
+- **Plătit (Team):** dashboard web pentru toată echipa. Acolo stă valoarea plătită: istoricul și vizibilitatea pe toți dezvoltatorii.
+- **Nu acum:** extensii separate pentru VS Code sau JetBrains. Claude Code rulează deja în ele, deci pluginul funcționează acolo fără muncă în plus.
 
 ## Limitări cunoscute
 - Serverele remote cu OAuth (Vercel, Cloudflare API, Runpod) nu pot fi scanate la nivel de tool-uri, pentru că scannerul nu are acces la token-urile Claude Code. Configurația lor se auditează totuși. Idee: un flux OAuth propriu, opțional, sau citirea definițiilor tool-urilor direct din sesiunea Claude (prin skill).

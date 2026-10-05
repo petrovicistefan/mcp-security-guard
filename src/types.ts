@@ -11,6 +11,10 @@ export interface Finding {
   /** Sanitized, truncated excerpt. Never contains a full secret. */
   evidence?: string;
   remediation: string;
+  /** Config file the finding traces back to, for SARIF/CI output. */
+  file?: string;
+  /** Server the finding is about, used to locate the line in `file`. */
+  server?: string;
 }
 
 export type ConfigScope = "user" | "local" | "project" | "plugin" | "claude-desktop";

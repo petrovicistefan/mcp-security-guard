@@ -3,6 +3,7 @@ import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport, getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { transportOf } from "./config.js";
+import { VERSION } from "./version.js";
 import type { ServerConfig, ToolDefinition } from "./types.js";
 
 /** Expand `${VAR}` and `${VAR:-default}` the way Claude Code does for .mcp.json. */
@@ -18,7 +19,7 @@ const expandRecord = (r?: Record<string, string>) => (r ? Object.fromEntries(Obj
  * no tool is ever called.
  */
 export async function fetchTools(s: ServerConfig, timeoutMs = 20_000): Promise<ToolDefinition[]> {
-  const client = new Client({ name: "mcp-security-scanner", version: "0.2.0" });
+  const client = new Client({ name: "mcp-security-scanner", version: VERSION });
   const kind = transportOf(s);
   const transport =
     kind === "stdio"

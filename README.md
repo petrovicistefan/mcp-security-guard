@@ -17,7 +17,7 @@ Everything runs locally. Nothing is sent anywhere.
 ## Install
 
 ```
-/plugin marketplace add <github-user>/mcp-security
+/plugin marketplace add petrovicistefan/mcp-security
 /plugin install mcp-security@mcp-security
 ```
 
@@ -40,6 +40,40 @@ A `SessionStart` hook re-verifies **only the servers you have pinned** (pinning 
 - `full` (default): compare launch configs and re-list tools
 - `config`: compare launch configs only, launch nothing
 - `off`: disable the check
+
+## CI / GitHub Action
+
+Fail pull requests that add risky MCP servers to `.mcp.json`, and show the findings in GitHub code scanning:
+
+```yaml
+name: MCP security
+on: [pull_request]
+permissions:
+  contents: read
+  security-events: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: petrovicistefan/mcp-security@main
+        id: mcp
+        with:
+          fail-on: high          # critical | high | medium | low | info | none
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: ${{ steps.mcp.outputs.sarif-file }}
+```
+
+The same checks run locally without Claude:
+
+```
+node dist/cli.mjs audit --project-only --format sarif --output mcp.sarif
+node dist/cli.mjs analyze-tools tools.json --name my-server   # for MCP server authors: a saved tools/list result
+```
+
+Exit codes: `0` clean, `1` findings at or above `--fail-on`, `2` usage error.
 
 ## Limitations
 

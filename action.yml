@@ -1,0 +1,37 @@
+name: "MCP Security Audit"
+description: "Audit the MCP servers in your repository's .mcp.json for plaintext secrets, unpinned packages, insecure transports and risky launch commands."
+author: "Stefan Petrovici"
+branding:
+  icon: "shield"
+  color: "orange"
+
+inputs:
+  project-dir:
+    description: "Directory containing .mcp.json"
+    default: "."
+  fail-on:
+    description: "Fail the step at or above this severity: critical, high, medium, low, info, none"
+    default: "high"
+  sarif-file:
+    description: "Where to write SARIF output (upload it with github/codeql-action/upload-sarif)"
+    default: "mcp-security.sarif"
+
+outputs:
+  sarif-file:
+    description: "Path of the SARIF report"
+    value: ${{ inputs.sarif-file }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Audit MCP configuration
+      shell: bash
+      env:
+        PROJECT_DIR: ${{ inputs.project-dir }}
+        FAIL_ON: ${{ inputs.fail-on }}
+        SARIF_FILE: ${{ inputs.sarif-file }}
+      run: |
+        status=0
+        node "$GITHUB_ACTION_PATH/dist/cli.mjs" audit --project "$PROJECT_DIR" --project-only --format sarif --output "$SARIF_FILE" --fail-on none
+        node "$GITHUB_ACTION_PATH/dist/cli.mjs" audit --project "$PROJECT_DIR" --project-only --fail-on "$FAIL_ON" >> "$GITHUB_STEP_SUMMARY" || status=$?
+        exit $status
