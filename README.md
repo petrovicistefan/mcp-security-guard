@@ -62,6 +62,7 @@ Then run `/mcp-audit`, or ask Claude *"are my MCP servers safe?"*.
 | `analyze_tool_definitions` | No. Offline analysis of a `tools/list` payload, for MCP server authors |
 | `check_supply_chain` | No. Sends package names and versions to npm, PyPI and OSV after `confirm_network: true` |
 | `apply_fixes` | Only for the `permissions` fix. Dry run by default; with `write: true` it edits the project's `.mcp.json` / `.claude/settings.json` after a backup to `~/.claude/mcp-security/backups/` |
+| `security_dashboard` | Only with `scan: "full"` and `confirm_launch: true`. Interactive dashboard (MCP App) |
 | `generate_policy` | No. Returns a `.mcp-security.json` approving the current servers |
 | `query_audit_log` | No. Summarises the runtime audit log |
 | `adversarial_test` | Yes, and **calls tools** with injection payloads. Only for servers you own; needs `i_own_this_server` and `confirm_launch`; skips destructive tools |
@@ -139,6 +140,18 @@ Exit codes: `0` clean, `1` findings at or above `--fail-on`, `2` usage error.
 ## Limitations
 
 Remote servers that require OAuth (most hosted MCP servers) cannot be scanned at the tool level: the scanner cannot reuse Claude Code's tokens. Their configuration is still audited.
+
+## Interactive dashboard (MCP App)
+
+`security_dashboard` is an [MCP App](https://modelcontextprotocol.io/docs/extensions/apps): hosts that support MCP Apps (Claude Desktop, claude.ai, VS Code Copilot…) render it inline. It shows every server with its score and grade, findings filterable by severity and server, the OWASP MCP Top 10 breakdown, recommended permission rules, and **Full scan** and **Pin** buttons. Selecting a server tells Claude what you are looking at, so follow-up questions have context. Claude Code in a terminal gets the text summary instead.
+
+To use it in Claude Desktop, add the server to `claude_desktop_config.json` and ask Claude to *"open the MCP security dashboard"*:
+
+```json
+{ "mcpServers": { "mcp-security": { "command": "node", "args": ["/path/to/mcp-security/dist/index.mjs"] } } }
+```
+
+The UI is a single self-contained HTML file. Server-supplied text reaches the page only as text (never as HTML), and the host's sandbox applies. Develop it with a local host that drives the real server: `npm run dashboard:dev -- /path/to/project`.
 
 ## Runtime hooks
 

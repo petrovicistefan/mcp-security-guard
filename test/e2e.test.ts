@@ -85,3 +85,34 @@ describe("first run", () => {
     expect(hook()).toBe("");
   });
 });
+
+describe("dashboard (MCP App)", () => {
+  it("declares the UI resource, serves the bundled HTML, and returns structured data", async () => {
+    const work = mkdtempSync(join(tmpdir(), "mcpsec-dash-"));
+    writeFileSync(join(work, ".mcp.json"), JSON.stringify({ mcpServers: { leaky: { command: "npx", args: ["-y", "pkg"], env: { GITHUB_TOKEN: "ghp_" + "f".repeat(36) } } } }));
+    const c = new Client({ name: "test", version: "0" });
+    await c.connect(new StdioClientTransport({ command: process.execPath, args: [join(root, "dist/index.mjs")], cwd: root, env: { ...getDefaultEnvironment(), CLAUDE_PROJECT_DIR: work, MCP_SECURITY_HOME: join(work, "state"), HOME: work } }));
+    try {
+      const tool = (await c.listTools()).tools.find((t) => t.name === "security_dashboard")!;
+      const uri = (tool._meta as any)?.ui?.resourceUri;
+      expect(uri).toBe("ui://mcp-security/dashboard.html");
+      const res = await c.readResource({ uri });
+      expect(res.contents[0].mimeType).toBe("text/html;profile=mcp-app");
+      const html = String((res.contents[0] as { text?: string }).text);
+      expect(html).toMatch(/^<!doctype html>/);
+      expect(html).not.toContain("/*__APP_JS__*/");
+      const r: any = await c.callTool({ name: "security_dashboard", arguments: {} });
+      expect(r.structuredContent.mode).toBe("config");
+      expect(r.structuredContent.servers.map((s: any) => s.key)).toEqual(["project:leaky"]);
+      expect(r.structuredContent.summary.high).toBeGreaterThan(0);
+      expect(r.structuredContent.owasp).toHaveLength(10);
+      expect(JSON.stringify(r)).not.toContain("f".repeat(36));
+      // Without consent a full scan degrades to config-only and says why.
+      const blocked: any = await c.callTool({ name: "security_dashboard", arguments: { scan: "full" } });
+      expect(blocked.structuredContent.mode).toBe("config");
+      expect(blocked.structuredContent.notes[0]).toContain("confirm_launch");
+    } finally {
+      await c.close();
+    }
+  }, 60_000);
+});

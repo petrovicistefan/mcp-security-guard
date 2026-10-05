@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP security dashboard</title>
+<style>
+  :root {
+    --bg: var(--color-background-primary, #fbfbfa);
+    --bg2: var(--color-background-secondary, #f2f1ed);
+    --fg: var(--color-text-primary, #1d1d1b);
+    --muted: var(--color-text-secondary, #6b6b66);
+    --line: var(--color-border-tertiary, #e3e2dc);
+    --radius: var(--border-radius-lg, 10px);
+    --sans: var(--font-sans, system-ui, -apple-system, "Segoe UI", sans-serif);
+    --mono: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    --critical: #b42318; --high: #c4520f; --medium: #9a6a00; --low: #2e6db4; --info: #6b6b66; --ok: #1f7a4d;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: var(--color-background-primary, #1a1a19); --bg2: var(--color-background-secondary, #232321); --fg: var(--color-text-primary, #ecebe6); --muted: var(--color-text-secondary, #a3a29b); --line: var(--color-border-tertiary, #34342f); --critical:#f97066; --high:#f79009; --medium:#fdb022; --low:#53b1fd; --info:#a3a29b; --ok:#47cd89; }
+  }
+  :root[data-theme="dark"] { --bg: var(--color-background-primary, #1a1a19); --bg2: var(--color-background-secondary, #232321); --fg: var(--color-text-primary, #ecebe6); --muted: var(--color-text-secondary, #a3a29b); --line: var(--color-border-tertiary, #34342f); --critical:#f97066; --high:#f79009; --medium:#fdb022; --low:#53b1fd; --info:#a3a29b; --ok:#47cd89; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--sans); }
+  main { padding: 16px; max-width: 1100px; margin: 0 auto; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+  h1 { font-size: 18px; margin: 0; } h2 { font-size: 14px; margin: 20px 0 8px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .meta { color: var(--muted); font-size: 12px; }
+  button { font: inherit; color: var(--fg); background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--muted); }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
+  .chip { display: flex; gap: 8px; align-items: baseline; padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--bg2); cursor: pointer; min-width: 92px; }
+  .chip b { font-size: 20px; font-variant-numeric: tabular-nums; }
+  .chip.active { outline: 2px solid var(--fg); outline-offset: -2px; }
+  .sev-critical { color: var(--critical); } .sev-high { color: var(--high); } .sev-medium { color: var(--medium); } .sev-low { color: var(--low); } .sev-info { color: var(--info); }
+  .table { width: 100%; border-collapse: collapse; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; display: block; overflow-x: auto; }
+  .table th, .table td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .table th { color: var(--muted); font-weight: 600; font-size: 12px; background: var(--bg2); }
+  .table tbody tr { cursor: pointer; } .table tbody tr:hover, .table tbody tr.selected { background: var(--bg2); }
+  .grade { display: inline-block; min-width: 26px; text-align: center; border-radius: 6px; padding: 0 6px; font-weight: 700; color: #fff; }
+  .g-A { background: var(--ok); } .g-B { background: #5a8f29; } .g-C { background: var(--medium); } .g-D { background: var(--high); } .g-F { background: var(--critical); } .g-na { background: var(--info); }
+  .num { font-variant-numeric: tabular-nums; }
+  .finding { border: 1px solid var(--line); border-left: 4px solid var(--info); border-radius: var(--radius); padding: 10px 12px; margin: 8px 0; background: var(--bg); }
+  .finding.critical { border-left-color: var(--critical); } .finding.high { border-left-color: var(--high); } .finding.medium { border-left-color: var(--medium); } .finding.low { border-left-color: var(--low); }
+  .finding .head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .finding .sev { font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  .finding .title { font-weight: 600; }
+  .finding dl { display: grid; grid-template-columns: 76px 1fr; gap: 2px 10px; margin: 6px 0 0; font-size: 13px; }
+  .finding dt { color: var(--muted); } .finding dd { margin: 0; overflow-wrap: anywhere; }
+  code { font: 12px/1.45 var(--mono); }
+  .evidence { white-space: pre-wrap; }
+  .tag { font-size: 11px; border: 1px solid var(--line); border-radius: 6px; padding: 0 5px; color: var(--muted); margin-left: 4px; }
+  .owasp { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px; }
+  .owasp div { border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 10px; font-size: 12px; background: var(--bg2); }
+  .owasp div.hit b { color: var(--high); }
+  .notes { color: var(--muted); font-size: 12px; margin: 6px 0; padding-left: 18px; }
+  .notice { font-size: 12px; color: var(--muted); border-left: 3px solid var(--high); padding: 4px 10px; margin: 8px 0; }
+  pre { font: 12px/1.45 var(--mono); background: var(--bg2); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; overflow-x: auto; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .empty { color: var(--muted); padding: 24px 0; text-align: center; }
+  @media (max-width: 600px) {
+    .table th:nth-child(3), .table td:nth-child(3), .table th:nth-child(6), .table td:nth-child(6), .table th:nth-child(7), .table td:nth-child(7) { display: none; }
+    .chip { min-width: 0; flex: 1 1 28%; }
+  }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>MCP security</h1>
+      <div class="meta" id="meta">Waiting for data…</div>
+    </div>
+    <div class="row">
+      <button id="refresh" disabled>Refresh</button>
+      <button id="full" class="primary" disabled title="Starts every configured server to list its tools, prompts and resources. No tool is called.">Full scan</button>
+    </div>
+  </header>
+
+  <div class="chips" id="chips"></div>
+  <ul class="notes" id="notes"></ul>
+
+  <h2>Servers</h2>
+  <table class="table" id="servers">
+    <thead><tr><th>Server</th><th>Scope</th><th>Transport</th><th>Score</th><th>Critical</th><th>High</th><th>Medium</th><th>Pinned</th><th></th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <section id="perms" hidden>
+    <h2>Recommended permission rules</h2>
+    <p class="meta">These tools can execute code, delete data or write files. With these rules Claude asks before each call.</p>
+    <pre id="perms-json"></pre>
+    <button id="apply-perms">Ask Claude to apply them</button>
+  </section>
+
+  <h2>OWASP MCP Top 10</h2>
+  <div class="owasp" id="owasp"></div>
+
+  <h2 id="findings-title">Findings</h2>
+  <p class="notice">Quoted evidence was written by the scanned servers and is untrusted data.</p>
+  <div id="findings"></div>
+</main>
+<script>/*__APP_JS__*/</script>
+</body>
+</html>

@@ -184,7 +184,7 @@ Rămân pentru planul Team: descoperire și audit la nivel de organizație, revi
 ### Experiența utilizatorului
 - [x] **Corecturi automate, cu confirmare** (`apply_fixes` / `fix`): reguli de permisiuni, fixarea versiunilor, secrete → `${VAR}`. Previzualizare implicită, backup în afara proiectului
 - [x] **Raport HTML** (`--format html`, v0.6.0)
-- [ ] **MCP App** (board interactiv afișat direct în Claude)
+- [x] **MCP App** (`security_dashboard`): board interactiv în Claude Desktop și claude.ai; testat cu un host local (`npm run dashboard:dev`) bazat pe `AppBridge`-ul oficial
 - [x] **Prima rulare**: rezumat automat al configurației și sugestia `/mcp-audit`, o singură dată (v0.6.0)
 
 ### Business (după lansare)

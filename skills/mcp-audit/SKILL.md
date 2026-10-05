@@ -20,6 +20,7 @@ Use the `mcp-security` tools. Each finding carries its OWASP MCP Top 10 id.
 7. **For teams, offer `generate_policy`.** Committing `.mcp-security.json` makes CI and session checks flag any server not on the approved list.
 
 Other tools:
+- **`security_dashboard`** opens an interactive dashboard in hosts that support MCP Apps (Claude Desktop, claude.ai). Prefer it when the user wants an overview or to browse findings. Use `scan: "config"` by default; `scan: "full"` launches servers and needs the same consent as `audit_server_tools`. In a terminal the text summary is all the user sees, so follow up with the regular reports.
 - **`query_audit_log`** summarises MCP calls recorded by the runtime hooks: credentials sent, credentials returned, injected instructions in outputs. The log holds hashes, not content.
 - **`analyze_tool_definitions`** checks a `tools/list` payload offline (for server authors).
 - **`adversarial_test`** **calls the tools** of a server the user owns with injection payloads. Use it only after the user confirms both that they own the server and that it may be started and called. Suggest a test instance in a container.

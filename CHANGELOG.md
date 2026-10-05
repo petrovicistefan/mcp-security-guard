@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Interactive dashboard (MCP App)** `security_dashboard`: servers with scores, filterable findings, OWASP breakdown, recommended permissions, Full scan and Pin buttons; tells Claude which server the user selected. Rendered in Claude Desktop, claude.ai and other MCP Apps hosts; text summary elsewhere. `npm run dashboard:dev` runs it in a local host against the real server
+
 ## 0.6.0
 
 - **First run**: the first session after install shows a one-line, read-only config summary and points to `/mcp-audit`

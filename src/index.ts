@@ -2,7 +2,9 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { adversarialTest } from "./adversarial.js";
+import { readFileSync } from "node:fs";
 import { auditConfig } from "./audit.js";
+import { buildDashboard, dashboardText, DASHBOARD_MIME, DASHBOARD_URI } from "./dashboard.js";
 import { recommendPermissions } from "./capabilities.js";
 import { applyPlan, describePlan, planEnvRefs, planPermissions, planPinVersions, type FixPlan } from "./fixes.js";
 import { discoverServers, transportOf } from "./config.js";
@@ -210,6 +212,39 @@ server.registerTool(
       ]),
     );
   },
+);
+
+// Interactive dashboard (MCP App). Hosts that support MCP Apps render dist/dashboard.html in a
+// sandboxed iframe; others show the text summary.
+server.registerTool(
+  "security_dashboard",
+  {
+    title: "Security dashboard",
+    description:
+      "Opens the interactive mcp-security dashboard: every configured MCP server with its score and grade, findings filterable by severity and server, the OWASP MCP Top 10 breakdown, recommended permission rules, and pin buttons. scan='config' reads files only. scan='full' starts the servers to list their tools, prompts and resources (no tool is called) and needs confirm_launch=true; ask the user first.",
+    inputSchema: {
+      scan: z.enum(["config", "full"]).default("config"),
+      confirm_launch: z.boolean().default(false),
+      project_dir: z.string().optional(),
+    },
+    annotations: { readOnlyHint: true, openWorldHint: true },
+    _meta: { ui: { resourceUri: DASHBOARD_URI }, "ui/resourceUri": DASHBOARD_URI },
+  },
+  async ({ scan, confirm_launch, project_dir }) => {
+    const mode = scan === "full" && confirm_launch ? "full" : "config";
+    const data = await buildDashboard(project_dir ?? projectDir(), mode);
+    if (scan === "full" && !confirm_launch) data.notes.unshift("Full scan not started: it launches the configured servers. Ask the user, then call again with confirm_launch=true.");
+    return { content: [{ type: "text" as const, text: dashboardText(data) }], structuredContent: data as unknown as Record<string, unknown> };
+  },
+);
+
+server.registerResource(
+  "mcp-security dashboard",
+  DASHBOARD_URI,
+  { mimeType: DASHBOARD_MIME, description: "Interactive security dashboard (MCP App)." },
+  async () => ({
+    contents: [{ uri: DASHBOARD_URI, mimeType: DASHBOARD_MIME, text: readFileSync(new URL("./dashboard.html", import.meta.url), "utf8") }],
+  }),
 );
 
 server.registerTool(
