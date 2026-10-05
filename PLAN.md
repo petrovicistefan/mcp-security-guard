@@ -39,7 +39,7 @@
 ### Faza 4: Analiză mai profundă
 - [ ] **Reputația pachetelor** (npm/PyPI): vechimea pachetului, numărul de descărcări, schimbări recente de maintainer, typosquatting (`@modelcontextprotocol/server-githbu`), scripturi `postinstall`
 - [ ] **Vulnerabilități cunoscute** (OSV.dev) pentru versiunea exactă a fiecărui server MCP
-- [ ] **Scanare în sandbox**: pornește serverele stdio într-un container fără rețea și fără acces la home, ca auditul să nu le dea acces la sistem
+- [ ] **Scanare în sandbox** (`scan --sandbox`): pornește serverele stdio într-un container fără rețea și fără acces la home. Rețeta e deja validată în bench/sandbox (Docker cu `--network none --read-only --cap-drop ALL`)
 - [ ] **Audit OAuth pentru servere remote**: scope-urile cerute versus cele necesare
 - [ ] **Scor de risc per server** (0–100), cu explicație și cu pași concreți de reducere a scorului
 - [ ] **Reducerea fals pozitivelor**: testare pe cele mai populare 50 de servere reale (GitHub, filesystem, Slack, Postgres…) și o listă de excepții documentate
@@ -109,11 +109,12 @@ Prețurile trebuie validate cu utilizatori reali înainte de lansare. Mai jos, l
 2. [x] **Hook `SessionStart` pentru drift**: verificare rapidă la fiecare sesiune, cu avertisment doar când se schimbă ceva
 3. [x] **Scanarea serverelor MCP din plugin-uri** (`~/.claude/plugins/`)
 4. [x] **Ieșire SARIF/JSON** + GitHub Action de bază + CLI pentru CI
-5. [~] **Test pe 10–20 de servere MCP populare** (15 remote + 15 configurații din marketplace făcute, vezi bench/RESULTS.md; urmează serverele stdio în Docker) pentru calibrarea fals pozitivelor
+5. [x] **Test pe servere MCP reale**: 17 servere legitime (83 tool-uri) + 15 configurații din marketplace; 2 alarme false găsite și corectate (vezi bench/RESULTS.md)
 6. [ ] **Repo public pe GitHub** + instalare prin `/plugin marketplace add`
 7. [ ] **Trimitere în Anthropic Directory**
 8. [ ] **Waitlist pentru Pro/Team** în README, ca să validezi cererea
 9. [ ] Hook `PostToolUse` pentru scanarea răspunsurilor tool-urilor (protecție la runtime)
+5b. [ ] **Rata de detecție**: colecție de PoC-uri publice de tool poisoning, ca să măsurăm cât prindem, nu doar alarmele false
 10. [ ] Primul raport de cercetare: „Am scanat N servere MCP populare”
 
 ## Interfață vizuală (board)

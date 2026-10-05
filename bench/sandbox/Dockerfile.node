@@ -1,0 +1,11 @@
+# Official reference MCP servers, installed at build time (network on).
+# At scan time the container runs with --network none, a read-only FS and no capabilities.
+FROM node:22-slim
+RUN npm install -g --no-fund --no-audit \
+      @modelcontextprotocol/server-filesystem \
+      @modelcontextprotocol/server-memory \
+      @modelcontextprotocol/server-everything \
+      @modelcontextprotocol/server-sequential-thinking \
+    && npm ls -g --depth=0 > /versions.txt
+USER node
+WORKDIR /home/node

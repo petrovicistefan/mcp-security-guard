@@ -37677,6 +37677,11 @@ var PATTERNS = [
     remediation: "A tool should describe itself. Instructions about other tools are how one server hijacks another (tool shadowing)."
   }
 ];
+function toolMention(name) {
+  const n = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  if (/[_\-.\d]|[a-z][A-Z]/.test(name)) return new RegExp(`(?<![\\w-])${n}(?![\\w-])`);
+  return new RegExp(`[\`'"]${n}[\`'"]|\\b${n}\\s*\\(|\\b${n}\\s+tool\\b`, "i");
+}
 var URL_RE = /https?:\/\/[^\s"'<>)`]+/gi;
 var MAX_DESCRIPTION = 1500;
 function analyzeTools(serverName, tools, otherServersTools = {}) {
@@ -37715,7 +37720,7 @@ function analyzeTools(serverName, tools, otherServersTools = {}) {
         add({ severity: "info", rule: "tool/embedded-url", title: `Mentions ${urls.length} URL(s)`, location: where(path), evidence: urls.slice(0, 3).map((u) => excerpt(u, 80)).join(", "), remediation: "Check that each URL belongs to the service this server integrates with." });
       }
       for (const { srv, n } of otherNames) {
-        const idx = text2.search(new RegExp(`\\b${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`));
+        const idx = text2.search(toolMention(n));
         if (idx >= 0 && path !== "name") {
           add({ severity: "high", rule: "tool/shadowing", title: `Mentions tool "${excerpt(n, 60)}" from another server ("${srv}")`, location: where(path), evidence: excerptAround(text2, idx, n.length), remediation: `A server referencing another server's tools may be trying to change how "${srv}" is used (tool shadowing). Disable one of the two until reviewed.` });
         }

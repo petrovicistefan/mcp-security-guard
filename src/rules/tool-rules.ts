@@ -97,6 +97,17 @@ const PATTERNS: { rule: string; severity: Severity; title: string; re: RegExp; r
   },
 ];
 
+/**
+ * Regex for a reference to tool `name`. Identifier-like names (send_email, getUser, list-repos) match as
+ * whole words. Names that are plain words ("fetch", "search") only match when clearly used as a tool
+ * name: quoted, in backticks, called like a function, or followed by "tool".
+ */
+function toolMention(name: string): RegExp {
+  const n = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  if (/[_\-.\d]|[a-z][A-Z]/.test(name)) return new RegExp(`(?<![\\w-])${n}(?![\\w-])`);
+  return new RegExp(`[\`'"]${n}[\`'"]|\\b${n}\\s*\\(|\\b${n}\\s+tool\\b`, "i");
+}
+
 const URL_RE = /https?:\/\/[^\s"'<>)`]+/gi;
 const MAX_DESCRIPTION = 1500;
 
@@ -141,7 +152,7 @@ export function analyzeTools(serverName: string, tools: ToolDefinition[], otherS
         add({ severity: "info", rule: "tool/embedded-url", title: `Mentions ${urls.length} URL(s)`, location: where(path), evidence: urls.slice(0, 3).map((u) => excerpt(u, 80)).join(", "), remediation: "Check that each URL belongs to the service this server integrates with." });
       }
       for (const { srv, n } of otherNames) {
-        const idx = text.search(new RegExp(`\\b${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`));
+        const idx = text.search(toolMention(n));
         if (idx >= 0 && path !== "name") {
           add({ severity: "high", rule: "tool/shadowing", title: `Mentions tool "${excerpt(n, 60)}" from another server ("${srv}")`, location: where(path), evidence: excerptAround(text, idx, n.length), remediation: `A server referencing another server's tools may be trying to change how "${srv}" is used (tool shadowing). Disable one of the two until reviewed.` });
         }

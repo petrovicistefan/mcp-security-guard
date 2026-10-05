@@ -1,0 +1,172 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--network",
+        "none",
+        "--read-only",
+        "--tmpfs",
+        "/tmp",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--memory",
+        "256m",
+        "--pids-limit",
+        "128",
+        "mcpsec-bench-node",
+        "mcp-server-filesystem",
+        "/tmp"
+      ]
+    },
+    "memory": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--network",
+        "none",
+        "--read-only",
+        "--tmpfs",
+        "/tmp",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--memory",
+        "256m",
+        "--pids-limit",
+        "128",
+        "-e",
+        "MEMORY_FILE_PATH=/tmp/memory.jsonl",
+        "mcpsec-bench-node",
+        "mcp-server-memory"
+      ]
+    },
+    "everything": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--network",
+        "none",
+        "--read-only",
+        "--tmpfs",
+        "/tmp",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--memory",
+        "256m",
+        "--pids-limit",
+        "128",
+        "mcpsec-bench-node",
+        "mcp-server-everything"
+      ]
+    },
+    "sequential-thinking": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--network",
+        "none",
+        "--read-only",
+        "--tmpfs",
+        "/tmp",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--memory",
+        "256m",
+        "--pids-limit",
+        "128",
+        "mcpsec-bench-node",
+        "mcp-server-sequential-thinking"
+      ]
+    },
+    "git": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--network",
+        "none",
+        "--read-only",
+        "--tmpfs",
+        "/tmp",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--memory",
+        "256m",
+        "--pids-limit",
+        "128",
+        "-e",
+        "GIT_PYTHON_REFRESH=quiet",
+        "mcpsec-bench-python",
+        "mcp-server-git"
+      ]
+    },
+    "fetch": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--network",
+        "none",
+        "--read-only",
+        "--tmpfs",
+        "/tmp",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--memory",
+        "256m",
+        "--pids-limit",
+        "128",
+        "mcpsec-bench-python",
+        "mcp-server-fetch"
+      ]
+    },
+    "time": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--network",
+        "none",
+        "--read-only",
+        "--tmpfs",
+        "/tmp",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--memory",
+        "256m",
+        "--pids-limit",
+        "128",
+        "mcpsec-bench-python",
+        "mcp-server-time",
+        "--local-timezone",
+        "UTC"
+      ]
+    }
+  }
+}
