@@ -26,7 +26,7 @@ export interface CloudPackage {
 
 /** POST /v1/check request body. */
 export interface CloudCheckRequest {
-  client: { name: "mcp-security"; version: string };
+  client: { name: "mcp-security-guard"; version: string };
   packages: CloudPackage[];
   toolHashes: string[];
 }
@@ -93,7 +93,7 @@ export function buildCheckRequest(packages: PackageRef[], servers: ServerTools[]
   for (const p of packages) pkgs.set(packageKey(p), p.version ? { ecosystem: p.ecosystem, name: p.name, version: p.version } : { ecosystem: p.ecosystem, name: p.name });
   const hashes = new Set(servers.flatMap((s) => s.tools.map(hashTool)));
   return {
-    client: { name: "mcp-security", version: VERSION },
+    client: { name: "mcp-security-guard", version: VERSION },
     packages: [...pkgs.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, p]) => p).slice(0, MAX_PACKAGES),
     toolHashes: [...hashes].sort().slice(0, MAX_TOOL_HASHES),
   };
