@@ -1,5 +1,7 @@
 import { capabilityFindings, inventory, recommendPermissions, type ServerInventory } from "./capabilities.js";
 import { fetchSurface, surfaceDefinitions } from "./client.js";
+import { cloudCheck } from "./cloud.js";
+import { packagesOf } from "./supply-chain.js";
 import { applyPolicy, auditPolicy, type LoadedPolicy } from "./policy.js";
 import { computeDrift, hasDrift, hashConfig, pinKey, type PinFile } from "./pins.js";
 import { auditServerConfig } from "./rules/config-rules.js";
@@ -57,6 +59,8 @@ export interface ToolAudit {
   /** Per-server pin status lines; empty when no pin file was given. */
   driftLines: string[];
   inventories: ServerInventory[];
+  /** Status line of the opt-in threat feed (absent when no MCP_SECURITY_API_KEY is set). */
+  cloudNote?: string;
 }
 
 /**
@@ -95,7 +99,11 @@ export async function auditTools(servers: ServerConfig[], timeoutSeconds: number
     findings.push(...own.map((f) => ({ ...f, file: r.server.source, server: r.server.name })));
   }
   findings.push(...auditPolicy(servers, policy));
-  return { findings: applyPolicy(findings, policy), ok, errors, driftLines, inventories };
+
+  // Paid threat feed: a no-op without MCP_SECURITY_API_KEY; fails open (a note, never an error).
+  const cloud = await cloudCheck(servers.flatMap(packagesOf), ok.map((r) => ({ server: r.server, tools: r.tools })));
+  findings.push(...cloud.findings);
+  return { findings: applyPolicy(findings, policy), ok, errors, driftLines, inventories, cloudNote: cloud.note };
 }
 
 export function surfaceCounts(ok: FetchOk[]): string {
@@ -109,6 +117,7 @@ export function toolAuditSections(a: ToolAudit, unknown: string[] = [], pinsLoca
     `Scanned **${a.ok.length}** server(s): ${surfaceCounts(a.ok)}.`,
     unknown.length ? `**Unknown server names:** ${unknown.map((u) => excerpt(u, 50)).join(", ")}` : "",
     a.errors.length ? `**Could not connect:**\n${a.errors.map((e) => `- **${excerpt(e.server.name, 50)}** (${e.server.scope}): ${e.error}`).join("\n")}` : "",
+    a.cloudNote ?? "",
     a.driftLines.length ? `**Pinning status**${pinsLocation ? ` (${pinsLocation})` : ""}:\n${a.driftLines.join("\n")}` : "",
     scoreTable([...a.ok.map((r) => scoreServer(r.server, a.findings, "config+tools")), ...a.errors.map((e) => scoreServer(e.server, a.findings, "config"))]),
     permissionsSection(a.inventories),

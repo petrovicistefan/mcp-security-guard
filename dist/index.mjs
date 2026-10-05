@@ -41325,6 +41325,8 @@ var BY_RULE = [
   [/^capability\/network-egress$/, ["MCP10"]],
   [/^config\/(unpinned-package|docker-unpinned-image|pipe-to-shell|shell-wrapper)$/, ["MCP04"]],
   [/^supply-chain\//, ["MCP04"]],
+  [/^cloud-feed-package$/, ["MCP04"]],
+  [/^cloud-feed-tool$/, ["MCP03", "MCP04"]],
   [/^drift\/config-changed$/, ["MCP04"]],
   [/^drift\/tool-/, ["MCP03", "MCP04"]],
   [/^config\/(insecure-transport|invalid-url)$/, ["MCP07"]],
@@ -41728,6 +41730,112 @@ function scoreTable(scores) {
   return ["**Security score per server** (100 = no findings; any critical caps at F, any high at D):", "", "| Server | Scope | Score | Grade | Basis |", "|---|---|---|---|---|", ...rows].join("\n");
 }
 
+// src/cloud.ts
+var DEFAULT_ENDPOINT = void 0;
+var MAX_PACKAGES = 500;
+var MAX_TOOL_HASHES = 5e3;
+var MAX_FINDINGS = 1e3;
+var DEFAULT_TIMEOUT_MS = 3e3;
+function cloudOptionsFromEnv(env = process.env) {
+  return { apiKey: env.MCP_SECURITY_API_KEY?.trim() || void 0, endpoint: env.MCP_SECURITY_API_URL?.trim() || DEFAULT_ENDPOINT };
+}
+function endpointAllowed(endpoint) {
+  try {
+    const u = new URL(endpoint);
+    return u.protocol === "https:" || u.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname);
+  } catch {
+    return false;
+  }
+}
+var packageKey = (p) => `${p.ecosystem}:${p.name.toLowerCase()}@${p.version ?? ""}`;
+function buildCheckRequest(packages, servers) {
+  const pkgs = /* @__PURE__ */ new Map();
+  for (const p of packages) pkgs.set(packageKey(p), p.version ? { ecosystem: p.ecosystem, name: p.name, version: p.version } : { ecosystem: p.ecosystem, name: p.name });
+  const hashes = new Set(servers.flatMap((s) => s.tools.map(hashTool)));
+  return {
+    client: { name: "mcp-security", version: VERSION },
+    packages: [...pkgs.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, p]) => p).slice(0, MAX_PACKAGES),
+    toolHashes: [...hashes].sort().slice(0, MAX_TOOL_HASHES)
+  };
+}
+var isSeverity = (v) => typeof v === "string" && SEVERITY_ORDER.includes(v);
+function parseCheckResponse(body) {
+  if (!body || typeof body !== "object" || !Array.isArray(body.findings)) return void 0;
+  const findings = [];
+  for (const raw of body.findings.slice(0, MAX_FINDINGS)) {
+    const m = raw?.match;
+    if (!isSeverity(raw?.severity) || typeof raw?.title !== "string") continue;
+    let match;
+    if (m?.kind === "tool" && typeof m.hash === "string" && /^[0-9a-f]{64}$/.test(m.hash)) match = { kind: "tool", hash: m.hash };
+    else if (m?.kind === "package" && (m.ecosystem === "npm" || m.ecosystem === "PyPI") && typeof m.name === "string")
+      match = { kind: "package", ecosystem: m.ecosystem, name: m.name, ...typeof m.version === "string" ? { version: m.version } : {} };
+    else continue;
+    const reference = typeof raw.reference === "string" && /^https:\/\/[^\s]+$/.test(raw.reference) ? excerpt(raw.reference, 200) : void 0;
+    findings.push({ match, severity: raw.severity, title: excerpt(raw.title, 160), ...reference ? { reference } : {} });
+  }
+  const at = body.feedUpdatedAt;
+  return { findings, feedUpdatedAt: typeof at === "string" ? excerpt(at, 40) : "unknown" };
+}
+function toFindings(entries, packages, servers) {
+  const out = [];
+  for (const e of entries) {
+    const remediation = `Remove or replace this server until the issue is resolved.${e.reference ? ` Details: ${e.reference}` : ""}`;
+    if (e.match.kind === "package") {
+      const m = e.match;
+      for (const p of packages) {
+        if (p.ecosystem !== m.ecosystem || p.name.toLowerCase() !== m.name.toLowerCase() || m.version && p.version !== m.version) continue;
+        out.push({ severity: e.severity, rule: "cloud-feed-package", title: e.title, location: `server "${p.server.name}" (${p.server.scope}) \u203A ${p.ecosystem} ${p.name}${p.version ? `@${p.version}` : ""}`, remediation, file: p.server.source, server: p.server.name });
+      }
+    } else {
+      const hash2 = e.match.hash;
+      for (const s of servers)
+        for (const t of s.tools)
+          if (hashTool(t) === hash2)
+            out.push({ severity: e.severity, rule: "cloud-feed-tool", title: e.title, location: `server "${s.server.name}" (${s.server.scope}) \u203A tool "${excerpt(t.name, 60)}"`, remediation, file: s.server.source, server: s.server.name });
+    }
+  }
+  return out;
+}
+var defaultFetcher = (url2, init) => fetch(url2, init);
+async function cloudCheck(packages, servers, opts = cloudOptionsFromEnv()) {
+  if (!opts.apiKey) return { status: "disabled", findings: [] };
+  if (!opts.endpoint) return { status: "skipped", findings: [], note: "Threat feed skipped: MCP_SECURITY_API_URL is not set." };
+  if (!endpointAllowed(opts.endpoint)) return { status: "skipped", findings: [], note: "Threat feed skipped: MCP_SECURITY_API_URL must be an https URL." };
+  const request = buildCheckRequest(packages, servers);
+  const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const controller = new AbortController();
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error("timeout"));
+    }, timeoutMs);
+  });
+  try {
+    const res = await Promise.race([
+      (opts.fetcher ?? defaultFetcher)(new URL("/v1/check", opts.endpoint).href, {
+        method: "POST",
+        body: JSON.stringify(request),
+        headers: { "content-type": "application/json", authorization: `Bearer ${opts.apiKey}` },
+        signal: controller.signal
+      }),
+      timeout
+    ]);
+    if (!res.ok) {
+      const why = res.status === 401 ? "the API key was rejected" : res.status === 402 ? "the subscription has expired" : `the service answered ${res.status}`;
+      return { status: "skipped", findings: [], note: `Threat feed skipped: ${why}.` };
+    }
+    const parsed = parseCheckResponse(await Promise.race([res.json(), timeout]));
+    if (!parsed) return { status: "skipped", findings: [], note: "Threat feed skipped: unexpected response from the service." };
+    return { status: "ok", findings: toFindings(parsed.findings, packages, servers), note: `Threat feed checked (updated ${parsed.feedUpdatedAt}).` };
+  } catch (err) {
+    const why = err?.message === "timeout" ? `no answer within ${timeoutMs / 1e3} s` : "the service could not be reached";
+    return { status: "skipped", findings: [], note: `Threat feed skipped: ${why}.` };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // src/tool-audit.ts
 function selectServers(all, names) {
   if (names.includes("*")) return { picked: all, unknown: [] };
@@ -41790,7 +41898,9 @@ async function auditTools(servers, timeoutSeconds, pins, policy) {
     findings.push(...own2.map((f) => ({ ...f, file: r.server.source, server: r.server.name })));
   }
   findings.push(...auditPolicy(servers, policy));
-  return { findings: applyPolicy(findings, policy), ok, errors, driftLines, inventories };
+  const cloud = await cloudCheck(servers.flatMap(packagesOf), ok.map((r) => ({ server: r.server, tools: r.tools })));
+  findings.push(...cloud.findings);
+  return { findings: applyPolicy(findings, policy), ok, errors, driftLines, inventories, cloudNote: cloud.note };
 }
 function surfaceCounts(ok) {
   const count = (re) => ok.reduce((n, r) => n + r.definitions.filter((d) => re.test(d.name)).length, 0);
@@ -41803,6 +41913,7 @@ function toolAuditSections(a, unknown2 = [], pinsLocation) {
     unknown2.length ? `**Unknown server names:** ${unknown2.map((u) => excerpt(u, 50)).join(", ")}` : "",
     a.errors.length ? `**Could not connect:**
 ${a.errors.map((e) => `- **${excerpt(e.server.name, 50)}** (${e.server.scope}): ${e.error}`).join("\n")}` : "",
+    a.cloudNote ?? "",
     a.driftLines.length ? `**Pinning status**${pinsLocation ? ` (${pinsLocation})` : ""}:
 ${a.driftLines.join("\n")}` : "",
     scoreTable([...a.ok.map((r) => scoreServer(r.server, a.findings, "config+tools")), ...a.errors.map((e) => scoreServer(e.server, a.findings, "config"))]),

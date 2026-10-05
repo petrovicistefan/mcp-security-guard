@@ -2,6 +2,7 @@
 
 ## 0.6.0
 
+- **Threat feed (paid plan, opt-in)** wired into full audits: with `MCP_SECURITY_API_KEY` set, package names/versions and tool-definition hashes are checked against the mcp-security feed; without it nothing is sent. Fails open
 - **HTML report** (`--format html`): self-contained page with severity counts, scores, OWASP MCP Top 10 breakdown and finding cards, light and dark; no scripts, strict CSP, every server-supplied string escaped
 - **Container image vulnerabilities** for Docker-based servers via Trivy or Grype when installed (`scan_images`, `audit --scan-images`)
 - Discovers MCP servers of **other clients** (Cursor, VS Code incl. JSON-with-comments settings, Windsurf), **Claude Desktop extensions** (.mcpb) and the organisation-managed **managed-mcp.json**

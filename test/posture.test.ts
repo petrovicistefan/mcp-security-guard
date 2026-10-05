@@ -60,8 +60,8 @@ describe("score", () => {
 
 describe("OWASP mapping", () => {
   it("maps every rule id used in the sources", () => {
-    const src = ["rules/config-rules.ts", "rules/tool-rules.ts", "tool-audit.ts", "capabilities.ts"].map((p) => readFileSync(resolve(__dirname, "../src", p), "utf8")).join("\n");
-    const ruleIds = [...new Set([...src.matchAll(/rule: "([a-z-]+\/[a-z-]+)"/g)].map((m) => m[1]))];
+    const src = ["rules/config-rules.ts", "rules/tool-rules.ts", "tool-audit.ts", "capabilities.ts", "supply-chain.ts", "image-scan.ts", "policy.ts", "runtime.ts", "adversarial.ts", "cloud.ts"].map((p) => readFileSync(resolve(__dirname, "../src", p), "utf8")).join("\n");
+    const ruleIds = [...new Set([...src.matchAll(/rule: "([a-z-]+(?:\/[a-z-]+)?)"/g)].map((m) => m[1]))];
     expect(ruleIds.length).toBeGreaterThan(30);
     expect(ruleIds.filter((r) => owaspFor(r).length === 0)).toEqual([]);
   });
