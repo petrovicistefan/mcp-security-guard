@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { adversarialTest } from "./adversarial.js";
 import { auditConfig } from "./audit.js";
 import { discoverServers, transportOf } from "./config.js";
 import { loadPins, pinEntry, pinKey, pinsPath, savePins } from "./pins.js";
@@ -166,6 +167,38 @@ server.registerTool(
         `Checked **${r.checked.length}** package(s): ${r.checked.map((p) => `${p.ecosystem}:${excerpt(p.name, 60)}${p.version ? `@${excerpt(p.version, 20)}` : " (latest)"}`).join(", ") || "none (no npx/uvx servers)"}.`,
         unknown.length ? `**Unknown server names:** ${unknown.map((u) => excerpt(u, 50)).join(", ")}` : "",
         r.errors.length ? `**Lookups that failed:**\n${r.errors.map((e) => `- ${e}`).join("\n")}` : "",
+      ]),
+    );
+  },
+);
+
+server.registerTool(
+  "adversarial_test",
+  {
+    title: "Adversarial test of your own MCP server",
+    description:
+      "CALLS every non-destructive tool of one configured server with command-injection payloads (each would only create an empty canary file) and path-traversal payloads, then reports which parameters reach a shell or the file system unchecked. Only for servers the user develops or operates, ideally a test instance in a container. Destructive tools are skipped unless include_destructive is true.",
+    inputSchema: {
+      server: z.string().describe('Server name, optionally "scope:name".'),
+      i_own_this_server: z.boolean().describe("Must be true: the user confirmed they own or operate this server."),
+      confirm_launch: z.boolean().describe("Must be true: the user agreed that the server is started and its tools are called."),
+      include_destructive: z.boolean().default(false),
+      canary_dir: z.string().optional().describe("Writable directory as seen by the server (default /tmp). For a container, mount a host directory and pass host_canary_dir too."),
+      host_canary_dir: z.string().optional(),
+      project_dir: z.string().optional(),
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+  },
+  async ({ server: name, i_own_this_server, confirm_launch, include_destructive, canary_dir, host_canary_dir, project_dir }) => {
+    if (!i_own_this_server || !confirm_launch) return text("Not started: this test calls the server's tools with attack payloads. Confirm with the user that they own this server and agree to run it, then set i_own_this_server and confirm_launch to true.");
+    const { servers } = discoverServers(project_dir ?? projectDir());
+    const { picked } = selectServers(servers, [name]);
+    if (picked.length !== 1) return text(picked.length ? `"${excerpt(name, 50)}" matches ${picked.length} servers; use "scope:name".` : `Unknown server "${excerpt(name, 50)}".`);
+    const r = await adversarialTest(picked[0], { canaryDir: canary_dir, hostCanaryDir: host_canary_dir, includeDestructive: include_destructive });
+    return text(
+      report(`Adversarial test: ${excerpt(picked[0].name, 50)}`, r.findings, [
+        `Made **${r.calls}** call(s) to ${r.testedTools.length} tool(s).`,
+        r.skippedTools.length ? `**Skipped:**\n${r.skippedTools.map((t) => `- ${excerpt(t.tool, 50)}: ${t.reason}`).join("\n")}` : "",
       ]),
     );
   },

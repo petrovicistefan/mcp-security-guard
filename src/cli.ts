@@ -6,6 +6,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
+import { adversarialTest } from "./adversarial.js";
 import { auditConfig } from "./audit.js";
 import { discoverServers, toServers } from "./config.js";
 import { loadPolicy, policyFromServers } from "./policy.js";
@@ -23,12 +24,16 @@ const USAGE = `mcp-security ${VERSION}
 Usage:
   mcp-security audit [--project DIR] [--project-only] [--supply-chain] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
   mcp-security analyze-tools FILE [--name NAME] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
+  mcp-security adversarial FILE --server NAME --i-own-this-server --confirm-launch [--canary-dir DIR] [--host-canary-dir DIR] [--include-destructive]
   mcp-security policy-init [--project DIR] [--force]
   mcp-security scan FILE --confirm-launch [--timeout SECONDS] [--format ...] [--output FILE] [--fail-on SEVERITY]
 
   scan             audits servers from any mcpServers JSON file *before* you install them. It launches
                    stdio servers and connects to remote ones (initialize + tools/list only, no tool calls)
 
+  adversarial      CALLS the tools of a server you own with command-injection and path-traversal payloads
+                   (payloads only create empty canary files). Run it against a test instance, ideally in a
+                   container; destructive tools are skipped unless --include-destructive
   policy-init      writes .mcp-security.json approving the servers configured now (review it, then commit it)
   --supply-chain   (audit) also check npx/uvx packages on npm/PyPI and OSV (network)
   --project-only   only audit the project's .mcp.json (recommended in CI)
@@ -107,6 +112,11 @@ async function main(): Promise<number> {
       help: { type: "boolean", short: "h" },
       force: { type: "boolean", default: false },
       "supply-chain": { type: "boolean", default: false },
+      server: { type: "string" },
+      "i-own-this-server": { type: "boolean", default: false },
+      "include-destructive": { type: "boolean", default: false },
+      "canary-dir": { type: "string" },
+      "host-canary-dir": { type: "string" },
     },
   });
   if (values.help || !command) {
@@ -137,6 +147,22 @@ async function main(): Promise<number> {
     const findings = analyzeTools(name, tools).map((f) => ({ ...f, file: resolve(file) }));
     emit(`Tool definition analysis: ${name}`, findings, projectDir, values.format!, values.output, [`Analyzed **${tools.length}** tool(s).`]);
     return exitCode(findings, values["fail-on"]!);
+  }
+
+  if (command === "adversarial") {
+    const file = positionals[0];
+    if (!file || !values.server) throw new Error("adversarial needs a JSON file with mcpServers and --server NAME");
+    if (!values["i-own-this-server"] || !values["confirm-launch"]) throw new Error("adversarial calls the server's tools with attack payloads; it needs --i-own-this-server and --confirm-launch");
+    const source = resolve(file);
+    const data = JSON.parse(readFileSync(source, "utf8"));
+    const target = toServers(data.mcpServers ?? data, "project", source).find((s) => s.name === values.server);
+    if (!target) throw new Error(`server "${values.server}" not found in ${file}`);
+    const r = await adversarialTest(target, { canaryDir: values["canary-dir"], hostCanaryDir: values["host-canary-dir"], includeDestructive: values["include-destructive"] });
+    emit(`Adversarial test: ${target.name}`, r.findings, projectDir, values.format!, values.output, [
+      `Made **${r.calls}** call(s) to ${r.testedTools.length} tool(s).`,
+      r.skippedTools.length ? `**Skipped:**\n${r.skippedTools.map((t) => `- ${t.tool}: ${t.reason}`).join("\n")}` : "",
+    ]);
+    return exitCode(r.findings, values["fail-on"]!);
   }
 
   if (command === "policy-init") {

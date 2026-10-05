@@ -14,11 +14,10 @@ function expand(value: string): string {
 const expandRecord = (r?: Record<string, string>) => (r ? Object.fromEntries(Object.entries(r).map(([k, v]) => [k, expand(v)])) : undefined);
 
 /**
- * Connects to a configured server and returns its tool list. This *launches* stdio servers,
- * so callers must have explicit user consent. Only `initialize` and `tools/list` are sent;
- * no tool is ever called.
+ * Connects to a configured server, runs `fn` with the client, and always closes it. This *launches*
+ * stdio servers, so callers must have explicit user consent.
  */
-export async function fetchTools(s: ServerConfig, timeoutMs = 20_000): Promise<ToolDefinition[]> {
+export async function withClient<T>(s: ServerConfig, timeoutMs: number, fn: (client: Client) => Promise<T>): Promise<T> {
   const client = new Client({ name: "mcp-security-scanner", version: VERSION });
   const kind = transportOf(s);
   const transport =
@@ -39,14 +38,7 @@ export async function fetchTools(s: ServerConfig, timeoutMs = 20_000): Promise<T
     return await Promise.race([
       (async () => {
         await client.connect(transport);
-        const tools: ToolDefinition[] = [];
-        let cursor: string | undefined;
-        do {
-          const page = await client.listTools(cursor ? { cursor } : undefined);
-          tools.push(...(page.tools as ToolDefinition[]));
-          cursor = page.nextCursor;
-        } while (cursor && tools.length < 2000);
-        return tools;
+        return fn(client);
       })(),
       timeout,
     ]);
@@ -54,4 +46,20 @@ export async function fetchTools(s: ServerConfig, timeoutMs = 20_000): Promise<T
     clearTimeout(timer);
     await client.close().catch(() => {});
   }
+}
+
+export async function listAllTools(client: Client): Promise<ToolDefinition[]> {
+  const tools: ToolDefinition[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await client.listTools(cursor ? { cursor } : undefined);
+    tools.push(...(page.tools as ToolDefinition[]));
+    cursor = page.nextCursor;
+  } while (cursor && tools.length < 2000);
+  return tools;
+}
+
+/** Lists a server's tools. Only `initialize` and `tools/list` are sent; no tool is ever called. */
+export async function fetchTools(s: ServerConfig, timeoutMs = 20_000): Promise<ToolDefinition[]> {
+  return withClient(s, timeoutMs, listAllTools);
 }
