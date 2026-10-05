@@ -178,6 +178,11 @@ function invalidSchemaTypes(node, path) {
   }
   return out;
 }
+function describeDefinition(name) {
+  if (name === "#instructions") return { kind: "instructions", label: "" };
+  const m = /^(prompt|resource|template):(.*)$/s.exec(name);
+  return m ? { kind: m[1], label: m[2] } : { kind: "tool", label: name };
+}
 function analyzeTools(serverName, tools, otherServersTools = {}) {
   const findings = [];
   const seen = /* @__PURE__ */ new Set();
@@ -192,14 +197,15 @@ function analyzeTools(serverName, tools, otherServersTools = {}) {
     ([srv, names]) => names.filter((n) => n.length >= 4 && !tools.some((t) => t.name === n)).map((n) => ({ srv, n }))
   );
   for (const tool of tools) {
-    const where = (p) => `server "${serverName}" \u203A tool "${excerpt(tool.name, 60)}" \u203A ${p}`;
-    if (/[^\x20-\x7E]/.test(tool.name)) {
+    const { kind, label } = describeDefinition(tool.name);
+    const where = (p) => kind === "instructions" ? `server "${serverName}" \u203A server instructions` : `server "${serverName}" \u203A ${kind} "${excerpt(label, 60)}" \u203A ${p}`;
+    if (kind === "tool" && /[^\x20-\x7E]/.test(tool.name)) {
       add({ severity: "medium", rule: "tool/non-ascii-name", title: "Tool name contains non-ASCII characters (possible homoglyph impersonation)", location: where("name"), evidence: excerpt(tool.name), remediation: "Tool names should be plain ASCII. Look-alike characters let a tool impersonate a trusted one." });
     }
     if ((tool.description?.length ?? 0) > MAX_DESCRIPTION) {
       add({ severity: "low", rule: "tool/oversized-description", title: `Description is unusually long (${tool.description.length} chars)`, location: where("description"), remediation: "Long descriptions are where injected instructions usually hide. Read the full text." });
     }
-    for (const other of collidingServers(tool.name, otherServersTools)) {
+    for (const other of kind === "tool" ? collidingServers(tool.name, otherServersTools) : []) {
       add({ severity: "medium", rule: "tool/name-collision", title: `Tool name also exposed by server "${excerpt(other, 50)}"`, location: where("name"), evidence: excerpt(tool.name), remediation: "Two servers with the same tool name leave it to the client which one runs, and one can impersonate the other. Rename or disable one of them." });
     }
     for (const bad of invalidSchemaTypes(tool.inputSchema, "inputSchema")) {

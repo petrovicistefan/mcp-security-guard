@@ -63,3 +63,60 @@ export async function listAllTools(client: Client): Promise<ToolDefinition[]> {
 export async function fetchTools(s: ServerConfig, timeoutMs = 20_000): Promise<ToolDefinition[]> {
   return withClient(s, timeoutMs, listAllTools);
 }
+
+/** Everything a server puts in the model's context, not only tools. */
+export interface ServerSurface {
+  tools: ToolDefinition[];
+  /** `instructions` from the initialize result; clients add it to the system prompt. */
+  instructions?: string;
+  prompts: { name: string; title?: string; description?: string; arguments?: { name: string; description?: string; required?: boolean }[] }[];
+  resources: { uri: string; name: string; title?: string; description?: string; mimeType?: string }[];
+  resourceTemplates: { uriTemplate: string; name: string; title?: string; description?: string }[];
+}
+
+async function paginate<T>(fetchPage: (cursor?: string) => Promise<{ items: T[]; nextCursor?: string }>, max = 2000): Promise<T[]> {
+  const out: T[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await fetchPage(cursor);
+    out.push(...page.items);
+    cursor = page.nextCursor;
+  } while (cursor && out.length < max);
+  return out;
+}
+
+/**
+ * Lists tools, prompts, resources and resource templates, and reads the server instructions. Only
+ * list requests are sent: no tool is called, no prompt is rendered, no resource is read. A server that
+ * does not support prompts or resources simply yields empty lists.
+ */
+export async function fetchSurface(s: ServerConfig, timeoutMs = 20_000): Promise<ServerSurface> {
+  return withClient(s, timeoutMs, async (client) => {
+    const caps = client.getServerCapabilities() ?? {};
+    const safe = async <T>(enabled: unknown, fn: () => Promise<T[]>): Promise<T[]> => (enabled ? fn().catch(() => []) : []);
+    const [tools, prompts, resources, resourceTemplates] = await Promise.all([
+      // Some servers omit the tools capability but still answer tools/list.
+      listAllTools(client).catch((e) => (caps.tools ? Promise.reject(e) : ([] as ToolDefinition[]))),
+      safe(caps.prompts, () => paginate(async (cursor) => { const r = await client.listPrompts(cursor ? { cursor } : undefined); return { items: r.prompts as ServerSurface["prompts"], nextCursor: r.nextCursor }; })),
+      safe(caps.resources, () => paginate(async (cursor) => { const r = await client.listResources(cursor ? { cursor } : undefined); return { items: r.resources as ServerSurface["resources"], nextCursor: r.nextCursor }; })),
+      safe(caps.resources, () => paginate(async (cursor) => { const r = await client.listResourceTemplates(cursor ? { cursor } : undefined); return { items: r.resourceTemplates as ServerSurface["resourceTemplates"], nextCursor: r.nextCursor }; })),
+    ]);
+    return { tools, instructions: client.getInstructions() || undefined, prompts, resources, resourceTemplates };
+  });
+}
+
+/**
+ * The non-tool parts of a surface as tool-shaped definitions, so the same poisoning rules and pins
+ * apply. Names are prefixed (`#instructions`, `prompt:`, `resource:`, `template:`) and never collide with tools.
+ */
+export function surfaceDefinitions(surface: ServerSurface): { kind: "instructions" | "prompt" | "resource" | "template"; def: ToolDefinition }[] {
+  return [
+    ...(surface.instructions ? [{ kind: "instructions" as const, def: { name: "#instructions", description: surface.instructions } }] : []),
+    ...surface.prompts.map((p) => ({
+      kind: "prompt" as const,
+      def: { name: `prompt:${p.name}`, title: p.title, description: p.description, inputSchema: { type: "object", properties: Object.fromEntries((p.arguments ?? []).map((a) => [a.name, { type: "string", ...(a.description ? { description: a.description } : {}) }])) } },
+    })),
+    ...surface.resources.map((r) => ({ kind: "resource" as const, def: { name: `resource:${r.uri}`, title: r.title ?? r.name, description: r.description } })),
+    ...surface.resourceTemplates.map((t) => ({ kind: "template" as const, def: { name: `template:${t.uriTemplate}`, title: t.title ?? t.name, description: t.description } })),
+  ];
+}

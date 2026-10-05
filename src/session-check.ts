@@ -31,7 +31,7 @@ export async function sessionCheck(projectDir: string, mode: CheckMode, timeoutM
       if (mode === "full") {
         try {
           const tools = await fetchTools(s, timeoutMs);
-          const d = computeDrift(pin.tools, tools);
+          const d = computeDrift(pin, tools);
           if (hasDrift(d)) {
             const parts = [d.changed.length && `${d.changed.length} tool(s) changed`, d.added.length && `${d.added.length} added`, d.removed.length && `${d.removed.length} removed`].filter(Boolean);
             const severe = analyzeTools(s.name, tools.filter((t) => d.changed.includes(t.name) || d.added.includes(t.name))).filter((f) => f.severity === "critical" || f.severity === "high");

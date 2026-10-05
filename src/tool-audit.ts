@@ -77,7 +77,7 @@ export async function auditTools(servers: ServerConfig[], timeoutSeconds: number
       if (pinned.config && pinned.config !== hashConfig(r.server)) {
         own.push({ severity: "medium", rule: "drift/config-changed", title: "Launch command, package version or URL changed since pinning", location: `${where} in ${r.server.source}`, remediation: "Check who changed the config and why (e.g. a pulled .mcp.json or a version bump), then re-pin." });
       }
-      const d = computeDrift(pinned.tools, r.tools);
+      const d = computeDrift(pinned, r.tools);
       driftLines.push(hasDrift(d) ? `- ${label}: ⚠️ changed since ${pinned.pinnedAt}` : `- ${label}: unchanged since ${pinned.pinnedAt}`);
       const list = (xs: string[]) => xs.map((x) => `"${excerpt(x, 50)}"`).join(", ");
       if (d.changed.length) own.push({ severity: "high", rule: "drift/tool-changed", title: `${d.changed.length} tool definition(s) changed since pinning: ${list(d.changed)}`, location: where, remediation: "A server that rewrites tool descriptions after approval is the rug-pull pattern. Review the findings for these tools, and re-pin only once you trust the new wording." });

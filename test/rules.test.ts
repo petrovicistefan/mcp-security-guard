@@ -128,8 +128,8 @@ describe("pins", () => {
     const a = { name: "a", description: "one" };
     const b = { name: "b", description: "two" };
     const pinned = { a: hashTool(a), b: hashTool(b) };
-    expect(computeDrift(pinned, [a, b])).toEqual({ added: [], removed: [], changed: [] });
-    expect(computeDrift(pinned, [{ ...a, description: "one, but evil" }, { name: "c" }])).toEqual({ added: ["c"], removed: ["b"], changed: ["a"] });
+    expect(computeDrift({ tools: pinned }, [a, b])).toEqual({ added: [], removed: [], changed: [] });
+    expect(computeDrift({ tools: pinned }, [{ ...a, description: "one, but evil" }, { name: "c" }])).toEqual({ added: ["c"], removed: ["b"], changed: ["a"] });
   });
 
   it("hash is independent of key order", () => {

@@ -9,6 +9,8 @@ export interface PinEntry {
   tools: Record<string, string>;
   /** Hash of the launch config (command/args/url/env *names*). Absent in pins written before 0.2. */
   config?: string;
+  /** True when instructions, prompts and resources were pinned too (v0.6+). Older pins hold tools only. */
+  surface?: boolean;
 }
 
 export interface PinFile {
@@ -51,8 +53,9 @@ export function hashConfig(s: ServerConfig): string {
     .digest("hex");
 }
 
-export function pinEntry(s: ServerConfig, tools: ToolDefinition[]): PinEntry {
-  return { pinnedAt: new Date().toISOString(), tools: Object.fromEntries(tools.map((t) => [t.name, hashTool(t)])), config: hashConfig(s) };
+/** `definitions` are the tools plus the prefixed instruction/prompt/resource definitions. */
+export function pinEntry(s: ServerConfig, definitions: ToolDefinition[]): PinEntry {
+  return { pinnedAt: new Date().toISOString(), tools: Object.fromEntries(definitions.map((t) => [t.name, hashTool(t)])), config: hashConfig(s), surface: true };
 }
 
 export function loadPins(path = pinsPath()): PinFile {
@@ -76,8 +79,14 @@ export function pinKey(scope: string, name: string): string {
   return `${scope}:${name}`;
 }
 
-export function computeDrift(pinned: Record<string, string>, tools: ToolDefinition[]): Drift {
-  const current = Object.fromEntries(tools.map((t) => [t.name, hashTool(t)]));
+/** Instructions, prompts and resources are pinned under prefixed names (see surfaceDefinitions). */
+const NON_TOOL = /^(#instructions$|prompt:|resource:|template:)/;
+
+export function computeDrift(pin: Pick<PinEntry, "tools" | "surface">, tools: ToolDefinition[]): Drift {
+  const pinned = pin.tools;
+  // Pins written before v0.6 hold tools only: do not report every prompt or resource as "added".
+  const legacy = !pin.surface;
+  const current = Object.fromEntries(tools.filter((t) => !(legacy && NON_TOOL.test(t.name))).map((t) => [t.name, hashTool(t)]));
   return {
     added: Object.keys(current).filter((n) => !(n in pinned)),
     removed: Object.keys(pinned).filter((n) => !(n in current)),

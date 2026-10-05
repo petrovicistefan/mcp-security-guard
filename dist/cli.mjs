@@ -20958,8 +20958,11 @@ function loadPins(path = pinsPath()) {
 function pinKey(scope, name) {
   return `${scope}:${name}`;
 }
-function computeDrift(pinned, tools) {
-  const current = Object.fromEntries(tools.map((t) => [t.name, hashTool(t)]));
+var NON_TOOL = /^(#instructions$|prompt:|resource:|template:)/;
+function computeDrift(pin, tools) {
+  const pinned = pin.tools;
+  const legacy = !pin.surface;
+  const current = Object.fromEntries(tools.filter((t) => !(legacy && NON_TOOL.test(t.name))).map((t) => [t.name, hashTool(t)]));
   return {
     added: Object.keys(current).filter((n) => !(n in pinned)),
     removed: Object.keys(pinned).filter((n) => !(n in current)),
@@ -21119,6 +21122,11 @@ function invalidSchemaTypes(node2, path) {
   }
   return out;
 }
+function describeDefinition(name) {
+  if (name === "#instructions") return { kind: "instructions", label: "" };
+  const m = /^(prompt|resource|template):(.*)$/s.exec(name);
+  return m ? { kind: m[1], label: m[2] } : { kind: "tool", label: name };
+}
 function analyzeTools(serverName, tools, otherServersTools = {}) {
   const findings = [];
   const seen = /* @__PURE__ */ new Set();
@@ -21133,14 +21141,15 @@ function analyzeTools(serverName, tools, otherServersTools = {}) {
     ([srv, names]) => names.filter((n) => n.length >= 4 && !tools.some((t) => t.name === n)).map((n) => ({ srv, n }))
   );
   for (const tool of tools) {
-    const where = (p) => `server "${serverName}" \u203A tool "${excerpt(tool.name, 60)}" \u203A ${p}`;
-    if (/[^\x20-\x7E]/.test(tool.name)) {
+    const { kind, label } = describeDefinition(tool.name);
+    const where = (p) => kind === "instructions" ? `server "${serverName}" \u203A server instructions` : `server "${serverName}" \u203A ${kind} "${excerpt(label, 60)}" \u203A ${p}`;
+    if (kind === "tool" && /[^\x20-\x7E]/.test(tool.name)) {
       add({ severity: "medium", rule: "tool/non-ascii-name", title: "Tool name contains non-ASCII characters (possible homoglyph impersonation)", location: where("name"), evidence: excerpt(tool.name), remediation: "Tool names should be plain ASCII. Look-alike characters let a tool impersonate a trusted one." });
     }
     if ((tool.description?.length ?? 0) > MAX_DESCRIPTION) {
       add({ severity: "low", rule: "tool/oversized-description", title: `Description is unusually long (${tool.description.length} chars)`, location: where("description"), remediation: "Long descriptions are where injected instructions usually hide. Read the full text." });
     }
-    for (const other of collidingServers(tool.name, otherServersTools)) {
+    for (const other of kind === "tool" ? collidingServers(tool.name, otherServersTools) : []) {
       add({ severity: "medium", rule: "tool/name-collision", title: `Tool name also exposed by server "${excerpt(other, 50)}"`, location: where("name"), evidence: excerpt(tool.name), remediation: "Two servers with the same tool name leave it to the client which one runs, and one can impersonate the other. Rename or disable one of them." });
     }
     for (const bad of invalidSchemaTypes(tool.inputSchema, "inputSchema")) {
@@ -21238,7 +21247,7 @@ async function auditTools(servers, timeoutSeconds, pins, policy) {
       if (pinned.config && pinned.config !== hashConfig(r.server)) {
         own2.push({ severity: "medium", rule: "drift/config-changed", title: "Launch command, package version or URL changed since pinning", location: `${where} in ${r.server.source}`, remediation: "Check who changed the config and why (e.g. a pulled .mcp.json or a version bump), then re-pin." });
       }
-      const d = computeDrift(pinned.tools, r.tools);
+      const d = computeDrift(pinned, r.tools);
       driftLines.push(hasDrift(d) ? `- ${label}: \u26A0\uFE0F changed since ${pinned.pinnedAt}` : `- ${label}: unchanged since ${pinned.pinnedAt}`);
       const list2 = (xs) => xs.map((x) => `"${excerpt(x, 50)}"`).join(", ");
       if (d.changed.length) own2.push({ severity: "high", rule: "drift/tool-changed", title: `${d.changed.length} tool definition(s) changed since pinning: ${list2(d.changed)}`, location: where, remediation: "A server that rewrites tool descriptions after approval is the rug-pull pattern. Review the findings for these tools, and re-pin only once you trust the new wording." });
@@ -21400,7 +21409,7 @@ async function sessionCheck(projectDir, mode, timeoutMs = 1e4) {
       if (mode === "full") {
         try {
           const tools = await fetchTools(s, timeoutMs);
-          const d = computeDrift(pin.tools, tools);
+          const d = computeDrift(pin, tools);
           if (hasDrift(d)) {
             const parts = [d.changed.length && `${d.changed.length} tool(s) changed`, d.added.length && `${d.added.length} added`, d.removed.length && `${d.removed.length} removed`].filter(Boolean);
             const severe = analyzeTools(s.name, tools.filter((t) => d.changed.includes(t.name) || d.added.includes(t.name))).filter((f) => f.severity === "critical" || f.severity === "high");
