@@ -7,9 +7,14 @@ import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const sets = ["remote-public"];
-const docker = spawnSync("docker", ["image", "inspect", "mcpsec-bench-node", "mcpsec-bench-python"], { stdio: "ignore" });
+const docker = spawnSync("docker", ["image", "inspect", "mcpsec-bench-node", "mcpsec-bench-python"], { encoding: "utf8" });
 if (docker.status === 0) sets.push("stdio-sandbox");
-else console.log("note: sandbox images not built, skipping stdio-sandbox (see bench/RESULTS.md)");
+else {
+  // Never let a skipped set look like a clean one.
+  const why = (docker.error?.message ?? docker.stderr ?? "").trim().split("\n")[0] || `exit ${docker.status}`;
+  console.log(`SKIPPED stdio-sandbox: ${why} (build the images as in bench/RESULTS.md, or start Docker)`);
+  if (process.env.BENCH_REQUIRE_SANDBOX === "1") process.exit(1);
+}
 
 let failed = false;
 for (const set of sets) {
