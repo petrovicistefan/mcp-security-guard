@@ -183,7 +183,7 @@ server.registerTool(
       i_own_this_server: z.boolean().describe("Must be true: the user confirmed they own or operate this server."),
       confirm_launch: z.boolean().describe("Must be true: the user agreed that the server is started and its tools are called."),
       include_destructive: z.boolean().default(false),
-      canary_dir: z.string().optional().describe("Writable directory as seen by the server (default /tmp). For a container, mount a host directory and pass host_canary_dir too."),
+      canary_dir: z.string().optional().describe("Writable directory as seen by the server (default: the OS temp directory). For a container, mount a host directory and pass host_canary_dir too."),
       host_canary_dir: z.string().optional(),
       project_dir: z.string().optional(),
     },

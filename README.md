@@ -158,6 +158,9 @@ npm run bench      # false-positive gate on real servers (network; Docker images
 
 `test/fixtures/poisoned-server.mjs` is a deliberately malicious server used by the end-to-end test.
 
-## License
+## Security, privacy, license
 
-MIT
+- Found a vulnerability? See [SECURITY.md](SECURITY.md).
+- What is read, written and sent: [PRIVACY.md](PRIVACY.md).
+- Changes: [CHANGELOG.md](CHANGELOG.md).
+- MIT, see [LICENSE](LICENSE).

@@ -37151,6 +37151,8 @@ var StdioServerTransport = class {
 // src/adversarial.ts
 import { randomBytes } from "node:crypto";
 import { existsSync as existsSync2, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join as join2 } from "node:path";
 
 // src/sanitize.ts
 var INVISIBLE_RE = /[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\u3164\uFE00-\uFE0F\uFEFF\uFFA0\u{E0000}-\u{E007F}\u{E0100}-\u{E01EF}]/gu;
@@ -40445,11 +40447,17 @@ function surfaceDefinitions(surface) {
 
 // src/adversarial.ts
 var PATH_PARAM = /(^|_)(path|file|filename|filepath|dir|directory|folder|src|source|dest|destination)$/i;
-var PASSWD_RE = /root:[x*]?:0:0:/;
+var LEAK_RE = /root:[x*]?:0:0:|\[fonts\]|for 16-bit app support/i;
 var commandPayloads = (canary) => [`; touch ${canary}`, `$(touch ${canary})`, `\`touch ${canary}\``, `| touch ${canary}`, `&& touch ${canary}`, `
 touch ${canary}
-`];
-var PATH_PAYLOADS = ["../../../../../../../../../../etc/passwd", "/etc/passwd", "..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc%2fpasswd"];
+`, `& echo x > ${canary}`];
+var PATH_PAYLOADS = [
+  "../../../../../../../../../../etc/passwd",
+  "/etc/passwd",
+  "..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc%2fpasswd",
+  "..\\..\\..\\..\\..\\..\\..\\Windows\\win.ini",
+  "C:\\Windows\\win.ini"
+];
 function typeOf(s) {
   const t = s?.type;
   return Array.isArray(t) ? t.find((x) => x !== "null") ?? "string" : t ?? "string";
@@ -40478,9 +40486,12 @@ function responseText(r) {
   const content = r?.content ?? [];
   return content.map((c) => c.text ?? "").join("\n");
 }
+function serverPath(dir, name) {
+  return `${dir}${dir.includes("\\") && !dir.includes("/") ? "\\" : "/"}${name}`;
+}
 async function adversarialTest(s, opts = {}) {
-  const canaryDir = (opts.canaryDir ?? "/tmp").replace(/\/$/, "");
-  const hostDir = (opts.hostCanaryDir ?? canaryDir).replace(/\/$/, "");
+  const canaryDir = (opts.canaryDir ?? tmpdir()).replace(/[\\/]$/, "");
+  const hostDir = (opts.hostCanaryDir ?? canaryDir).replace(/[\\/]$/, "");
   const maxCalls = opts.maxCalls ?? 300;
   const callTimeout = opts.callTimeoutMs ?? 5e3;
   const runId = randomBytes(4).toString("hex");
@@ -40516,13 +40527,13 @@ async function adversarialTest(s, opts = {}) {
         for (const payload of commandPayloads("CANARY")) {
           const name = `mcpsec-${runId}-${planted.size}`;
           planted.set(name, { tool: tool.name, param, payload });
-          await call({ ...baseArgs(schema), [param]: `test${payload.replace("CANARY", `${canaryDir}/${name}`)}` });
+          await call({ ...baseArgs(schema), [param]: `test${payload.replace("CANARY", serverPath(canaryDir, name))}` });
         }
         if (PATH_PARAM.test(param)) {
           for (const payload of PATH_PAYLOADS) {
             const r = await call({ ...baseArgs(schema), [param]: payload });
-            if (PASSWD_RE.test(responseText(r))) {
-              findings.push({ severity: "high", rule: "adversarial/path-traversal", title: `Tool "${excerpt(tool.name, 50)}" returned /etc/passwd for parameter "${excerpt(param, 40)}"`, location: `server "${s.name}" \u203A tool "${excerpt(tool.name, 50)}" \u203A ${excerpt(param, 40)}`, evidence: excerpt(payload, 80), remediation: "Resolve the path, then reject anything outside the allowed root (compare realpath prefixes). Never pass user paths straight to the file system.", file: s.source, server: s.name });
+            if (LEAK_RE.test(responseText(r))) {
+              findings.push({ severity: "high", rule: "adversarial/path-traversal", title: `Tool "${excerpt(tool.name, 50)}" returned a system file outside its directory for parameter "${excerpt(param, 40)}"`, location: `server "${s.name}" \u203A tool "${excerpt(tool.name, 50)}" \u203A ${excerpt(param, 40)}`, evidence: excerpt(payload, 80), remediation: "Resolve the path, then reject anything outside the allowed root (compare realpath prefixes). Never pass user paths straight to the file system.", file: s.source, server: s.name });
               break;
             }
           }
@@ -40533,7 +40544,7 @@ async function adversarialTest(s, opts = {}) {
   await new Promise((r) => setTimeout(r, 300));
   const hit = /* @__PURE__ */ new Set();
   for (const [name, origin] of planted) {
-    const path = `${hostDir}/${name}`;
+    const path = join2(hostDir, name);
     if (!existsSync2(path)) continue;
     rmSync(path, { force: true });
     const key = `${origin.tool}|${origin.param}`;
@@ -40547,9 +40558,9 @@ async function adversarialTest(s, opts = {}) {
 // src/policy.ts
 import { existsSync as existsSync3, readFileSync as readFileSync2 } from "node:fs";
 import { homedir as homedir2 } from "node:os";
-import { join as join2 } from "node:path";
+import { join as join3 } from "node:path";
 function policyPaths(projectDir2) {
-  return [join2(process.env.MCP_SECURITY_HOME ?? join2(homedir2(), ".claude", "mcp-security"), "policy.json"), join2(projectDir2, ".mcp-security.json")];
+  return [join3(process.env.MCP_SECURITY_HOME ?? join3(homedir2(), ".claude", "mcp-security"), "policy.json"), join3(projectDir2, ".mcp-security.json")];
 }
 function loadPolicy(projectDir2) {
   const merged = {};
@@ -40846,9 +40857,9 @@ function auditConfig(projectDir2, opts = {}) {
 import { createHash } from "node:crypto";
 import { existsSync as existsSync4, mkdirSync, readFileSync as readFileSync3, renameSync, writeFileSync } from "node:fs";
 import { homedir as homedir3 } from "node:os";
-import { dirname, join as join3 } from "node:path";
+import { dirname, join as join4 } from "node:path";
 function pinsPath() {
-  return join3(process.env.MCP_SECURITY_HOME ?? join3(homedir3(), ".claude", "mcp-security"), "pins.json");
+  return join4(process.env.MCP_SECURITY_HOME ?? join4(homedir3(), ".claude", "mcp-security"), "pins.json");
 }
 function stableStringify(v) {
   if (Array.isArray(v)) return `[${v.map(stableStringify).join(",")}]`;
@@ -41146,7 +41157,7 @@ async function checkSupplyChain(servers, fetcher = fetch, now = Date.now()) {
 // src/runtime.ts
 import { appendFileSync, existsSync as existsSync5, mkdirSync as mkdirSync2, readFileSync as readFileSync4, renameSync as renameSync2, statSync } from "node:fs";
 import { homedir as homedir4 } from "node:os";
-import { dirname as dirname2, join as join4 } from "node:path";
+import { dirname as dirname2, join as join5 } from "node:path";
 
 // src/rules/tool-rules.ts
 function collectText(tool) {
@@ -41367,7 +41378,7 @@ function analyzeTools(serverName, tools, otherServersTools = {}) {
 var MAX_SCAN_BYTES = 256 * 1024;
 var MAX_LOG_BYTES = 10 * 1024 * 1024;
 function auditLogPath() {
-  return join4(process.env.MCP_SECURITY_HOME ?? join4(homedir4(), ".claude", "mcp-security"), "audit.jsonl");
+  return join5(process.env.MCP_SECURITY_HOME ?? join5(homedir4(), ".claude", "mcp-security"), "audit.jsonl");
 }
 function readAudit(path = auditLogPath()) {
   if (!existsSync5(path)) return [];
@@ -41665,7 +41676,7 @@ server.registerTool(
       i_own_this_server: external_exports.boolean().describe("Must be true: the user confirmed they own or operate this server."),
       confirm_launch: external_exports.boolean().describe("Must be true: the user agreed that the server is started and its tools are called."),
       include_destructive: external_exports.boolean().default(false),
-      canary_dir: external_exports.string().optional().describe("Writable directory as seen by the server (default /tmp). For a container, mount a host directory and pass host_canary_dir too."),
+      canary_dir: external_exports.string().optional().describe("Writable directory as seen by the server (default: the OS temp directory). For a container, mount a host directory and pass host_canary_dir too."),
       host_canary_dir: external_exports.string().optional(),
       project_dir: external_exports.string().optional()
     },

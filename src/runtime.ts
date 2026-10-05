@@ -21,6 +21,8 @@ const OUTPUT_RULES = new Set([
   "tool/sensitive-path",
 ]);
 const MAX_SCAN_BYTES = 256 * 1024;
+/** Hostile outputs can nest arbitrarily; recursion stops here instead of overflowing the stack. */
+const MAX_DEPTH = 64;
 const MAX_LOG_BYTES = 10 * 1024 * 1024;
 
 export interface McpToolName {
@@ -39,16 +41,19 @@ export function isOwnTool(server: string): boolean {
 }
 
 /** Every string inside an arbitrary JSON value, with its path, up to a byte budget. */
-export function strings(value: unknown, path = "$", out: { path: string; text: string }[] = [], budget = { left: MAX_SCAN_BYTES }): { path: string; text: string }[] {
-  if (budget.left <= 0) return out;
+export function strings(value: unknown, path = "$", out: { path: string; text: string }[] = [], budget = { left: MAX_SCAN_BYTES }, depth = 0): { path: string; text: string }[] {
+  if (budget.left <= 0 || depth > MAX_DEPTH) return out;
   if (typeof value === "string") {
     const text = value.slice(0, budget.left);
     budget.left -= text.length;
     out.push({ path, text });
   } else if (Array.isArray(value)) {
-    value.forEach((v, i) => strings(v, `${path}[${i}]`, out, budget));
+    for (let i = 0; i < value.length && budget.left > 0; i++) strings(value[i], `${path}[${i}]`, out, budget, depth + 1);
   } else if (value && typeof value === "object") {
-    for (const [k, v] of Object.entries(value)) strings(v, `${path}.${k}`, out, budget);
+    for (const [k, v] of Object.entries(value)) {
+      if (budget.left <= 0) break;
+      strings(v, `${path}.${k}`, out, budget, depth + 1);
+    }
   }
   return out;
 }

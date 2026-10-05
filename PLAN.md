@@ -158,10 +158,10 @@ Rămân pentru planul Team: descoperire și audit la nivel de organizație, revi
 - [x] **Goluri de descoperire găsite în testul real** (închise în v0.6.0):
   - conectorii claude.ai (Claude Docs, Canva, Supermetrics, Google Drive) ajung în sesiune, dar nu apar în `list_mcp_servers`
   - plugin-urile sincronizate din cont (`instagram@synced`, `makebox-etsy@synced`) aduc servere MCP pe care nu le citim
-- [ ] **CI pe Linux, macOS și Windows** (căi, `/tmp` la testul adversarial, shell-uri)
-- [ ] **Securizarea propriului proiect**: versiuni exacte pentru dependențe, SBOM, release-uri semnate, fuzzing pe hook (intrări malformate sau uriașe)
-- [ ] **Documente de publicare**: `LICENSE`, `SECURITY.md`, politică de confidențialitate, `CHANGELOG`, release GitHub
-- [ ] **Valoarea implicită a verificării la pornire**: probabil `config` în loc de `full` (cu multe servere pinuite, `full` e lent)
+- [x] **CI pe Linux, macOS și Windows**: Linux la fiecare push; macOS și Windows la cerere (`workflow_dispatch`) și la fiecare release; problemele de Windows din testul adversarial au fost corectate
+- [x] **Securizarea propriului proiect**: versiuni exacte (`save-exact`), acțiuni GitHub fixate pe SHA, `npm ci --ignore-scripts`, `npm audit` în CI, SBOM CycloneDX, proveniență semnată (doar pentru repo public), test cu intrări ostile pe hook
+- [x] **Documente de publicare**: `LICENSE`, `SECURITY.md`, `PRIVACY.md`, `CHANGELOG.md`, workflow de release (zip + SBOM + SHA256SUMS)
+- [x] **Valoarea implicită a verificării la pornire**: rămâne `full`. Doar așa se prind rug pull-urile serverelor remote, care își schimbă descrierile fără să se schimbe configurația. Repornește doar serverele pinuite, cu timeout de 10 s fiecare; `config` sau `off` sunt disponibile prin `MCP_SECURITY_SESSION_CHECK`
 
 ### Goluri de detecție
 - [x] **`instructions`, prompts și resources**: scanate și pinuite (v0.6.0)

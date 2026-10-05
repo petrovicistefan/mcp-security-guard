@@ -279,6 +279,7 @@ var OUTPUT_RULES = /* @__PURE__ */ new Set([
   "tool/sensitive-path"
 ]);
 var MAX_SCAN_BYTES = 256 * 1024;
+var MAX_DEPTH = 64;
 var MAX_LOG_BYTES = 10 * 1024 * 1024;
 function parseToolName(name) {
   const m = /^mcp__(.+?)__(.+)$/.exec(name);
@@ -287,16 +288,19 @@ function parseToolName(name) {
 function isOwnTool(server) {
   return server === "mcp-security" || server === "plugin_mcp-security_mcp-security";
 }
-function strings(value, path = "$", out = [], budget = { left: MAX_SCAN_BYTES }) {
-  if (budget.left <= 0) return out;
+function strings(value, path = "$", out = [], budget = { left: MAX_SCAN_BYTES }, depth = 0) {
+  if (budget.left <= 0 || depth > MAX_DEPTH) return out;
   if (typeof value === "string") {
     const text = value.slice(0, budget.left);
     budget.left -= text.length;
     out.push({ path, text });
   } else if (Array.isArray(value)) {
-    value.forEach((v, i) => strings(v, `${path}[${i}]`, out, budget));
+    for (let i = 0; i < value.length && budget.left > 0; i++) strings(value[i], `${path}[${i}]`, out, budget, depth + 1);
   } else if (value && typeof value === "object") {
-    for (const [k, v] of Object.entries(value)) strings(v, `${path}.${k}`, out, budget);
+    for (const [k, v] of Object.entries(value)) {
+      if (budget.left <= 0) break;
+      strings(v, `${path}.${k}`, out, budget, depth + 1);
+    }
   }
   return out;
 }

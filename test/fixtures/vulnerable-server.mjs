@@ -2,7 +2,7 @@
 // tests only create empty canary files in a temp directory.
 import { exec, execFile } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { isAbsolute, join } from "node:path";
 import { promisify } from "node:util";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -26,7 +26,7 @@ server.registerTool("safe_ping", { description: "Pings a host safely.", inputSch
 // VULNERABLE: no containment check on the path.
 server.registerTool("read_doc", { description: "Reads a document from the docs folder.", inputSchema: { path: z.string() } }, async ({ path }) => {
   try {
-    return text(readFileSync(path.startsWith("/") ? path : join(process.cwd(), "docs", path), "utf8"));
+    return text(readFileSync(isAbsolute(path) ? path : join(process.cwd(), "docs", path), "utf8"));
   } catch (e) {
     return text(`error: ${e.message}`);
   }
