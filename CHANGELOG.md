@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.0
 
 - **Plugin moved to `plugin/`** for the Claude directory: users install only the runtime (manifest, MCP server, hooks, skill, command, bundles, README, license). Source, tests, attack corpus and benchmarks stay in the repository. The dashboard bundle is no longer minified, so reviewers can read it
 - **Renamed to mcp-security-guard** (plugin, marketplace, MCP server, CLI, Action, release files), because `mcp-security` is taken on npm and by google/mcp-security. Unchanged for compatibility: the state directory `~/.claude/mcp-security/` (pins, audit log, backups), the `MCP_SECURITY_*` variables and the `.mcp-security.json` policy file. Tool names are now `mcp__plugin_mcp-security-guard_mcp-security-guard__*`; permission rules written for the old names need updating
