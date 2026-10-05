@@ -147,7 +147,11 @@ Rămân pentru planul Team: descoperire și audit la nivel de organizație, revi
 ## Ce mai rămâne de acoperit (după v0.5.0)
 
 ### Obligatorii înainte de lansare
-- [ ] **Test real în Claude Code**: instalare din repo; verificat serverul MCP, `/mcp-audit` și cele 3 hook-uri (formatul `tool_response`, numele de permisiuni `mcp__plugin_...`, afișarea mesajelor)
+- [~] **Test real în Claude Code** (2026-10-06, sesiune izolată cu `--plugin-dir`, configurația utilizatorului verificată identică prin sha256 după test)
+  - ✅ plugin-ul se încarcă (`mcp-security@inline`, 0.5.0) și hook-ul `SessionStart` rulează fără eroare
+  - ⚠️ `--strict-mcp-config` oprește și serverul MCP al plugin-ului; testul complet trebuie rulat fără el
+  - ⏳ blocat: CLI-ul `claude` nu e autentificat (aplicația desktop are alt login). După `claude /login`, de rulat cu `test/fixtures/runtime-server.mjs` pentru PreToolUse/PostToolUse, `tool_response` și numele de permisiuni
+  - Notă: orice sesiune Claude Code actualizează `pluginUsage` în `~/.claude.json` (contoare de utilizare); după test au fost readuse la valorile inițiale
 - [ ] **CI pe Linux, macOS și Windows** (căi, `/tmp` la testul adversarial, shell-uri)
 - [ ] **Securizarea propriului proiect**: versiuni exacte pentru dependențe, SBOM, release-uri semnate, fuzzing pe hook (intrări malformate sau uriașe)
 - [ ] **Documente de publicare**: `LICENSE`, `SECURITY.md`, politică de confidențialitate, `CHANGELOG`, release GitHub
