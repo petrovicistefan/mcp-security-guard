@@ -24,7 +24,7 @@
 - [x] Skill + comanda `/mcp-audit`, 15 teste (inclusiv e2e cu un server otrăvit)
 
 ### Faza 2: Protecție continuă
-- [ ] **Hook `SessionStart`**: verifică drift-ul la fiecare sesiune și afișează un avertisment scurt doar când s-a schimbat ceva
+- [x] **Hook `SessionStart`**: verifică drift-ul la fiecare sesiune și afișează un avertisment scurt doar când s-a schimbat ceva
 - [ ] **Scanarea serverelor MCP aduse de plugin-uri** (`~/.claude/plugins/**/.mcp.json`), nu doar a celor configurate manual
 - [ ] **Scanarea skill-urilor, comenzilor și fișierelor CLAUDE.md** pentru prompt injection, pentru că și ele ajung în context
 - [ ] **Ieșire SARIF** pentru GitHub Code Scanning, plus JSON pentru scripturi
@@ -106,7 +106,7 @@ Prețurile trebuie validate cu utilizatori reali înainte de lansare. Mai jos, l
 
 ## Next steps (în ordine)
 1. [x] Commit pentru MVP
-2. [ ] **Hook `SessionStart` pentru drift**: verificare rapidă la fiecare sesiune, cu avertisment doar când se schimbă ceva
+2. [x] **Hook `SessionStart` pentru drift**: verificare rapidă la fiecare sesiune, cu avertisment doar când se schimbă ceva
 3. [ ] **Scanarea serverelor MCP din plugin-uri** (`~/.claude/plugins/`)
 4. [ ] **Ieșire SARIF/JSON** + GitHub Action de bază
 5. [ ] **Test pe 10–20 de servere MCP populare** pentru calibrarea fals pozitivelor

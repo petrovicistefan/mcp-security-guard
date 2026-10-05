@@ -1,0 +1,17 @@
+{
+  "description": "Re-verifies pinned MCP servers at session start and warns only when something changed (rug-pull detection).",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/dist/cli.mjs\" session-check",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

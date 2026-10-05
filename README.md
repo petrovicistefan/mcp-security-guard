@@ -7,7 +7,7 @@ A Claude Code plugin that audits the **MCP servers you have installed**. Your co
 | Tool poisoning | Instruction overrides, "don't tell the user", `<IMPORTANT>` tags, sensitive paths (`~/.ssh`, `.env`), exfiltration wording, encoded payloads, in descriptions *and* schema strings |
 | Invisible Unicode | Zero-width, bidi-control and tag characters that hide text from human reviewers |
 | Tool shadowing | A server whose descriptions reference another server's tools |
-| Rug pulls | Tool definitions that changed after you pinned them (SHA-256 per tool) |
+| Rug pulls | Tool definitions or launch commands that changed after you pinned them (SHA-256 per tool). Re-checked automatically at every session start |
 | Configuration | Plaintext secrets in env/headers/args/URLs, plain-HTTP remotes, unpinned `npx`/`uvx` packages, privileged or unpinned Docker images, pipe-to-shell launches, duplicate names across scopes |
 
 Everything runs locally. Nothing is sent anywhere.
@@ -30,6 +30,14 @@ Then run `/mcp-audit`, or ask Claude *"are my MCP servers safe?"*.
 | `audit_server_tools` | Yes, after explicit `confirm_launch: true`. Sends only `initialize` and `tools/list`; never calls a scanned tool |
 | `pin_tools` | Yes (same as above). Writes `~/.claude/mcp-security/pins.json` |
 | `analyze_tool_definitions` | No. Offline analysis of a `tools/list` payload, for MCP server authors |
+
+## Session-start check
+
+A `SessionStart` hook re-verifies **only the servers you have pinned** (pinning is your consent to launch them) and stays silent unless something changed. Control it with `MCP_SECURITY_SESSION_CHECK`:
+
+- `full` (default): compare launch configs and re-list tools
+- `config`: compare launch configs only, launch nothing
+- `off`: disable the check
 
 ## Trust model
 

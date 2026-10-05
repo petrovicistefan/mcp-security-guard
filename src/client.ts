@@ -18,7 +18,7 @@ const expandRecord = (r?: Record<string, string>) => (r ? Object.fromEntries(Obj
  * no tool is ever called.
  */
 export async function fetchTools(s: ServerConfig, timeoutMs = 20_000): Promise<ToolDefinition[]> {
-  const client = new Client({ name: "mcp-security-scanner", version: "0.1.0" });
+  const client = new Client({ name: "mcp-security-scanner", version: "0.2.0" });
   const kind = transportOf(s);
   const transport =
     kind === "stdio"

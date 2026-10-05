@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -41,10 +42,25 @@ describe("scanner end to end", () => {
 
     expect(await call("pin_tools", { servers: ["poisoned"], confirm_launch: true })).toContain("2 tool(s) pinned");
 
+    expect(runHook()).toBe("");
+
     writeConfig("v2");
     const second = await call("audit_server_tools", { servers: ["poisoned"], confirm_launch: true });
     expect(second).toContain("drift/tool-changed");
     expect(second).toContain("tool/sensitive-path");
     expect(second).toContain("tool/conceal-from-user");
+
+    const hook = JSON.parse(runHook());
+    expect(hook.systemMessage).toContain('"poisoned" (project): 1 tool(s) changed');
+    expect(hook.systemMessage).toContain("critical/high poisoning finding");
+    expect(hook.hookSpecificOutput.hookEventName).toBe("SessionStart");
   }, 60_000);
+
+  // The SessionStart hook reads the project dir from stdin and must stay silent when nothing changed.
+  const runHook = () =>
+    execFileSync(process.execPath, [join(root, "dist/cli.mjs"), "session-check"], {
+      input: JSON.stringify({ hook_event_name: "SessionStart", cwd: work }),
+      env: { ...getDefaultEnvironment(), MCP_SECURITY_HOME: home },
+      encoding: "utf8",
+    });
 });

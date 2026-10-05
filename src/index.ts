@@ -3,14 +3,14 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { fetchTools } from "./client.js";
 import { discoverServers, transportOf } from "./config.js";
-import { computeDrift, hasDrift, hashTool, loadPins, pinKey, pinsPath, savePins } from "./pins.js";
+import { computeDrift, hasDrift, hashConfig, loadPins, pinEntry, pinKey, pinsPath, savePins } from "./pins.js";
 import { report } from "./report.js";
 import { auditDuplicates, auditServerConfig } from "./rules/config-rules.js";
 import { analyzeTools } from "./rules/tool-rules.js";
 import { excerpt } from "./sanitize.js";
 import type { Finding, ServerConfig, ToolDefinition } from "./types.js";
 
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 const projectDir = () => process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
 
@@ -125,6 +125,9 @@ server.registerTool(
         driftLines.push(`- **${excerpt(r.server.name, 50)}** (${r.server.scope}): not pinned yet`);
         continue;
       }
+      if (pinned.config && pinned.config !== hashConfig(r.server)) {
+        findings.push({ severity: "medium", rule: "drift/config-changed", title: "Launch command, package version or URL changed since pinning", location: `server "${r.server.name}" (${r.server.scope}) in ${r.server.source}`, remediation: "Check who changed the config and why (e.g. a pulled .mcp.json or a version bump), then re-pin." });
+      }
       const d = computeDrift(pinned.tools, r.tools);
       if (!hasDrift(d)) {
         driftLines.push(`- **${excerpt(r.server.name, 50)}** (${r.server.scope}): unchanged since ${pinned.pinnedAt}`);
@@ -170,7 +173,7 @@ server.registerTool(
         lines.push(`- ❌ **${excerpt(r.server.name, 50)}** (${r.server.scope}): ${r.error}`);
         continue;
       }
-      pins.servers[pinKey(r.server.scope, r.server.name)] = { pinnedAt: new Date().toISOString(), tools: Object.fromEntries(r.tools!.map((t) => [t.name, hashTool(t)])) };
+      pins.servers[pinKey(r.server.scope, r.server.name)] = pinEntry(r.server, r.tools!);
       lines.push(`- 📌 **${excerpt(r.server.name, 50)}** (${r.server.scope}): ${r.tools!.length} tool(s) pinned`);
     }
     savePins(pins);

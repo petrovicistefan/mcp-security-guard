@@ -2,11 +2,18 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import type { ToolDefinition } from "./types.js";
+import type { ServerConfig, ToolDefinition } from "./types.js";
+
+export interface PinEntry {
+  pinnedAt: string;
+  tools: Record<string, string>;
+  /** Hash of the launch config (command/args/url/env *names*). Absent in pins written before 0.2. */
+  config?: string;
+}
 
 export interface PinFile {
   version: 1;
-  servers: Record<string, { pinnedAt: string; tools: Record<string, string> }>;
+  servers: Record<string, PinEntry>;
 }
 
 export interface Drift {
@@ -35,6 +42,17 @@ export function hashTool(t: ToolDefinition): string {
   return createHash("sha256")
     .update(stableStringify({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations }))
     .digest("hex");
+}
+
+/** Detects a changed launch command or package version. Env and header *values* are excluded so rotating a secret is not drift. */
+export function hashConfig(s: ServerConfig): string {
+  return createHash("sha256")
+    .update(stableStringify({ type: s.type, command: s.command, args: s.args, url: s.url, env: Object.keys(s.env ?? {}).sort(), headers: Object.keys(s.headers ?? {}).sort() }))
+    .digest("hex");
+}
+
+export function pinEntry(s: ServerConfig, tools: ToolDefinition[]): PinEntry {
+  return { pinnedAt: new Date().toISOString(), tools: Object.fromEntries(tools.map((t) => [t.name, hashTool(t)])), config: hashConfig(s) };
 }
 
 export function loadPins(path = pinsPath()): PinFile {

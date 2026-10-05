@@ -40185,7 +40185,7 @@ function expand(value) {
 }
 var expandRecord = (r) => r ? Object.fromEntries(Object.entries(r).map(([k, v]) => [k, expand(v)])) : void 0;
 async function fetchTools(s, timeoutMs = 2e4) {
-  const client = new Client({ name: "mcp-security-scanner", version: "0.1.0" });
+  const client = new Client({ name: "mcp-security-scanner", version: "0.2.0" });
   const kind = transportOf(s);
   const transport = kind === "stdio" ? new StdioClientTransport({ command: expand(s.command), args: (s.args ?? []).map(expand), env: { ...getDefaultEnvironment(), ...expandRecord(s.env) }, stderr: "ignore" }) : kind === "sse" ? new SSEClientTransport(new URL(expand(s.url)), { requestInit: { headers: expandRecord(s.headers) } }) : kind === "http" ? new StreamableHTTPClientTransport(new URL(expand(s.url)), { requestInit: { headers: expandRecord(s.headers) } }) : void 0;
   if (!transport) throw new Error("no command or url configured");
@@ -40232,6 +40232,12 @@ function stableStringify(v) {
 }
 function hashTool(t) {
   return createHash("sha256").update(stableStringify({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })).digest("hex");
+}
+function hashConfig(s) {
+  return createHash("sha256").update(stableStringify({ type: s.type, command: s.command, args: s.args, url: s.url, env: Object.keys(s.env ?? {}).sort(), headers: Object.keys(s.headers ?? {}).sort() })).digest("hex");
+}
+function pinEntry(s, tools) {
+  return { pinnedAt: (/* @__PURE__ */ new Date()).toISOString(), tools: Object.fromEntries(tools.map((t) => [t.name, hashTool(t)])), config: hashConfig(s) };
 }
 function loadPins(path = pinsPath()) {
   if (!existsSync2(path)) return { version: 1, servers: {} };
@@ -40639,7 +40645,7 @@ function analyzeTools(serverName, tools, otherServersTools = {}) {
 }
 
 // src/index.ts
-var VERSION = "0.1.0";
+var VERSION = "0.2.0";
 var projectDir = () => process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 var text = (t) => ({ content: [{ type: "text", text: t }] });
 function select(all, names) {
@@ -40742,6 +40748,9 @@ server.registerTool(
         driftLines.push(`- **${excerpt(r.server.name, 50)}** (${r.server.scope}): not pinned yet`);
         continue;
       }
+      if (pinned.config && pinned.config !== hashConfig(r.server)) {
+        findings.push({ severity: "medium", rule: "drift/config-changed", title: "Launch command, package version or URL changed since pinning", location: `server "${r.server.name}" (${r.server.scope}) in ${r.server.source}`, remediation: "Check who changed the config and why (e.g. a pulled .mcp.json or a version bump), then re-pin." });
+      }
       const d = computeDrift(pinned.tools, r.tools);
       if (!hasDrift(d)) {
         driftLines.push(`- **${excerpt(r.server.name, 50)}** (${r.server.scope}): unchanged since ${pinned.pinnedAt}`);
@@ -40786,7 +40795,7 @@ server.registerTool(
         lines.push(`- \u274C **${excerpt(r.server.name, 50)}** (${r.server.scope}): ${r.error}`);
         continue;
       }
-      pins.servers[pinKey(r.server.scope, r.server.name)] = { pinnedAt: (/* @__PURE__ */ new Date()).toISOString(), tools: Object.fromEntries(r.tools.map((t) => [t.name, hashTool(t)])) };
+      pins.servers[pinKey(r.server.scope, r.server.name)] = pinEntry(r.server, r.tools);
       lines.push(`- \u{1F4CC} **${excerpt(r.server.name, 50)}** (${r.server.scope}): ${r.tools.length} tool(s) pinned`);
     }
     savePins(pins);
