@@ -1,4 +1,4 @@
-# Plan mcp-security
+# Plan mcp-security-guard
 
 ## Poziționare
 „mcp-scan, dar integrat nativ în Claude Code.” Scanarea codului e acoperită de claude-security, Security Guidance, securitymaxxing și soundcheck. security-watchdog scanează plugin-urile. Nimeni din Anthropic Directory nu auditează **serverele MCP instalate și definițiile tool-urilor lor**.
@@ -28,7 +28,7 @@
 - [x] **Scanarea serverelor MCP aduse de plugin-uri** (`~/.claude/plugins/**/.mcp.json`), nu doar a celor configurate manual
 - [ ] **Scanarea skill-urilor, comenzilor și fișierelor CLAUDE.md** pentru prompt injection, pentru că și ele ajung în context
 - [x] **Ieșire SARIF** pentru GitHub Code Scanning, plus JSON pentru scripturi
-- [ ] **Lockfile pentru `.mcp.json`** (`mcp-security.lock`), comis în repo, ca toată echipa să ruleze exact aceleași versiuni și definiții
+- [ ] **Lockfile pentru `.mcp.json`** (`mcp-security-guard.lock`), comis în repo, ca toată echipa să ruleze exact aceleași versiuni și definiții
 
 ### Faza 3: Protecție la runtime
 - [x] **Hook `PostToolUse` pe `mcp__*`**: scanează *răspunsurile* tool-urilor pentru prompt injection, de exemplu o pagină web sau un issue GitHub care conține „ignore previous instructions”. Acoperă vectorul pe care auditul static nu îl vede.
@@ -48,7 +48,7 @@
 - [ ] Repo public pe GitHub, `marketplace.json`, release-uri semver, changelog
 - [ ] Trimitere în Anthropic Directory
 - [x] **GitHub Action gratuit** (varianta de bază): rulează `audit_mcp_config` în CI
-- [ ] Badge pentru autorii de servere: „Scanned by mcp-security”, ca reclamă gratuită
+- [ ] Badge pentru autorii de servere: „Scanned by mcp-security-guard”, ca reclamă gratuită
 
 ---
 
@@ -157,7 +157,7 @@ Rămân pentru planul Team: descoperire și audit la nivel de organizație, revi
 
 ### Obligatorii înainte de lansare
 - [x] **Test real în Claude Code** (2026-10-06, Claude Code 2.1.289, sesiune izolată cu `--plugin-dir`; configurația utilizatorului verificată după test)
-  - ✅ plugin-ul se încarcă, serverul MCP pornește (`plugin:mcp-security:mcp-security`, cu 10 tool-uri), iar hook-ul `SessionStart` rulează fără eroare
+  - ✅ plugin-ul se încarcă, serverul MCP pornește (`plugin:mcp-security-guard:mcp-security-guard`, cu 10 tool-uri), iar hook-ul `SessionStart` rulează fără eroare
   - ✅ numele reale ale tool-urilor sunt `mcp__plugin_mcp-security_mcp-security__*`, deci se confirmă formatul folosit la regulile de permisiuni și la excluderea propriilor tool-uri
   - ✅ **PostToolUse**: injecția din răspunsul `get_issue` a fost semnalată, iar Claude a ignorat instrucțiunea și i-a spus utilizatorului
   - ✅ **PreToolUse**: apelul cu token în argumente a fost oprit („ask”, refuzat în modul headless), cu tokenul mascat în mesaj
@@ -191,7 +191,7 @@ Rămân pentru planul Team: descoperire și audit la nivel de organizație, revi
 - [ ] Waitlist pentru Pro și Team
 - [ ] Raport public „Am scanat N servere MCP”
 - [ ] Backend pentru planurile plătite, începând cu feed-ul de threat intelligence
-- [ ] Verificarea numelui „mcp-security” (pachete sau mărci existente)
+- [ ] Verificarea numelui „mcp-security-guard” (pachete sau mărci existente)
 
 **Ordinea propusă:** test real → instructions/prompts/resources → CI pe mai multe platforme + securizarea proiectului → documente + release → corecturi automate.
 

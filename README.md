@@ -1,4 +1,4 @@
-# mcp-security
+# mcp-security-guard
 
 A Claude Code plugin that audits the **MCP servers you have installed**. Your code is covered by other tools. This one checks the servers that inject text into Claude's context.
 
@@ -46,7 +46,7 @@ What a local tool cannot do (planned for a hosted Team plan): org-wide discovery
 
 ```
 /plugin marketplace add petrovicistefan/mcp-security
-/plugin install mcp-security@mcp-security
+/plugin install mcp-security-guard@mcp-security-guard
 ```
 
 Then run `/mcp-audit`, or ask Claude *"are my MCP servers safe?"*.
@@ -148,7 +148,7 @@ Remote servers that require OAuth (most hosted MCP servers) cannot be scanned at
 To use it in Claude Desktop, add the server to `claude_desktop_config.json` and ask Claude to *"open the MCP security dashboard"*:
 
 ```json
-{ "mcpServers": { "mcp-security": { "command": "node", "args": ["/path/to/mcp-security/dist/index.mjs"] } } }
+{ "mcpServers": { "mcp-security-guard": { "command": "node", "args": ["/path/to/mcp-security/dist/index.mjs"] } } }
 ```
 
 The UI is a single self-contained HTML file. Server-supplied text reaches the page only as text (never as HTML), and the host's sandbox applies. Develop it with a local host that drives the real server: `npm run dashboard:dev -- /path/to/project`.
@@ -197,7 +197,7 @@ Interested? [Join the early access list](https://tally.so/r/dW5lZK). Early sign-
 
 ## About the author
 
-I'm Stefan Petrovici: passionate about IT, a husband and a father. I built mcp-security on my own. **I'm looking for a job.**
+I'm Stefan Petrovici: passionate about IT, a husband and a father. I built mcp-security-guard on my own. **I'm looking for a job.**
 
 I build web applications end to end, frontend, backend, APIs and deployment, and I'm happy to work on anything else that needs building. This repository shows how I work: tests, CI, careful documentation and attention to security.
 

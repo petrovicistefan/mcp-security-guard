@@ -18,7 +18,7 @@ const expandRecord = (r?: Record<string, string>) => (r ? Object.fromEntries(Obj
  * stdio servers, so callers must have explicit user consent.
  */
 export async function withClient<T>(s: ServerConfig, timeoutMs: number, fn: (client: Client) => Promise<T>): Promise<T> {
-  const client = new Client({ name: "mcp-security-scanner", version: VERSION });
+  const client = new Client({ name: "mcp-security-guard-scanner", version: VERSION });
   const kind = transportOf(s);
   const transport =
     kind === "stdio"

@@ -5,7 +5,7 @@ description: Audit the MCP servers installed in Claude Code or Claude Desktop fo
 
 # Auditing MCP servers
 
-Use the `mcp-security` tools. Each finding carries its OWASP MCP Top 10 id.
+Use the `mcp-security-guard` tools. Each finding carries its OWASP MCP Top 10 id.
 
 ## Workflow
 

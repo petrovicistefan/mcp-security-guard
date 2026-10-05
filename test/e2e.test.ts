@@ -80,7 +80,7 @@ describe("first run", () => {
     writeFileSync(join(work, ".mcp.json"), JSON.stringify({ mcpServers: { leaky: { command: "x", env: { GITHUB_TOKEN: "ghp_" + "e".repeat(36) } } } }));
     const hook = () => execFileSync(process.execPath, [join(root, "dist/cli.mjs"), "session-check"], { input: JSON.stringify({ cwd: work }), env: { ...getDefaultEnvironment(), MCP_SECURITY_HOME: home, HOME: work }, encoding: "utf8" });
     const first = JSON.parse(hook());
-    expect(first.systemMessage).toContain("mcp-security is active");
+    expect(first.systemMessage).toContain("mcp-security-guard is active");
     expect(first.systemMessage).toMatch(/found \d+ critical\/high issue/);
     expect(hook()).toBe("");
   });
@@ -95,7 +95,7 @@ describe("dashboard (MCP App)", () => {
     try {
       const tool = (await c.listTools()).tools.find((t) => t.name === "security_dashboard")!;
       const uri = (tool._meta as any)?.ui?.resourceUri;
-      expect(uri).toBe("ui://mcp-security/dashboard.html");
+      expect(uri).toBe("ui://mcp-security-guard/dashboard.html");
       const res = await c.readResource({ uri });
       expect(res.contents[0].mimeType).toBe("text/html;profile=mcp-app");
       const html = String((res.contents[0] as { text?: string }).text);

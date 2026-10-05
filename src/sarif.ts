@@ -35,7 +35,7 @@ export function toSarif(findings: Finding[], projectDir: string, version: string
     version: "2.1.0",
     runs: [
       {
-        tool: { driver: { name: "mcp-security", version, informationUri: "https://github.com/petrovicistefan/mcp-security", rules } },
+        tool: { driver: { name: "mcp-security-guard", version, informationUri: "https://github.com/petrovicistefan/mcp-security-guard", rules } },
         results: findings.map((f) => ({
           ruleId: f.rule,
           level: LEVEL[f.severity],

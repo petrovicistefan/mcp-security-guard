@@ -1,4 +1,4 @@
-name: "MCP Security Audit"
+name: "MCP Security Guard"
 description: "Audit the MCP servers in your repository's .mcp.json for plaintext secrets, unpinned packages, insecure transports and risky launch commands."
 author: "Stefan Petrovici"
 branding:
@@ -17,7 +17,7 @@ inputs:
     default: "true"
   sarif-file:
     description: "Where to write SARIF output (upload it with github/codeql-action/upload-sarif)"
-    default: "mcp-security.sarif"
+    default: "mcp-security-guard.sarif"
 
 outputs:
   sarif-file:

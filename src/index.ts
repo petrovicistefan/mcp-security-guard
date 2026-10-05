@@ -25,7 +25,7 @@ const projectDir = () => process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
 
 const server = new McpServer(
-  { name: "mcp-security", version: VERSION },
+  { name: "mcp-security-guard", version: VERSION },
   {
     instructions:
       "Security scanner for the MCP servers configured in Claude Code and Claude Desktop. Start with audit_mcp_config (read-only). " +
@@ -221,7 +221,7 @@ server.registerTool(
   {
     title: "Security dashboard",
     description:
-      "Opens the interactive mcp-security dashboard: every configured MCP server with its score and grade, findings filterable by severity and server, the OWASP MCP Top 10 breakdown, recommended permission rules, and pin buttons. scan='config' reads files only. scan='full' starts the servers to list their tools, prompts and resources (no tool is called) and needs confirm_launch=true; ask the user first.",
+      "Opens the interactive mcp-security-guard dashboard: every configured MCP server with its score and grade, findings filterable by severity and server, the OWASP MCP Top 10 breakdown, recommended permission rules, and pin buttons. scan='config' reads files only. scan='full' starts the servers to list their tools, prompts and resources (no tool is called) and needs confirm_launch=true; ask the user first.",
     inputSchema: {
       scan: z.enum(["config", "full"]).default("config"),
       confirm_launch: z.boolean().default(false),
@@ -239,7 +239,7 @@ server.registerTool(
 );
 
 server.registerResource(
-  "mcp-security dashboard",
+  "mcp-security-guard dashboard",
   DASHBOARD_URI,
   { mimeType: DASHBOARD_MIME, description: "Interactive security dashboard (MCP App)." },
   async () => ({

@@ -37,7 +37,7 @@ export function parseToolName(name: string): McpToolName | undefined {
 }
 
 export function isOwnTool(server: string): boolean {
-  return server === "mcp-security" || server === "plugin_mcp-security_mcp-security";
+  return ["mcp-security-guard", "plugin_mcp-security-guard_mcp-security-guard", "mcp-security", "plugin_mcp-security_mcp-security"].includes(server);
 }
 
 /** Every string inside an arbitrary JSON value, with its path, up to a byte budget. */

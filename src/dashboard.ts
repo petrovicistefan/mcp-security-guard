@@ -11,7 +11,7 @@ import { SEVERITY_ORDER, type Finding, type Severity } from "./types.js";
 import { excerpt } from "./sanitize.js";
 import { VERSION } from "./version.js";
 
-export const DASHBOARD_URI = "ui://mcp-security/dashboard.html";
+export const DASHBOARD_URI = "ui://mcp-security-guard/dashboard.html";
 export const DASHBOARD_MIME = "text/html;profile=mcp-app";
 
 export interface DashboardServer {
@@ -126,7 +126,7 @@ export function dashboardText(d: DashboardData): string {
   const s = d.summary;
   const worst = d.servers.filter((x) => x.score !== null).slice(0, 5).map((x) => `${excerpt(x.name, 50)} (${x.scope}) ${x.score}/${x.grade}`);
   return [
-    `mcp-security dashboard (${d.mode === "full" ? "full scan" : "configuration only"}): ${d.servers.length} server(s), ${s.critical} critical, ${s.high} high, ${s.medium} medium, ${s.low} low.`,
+    `mcp-security-guard dashboard (${d.mode === "full" ? "full scan" : "configuration only"}): ${d.servers.length} server(s), ${s.critical} critical, ${s.high} high, ${s.medium} medium, ${s.low} low.`,
     worst.length ? `Lowest scores: ${worst.join(", ")}.` : "",
     ...d.notes,
     "Hosts that support MCP Apps (Claude Desktop, claude.ai) show the interactive dashboard; elsewhere use audit_mcp_config / audit_server_tools for the full report.",

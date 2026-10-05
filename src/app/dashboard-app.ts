@@ -6,7 +6,7 @@ import type { DashboardData, DashboardFinding, DashboardServer } from "../dashbo
 type Severity = DashboardFinding["severity"];
 const SEVERITIES: Severity[] = ["critical", "high", "medium", "low", "info"];
 
-const app = new App({ name: "mcp-security dashboard", version: "1.0.0" });
+const app = new App({ name: "mcp-security-guard dashboard", version: "1.0.0" });
 let data: DashboardData | undefined;
 let sevFilter: Severity | undefined;
 let serverFilter: string | undefined;
@@ -131,7 +131,7 @@ function renderPermissions() {
   $("perms-json").textContent = JSON.stringify({ permissions: { ask: data!.permissions } }, null, 2);
   $<HTMLButtonElement>("apply-perms").onclick = () =>
     void app
-      .sendMessage({ role: "user", content: [{ type: "text", text: "Use mcp-security's apply_fixes with the permissions fix to add the recommended permission rules. Show me the dry run first." }] })
+      .sendMessage({ role: "user", content: [{ type: "text", text: "Use mcp-security-guard's apply_fixes with the permissions fix to add the recommended permission rules. Show me the dry run first." }] })
       .catch(() => {});
 }
 

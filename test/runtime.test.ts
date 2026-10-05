@@ -86,6 +86,7 @@ describe("hook process", () => {
     const home = mkdtempSync(join(tmpdir(), "mcpsec-hook-"));
     expect(runHook({ hook_event_name: "PreToolUse", tool_name: "Bash", tool_input: { command: KEY } }, home).out).toBeUndefined();
     expect(runHook({ hook_event_name: "PreToolUse", tool_name: "mcp__mcp-security__audit_mcp_config", tool_input: { x: KEY } }, home).out).toBeUndefined();
+    expect(runHook({ hook_event_name: "PreToolUse", tool_name: "mcp__plugin_mcp-security-guard_mcp-security-guard__audit_mcp_config", tool_input: { x: KEY } }, home).out).toBeUndefined();
     expect(readAudit(join(home, "audit.jsonl"))).toEqual([]);
   });
 });

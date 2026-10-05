@@ -92,7 +92,7 @@ export function toHtml(title: string, findings: Finding[], sections: string[], v
 <body>
 <main>
   <h1>${esc(title)}</h1>
-  <div class="meta">mcp-security ${esc(version)} · ${esc(generatedAt.toISOString())}</div>
+  <div class="meta">mcp-security-guard ${esc(version)} · ${esc(generatedAt.toISOString())}</div>
   <div class="counts">${counts.map(([s, n]) => `<div class="count ${s}"><b>${n}</b>${LABEL[s]}</div>`).join("")}</div>
   ${sections.filter(Boolean).map(markdown).join("\n")}
   <h2>OWASP MCP Top 10</h2>

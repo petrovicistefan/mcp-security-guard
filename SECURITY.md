@@ -1,6 +1,6 @@
 # Security policy
 
-mcp-security is a security tool, so a flaw in it can hurt the people relying on it. Reports are very welcome.
+mcp-security-guard is a security tool, so a flaw in it can hurt the people relying on it. Reports are very welcome.
 
 ## Reporting a vulnerability
 

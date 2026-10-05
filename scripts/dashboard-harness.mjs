@@ -1,5 +1,5 @@
 // Local MCP Apps host for developing the dashboard: `npm run dashboard:dev [-- <project dir>]`.
-// Starts the real mcp-security server over stdio, renders dist/dashboard.html in a sandboxed iframe
+// Starts the real mcp-security-guard server over stdio, renders dist/dashboard.html in a sandboxed iframe
 // through the official AppBridge, and proxies the app's tool calls to the server.
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
@@ -58,7 +58,7 @@ const hostJs = (
   })
 ).outputFiles[0].text;
 
-const page = `<!doctype html><html><head><meta charset="utf-8"><title>mcp-security dashboard (dev host)</title>
+const page = `<!doctype html><html><head><meta charset="utf-8"><title>mcp-security-guard dashboard (dev host)</title>
 <style>body{margin:0;font:13px system-ui;background:#e9e8e3} [data-theme=dark] body{background:#0f0f0e;color:#ddd} header{padding:8px 12px}
 iframe{display:block;width:100%;height:78vh;border:0;background:transparent} pre{margin:0;padding:8px 12px;max-height:18vh;overflow:auto}</style></head>
 <body><header>dev host · <a href="?">light</a> · <a href="?theme=dark">dark</a> · <a href="?scan=full">full scan</a></header>
