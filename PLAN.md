@@ -121,7 +121,7 @@ Prețurile trebuie validate cu utilizatori reali înainte de lansare. Mai jos, l
 5. [x] **Test pe servere MCP reale**: 17 servere legitime (83 tool-uri) + 15 configurații din marketplace; 2 alarme false găsite și corectate (vezi bench/RESULTS.md)
 6. [ ] **Repo public pe GitHub** + instalare prin `/plugin marketplace add`
 7. [ ] **Trimitere în Anthropic Directory**
-8. [ ] **Waitlist pentru Pro/Team** în README, ca să validezi cererea
+8. [x] **Waitlist pentru Pro/Team** în README (formular Tally + hello@petrovicistefan.ro)
 9. [x] Hook-uri runtime (PreToolUse/PostToolUse) + audit log
 9b. [x] Acoperire OWASP MCP Top 10: 10/10 local, inspirat din 42Crunch MCP Security Governance
 9c. [x] Testare adversarială pentru autorii de servere (MCP05)
@@ -188,7 +188,7 @@ Rămân pentru planul Team: descoperire și audit la nivel de organizație, revi
 - [x] **Prima rulare**: rezumat automat al configurației și sugestia `/mcp-audit`, o singură dată (v0.6.0)
 
 ### Business (după lansare)
-- [ ] Waitlist pentru Pro și Team
+- [x] Waitlist pentru Pro și Team: formular Tally + hello@petrovicistefan.ro în README
 - [ ] Raport public „Am scanat N servere MCP”
 - [ ] Backend pentru planurile plătite, începând cu feed-ul de threat intelligence
 - [ ] Verificarea numelui „mcp-security-guard” (pachete sau mărci existente)
