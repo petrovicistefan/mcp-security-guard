@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
+import { owaspFor } from "./owasp.js";
 import type { Finding, Severity } from "./types.js";
 
 const LEVEL: Record<Severity, "error" | "warning" | "note"> = { critical: "error", high: "error", medium: "warning", low: "note", info: "note" };
@@ -27,7 +28,7 @@ export function toSarif(findings: Finding[], projectDir: string, version: string
     name: f.rule.replace(/[/-](\w)/g, (_, c: string) => c.toUpperCase()),
     shortDescription: { text: f.title },
     help: { text: f.remediation },
-    properties: { tags: ["security", "mcp"], "security-severity": SECURITY_SEVERITY[f.severity] },
+    properties: { tags: ["security", "mcp", ...owaspFor(f.rule).map((id) => `OWASP-${id}`)], "security-severity": SECURITY_SEVERITY[f.severity] },
   }));
   return {
     $schema: "https://json.schemastore.org/sarif-2.1.0.json",
@@ -40,7 +41,7 @@ export function toSarif(findings: Finding[], projectDir: string, version: string
           level: LEVEL[f.severity],
           message: { text: `${f.title}${f.evidence ? ` (${f.evidence})` : ""}. ${f.remediation}` },
           locations: [{ physicalLocation: { artifactLocation: { uri: artifactUri(f.file, projectDir) }, region: { startLine: lineOf(f.file, f.server) } } }],
-          properties: { severity: f.severity, "security-severity": SECURITY_SEVERITY[f.severity], where: f.location },
+          properties: { severity: f.severity, "security-severity": SECURITY_SEVERITY[f.severity], where: f.location, owasp: owaspFor(f.rule) },
         })),
       },
     ],

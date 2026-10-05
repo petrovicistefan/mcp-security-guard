@@ -5,6 +5,7 @@ import { auditConfig } from "./audit.js";
 import { discoverServers, transportOf } from "./config.js";
 import { loadPins, pinEntry, pinKey, pinsPath, savePins } from "./pins.js";
 import { report } from "./report.js";
+import { scoreServer, scoreTable } from "./score.js";
 import { analyzeTools } from "./rules/tool-rules.js";
 import { excerpt } from "./sanitize.js";
 import { auditTools, fetchAll, selectServers, toolAuditSections } from "./tool-audit.js";
@@ -56,9 +57,11 @@ server.registerTool(
   },
   async ({ project_dir }) => {
     const { servers, sources, findings } = auditConfig(project_dir ?? projectDir());
+    const scores = scoreTable(servers.map((s) => scoreServer(s, findings, "config")));
     return text(
       report("MCP configuration audit", findings, [
         `Scanned **${servers.length}** server(s) from ${sources.filter((s) => s.status === "ok").length} config file(s).`,
+        scores,
         servers.length ? "Tool descriptions were not checked. Run `audit_server_tools` (launches the servers) for tool poisoning, shadowing and rug-pull detection." : "",
       ]),
     );

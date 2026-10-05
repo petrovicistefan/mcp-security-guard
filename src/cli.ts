@@ -8,7 +8,6 @@ import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { auditConfig } from "./audit.js";
 import { toServers } from "./config.js";
-import { auditServerConfig } from "./rules/config-rules.js";
 import { auditTools, toolAuditSections } from "./tool-audit.js";
 import { report } from "./report.js";
 import { analyzeTools } from "./rules/tool-rules.js";
@@ -139,7 +138,7 @@ async function main(): Promise<number> {
     const servers = toServers(data.mcpServers ?? data, "project", source);
     if (!servers.length) throw new Error(`no servers found in ${file}`);
     const audit = await auditTools(servers, Number(values.timeout) || 20);
-    const findings = [...servers.flatMap(auditServerConfig), ...audit.findings];
+    const findings = audit.findings;
     emit(`MCP server scan: ${file}`, findings, projectDir, values.format!, values.output, toolAuditSections(audit));
     return exitCode(findings, values["fail-on"]!);
   }

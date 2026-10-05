@@ -1,6 +1,9 @@
+import { capabilityFindings, inventory, recommendPermissions, type ServerInventory } from "./capabilities.js";
 import { fetchTools } from "./client.js";
 import { computeDrift, hasDrift, hashConfig, pinKey, type PinFile } from "./pins.js";
+import { auditServerConfig } from "./rules/config-rules.js";
 import { analyzeTools } from "./rules/tool-rules.js";
+import { scoreServer, scoreTable } from "./score.js";
 import { excerpt } from "./sanitize.js";
 import type { Finding, ServerConfig, ToolDefinition } from "./types.js";
 
@@ -44,15 +47,21 @@ export interface ToolAudit {
   errors: { server: ServerConfig; error: string }[];
   /** Per-server pin status lines; empty when no pin file was given. */
   driftLines: string[];
+  inventories: ServerInventory[];
 }
 
-/** Lists tools of every server, runs poisoning and shadowing checks across them, and compares with pins if given. */
+/**
+ * Full audit of the given servers: configuration rules, then tools/list for poisoning, shadowing,
+ * capability and authentication checks across all of them, and a comparison with pins if given.
+ */
 export async function auditTools(servers: ServerConfig[], timeoutSeconds: number, pins?: PinFile): Promise<ToolAudit> {
   const results = await fetchAll(servers, timeoutSeconds);
   const ok = results.filter((r): r is { server: ServerConfig; tools: ToolDefinition[] } => "tools" in r);
   const errors = results.filter((r): r is { server: ServerConfig; error: string } => "error" in r);
-  const findings: Finding[] = [];
+  const findings: Finding[] = servers.flatMap(auditServerConfig);
   const driftLines: string[] = [];
+  const inventories = ok.map((r) => inventory(r.server, r.tools));
+  findings.push(...inventories.flatMap(capabilityFindings));
 
   for (const r of ok) {
     const own: Finding[] = [];
@@ -76,7 +85,7 @@ export async function auditTools(servers: ServerConfig[], timeoutSeconds: number
     }
     findings.push(...own.map((f) => ({ ...f, file: r.server.source, server: r.server.name })));
   }
-  return { findings, ok, errors, driftLines };
+  return { findings, ok, errors, driftLines, inventories };
 }
 
 export function toolAuditSections(a: ToolAudit, unknown: string[] = [], pinsLocation?: string): string[] {
@@ -85,5 +94,18 @@ export function toolAuditSections(a: ToolAudit, unknown: string[] = [], pinsLoca
     unknown.length ? `**Unknown server names:** ${unknown.map((u) => excerpt(u, 50)).join(", ")}` : "",
     a.errors.length ? `**Could not connect:**\n${a.errors.map((e) => `- **${excerpt(e.server.name, 50)}** (${e.server.scope}): ${e.error}`).join("\n")}` : "",
     a.driftLines.length ? `**Pinning status**${pinsLocation ? ` (${pinsLocation})` : ""}:\n${a.driftLines.join("\n")}` : "",
+    scoreTable([...a.ok.map((r) => scoreServer(r.server, a.findings, "config+tools")), ...a.errors.map((e) => scoreServer(e.server, a.findings, "config"))]),
+    permissionsSection(a.inventories),
   ];
+}
+
+function permissionsSection(invs: ServerInventory[]): string {
+  const { ask } = recommendPermissions(invs);
+  if (!ask.length) return "";
+  return [
+    `**Recommended permission rules:** ${ask.length} tool(s) can execute code, delete data or write files. Add them to \`.claude/settings.json\` so Claude asks before each call:`,
+    "```json",
+    JSON.stringify({ permissions: { ask } }, null, 2),
+    "```",
+  ].join("\n");
 }

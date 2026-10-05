@@ -1,3 +1,4 @@
+import { owaspLabel } from "./owasp.js";
 import { SEVERITY_ORDER, type Finding, type Severity } from "./types.js";
 
 const ICON: Record<Severity, string> = { critical: "🟥", high: "🟧", medium: "🟨", low: "🟦", info: "⬜" };
@@ -18,6 +19,7 @@ export function formatFindings(findings: Finding[]): string {
         `### ${i + 1}. ${ICON[f.severity]} [${f.severity.toUpperCase()}] ${f.title}`,
         `- **Rule:** \`${f.rule}\``,
         `- **Where:** ${f.location}`,
+        owaspLabel(f.rule) ? `- **OWASP MCP Top 10:** ${owaspLabel(f.rule)}` : undefined,
         f.evidence ? `- **Evidence:** \`${f.evidence}\`` : undefined,
         `- **Fix:** ${f.remediation}`,
       ]
