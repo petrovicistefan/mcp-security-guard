@@ -37634,26 +37634,10 @@ function report(title, findings, sections = []) {
   return [`# ${title}`, `**Summary:** ${summarize(findings)}`, ...sections, findings.length ? UNTRUSTED_NOTICE : void 0, formatFindings(findings)].filter(Boolean).join("\n\n");
 }
 
-// src/score.ts
-var PENALTY = { critical: 45, high: 25, medium: 10, low: 3, info: 0 };
-var RULE_CAP = 50;
-function grade(score) {
-  return score >= 90 ? "A" : score >= 75 ? "B" : score >= 60 ? "C" : score >= 40 ? "D" : "F";
-}
-function scoreServer(server2, findings, basis) {
-  const own2 = findings.filter((f) => f.server === server2.name && f.file === server2.source);
-  const byRule = /* @__PURE__ */ new Map();
-  for (const f of own2) byRule.set(f.rule, Math.min(RULE_CAP, (byRule.get(f.rule) ?? 0) + PENALTY[f.severity]));
-  let score = Math.max(0, 100 - [...byRule.values()].reduce((a, b) => a + b, 0));
-  if (own2.some((f) => f.severity === "critical")) score = Math.min(score, 39);
-  else if (own2.some((f) => f.severity === "high")) score = Math.min(score, 59);
-  return { server: server2, score, grade: grade(score), basis };
-}
-function scoreTable(scores) {
-  if (!scores.length) return "";
-  const rows = [...scores].sort((a, b) => a.score - b.score).map((s) => `| ${excerpt(s.server.name, 50)} | ${s.server.scope} | **${s.score}** | ${s.grade} | ${s.basis === "config" ? "config only" : "config + tools"} |`);
-  return ["**Security score per server** (100 = no findings; any critical caps at F, any high at D):", "", "| Server | Scope | Score | Grade | Basis |", "|---|---|---|---|---|", ...rows].join("\n");
-}
+// src/runtime.ts
+import { appendFileSync, existsSync as existsSync3, mkdirSync as mkdirSync2, readFileSync as readFileSync3, renameSync as renameSync2, statSync } from "node:fs";
+import { homedir as homedir3 } from "node:os";
+import { dirname as dirname2, join as join3 } from "node:path";
 
 // src/rules/tool-rules.ts
 function collectText(tool) {
@@ -37862,6 +37846,63 @@ function analyzeTools(serverName, tools, otherServersTools = {}) {
     }
   }
   return findings;
+}
+
+// src/runtime.ts
+var MAX_SCAN_BYTES = 256 * 1024;
+var MAX_LOG_BYTES = 10 * 1024 * 1024;
+function auditLogPath() {
+  return join3(process.env.MCP_SECURITY_HOME ?? join3(homedir3(), ".claude", "mcp-security"), "audit.jsonl");
+}
+function readAudit(path = auditLogPath()) {
+  if (!existsSync3(path)) return [];
+  return readFileSync3(path, "utf8").split("\n").filter(Boolean).flatMap((l) => {
+    try {
+      return [JSON.parse(l)];
+    } catch {
+      return [];
+    }
+  });
+}
+function summarizeAudit(entries, sinceHours) {
+  const cutoff = sinceHours ? Date.now() - sinceHours * 36e5 : 0;
+  const recent = entries.filter((e) => Date.parse(e.ts) >= cutoff);
+  const posts = recent.filter((e) => e.event === "post");
+  const servers = /* @__PURE__ */ new Map();
+  for (const e of posts) {
+    const s = servers.get(e.server) ?? { calls: 0, tools: /* @__PURE__ */ new Set(), withFindings: 0 };
+    s.calls++;
+    s.tools.add(e.tool);
+    if (e.findings.length) s.withFindings++;
+    servers.set(e.server, s);
+  }
+  return {
+    calls: posts.length,
+    since: recent[0]?.ts,
+    byServer: [...servers.entries()].map(([server2, s]) => ({ server: server2, calls: s.calls, tools: s.tools.size, withFindings: s.withFindings })).sort((a, b) => b.calls - a.calls),
+    flagged: recent.filter((e) => e.findings.length || e.decision)
+  };
+}
+
+// src/score.ts
+var PENALTY = { critical: 45, high: 25, medium: 10, low: 3, info: 0 };
+var RULE_CAP = 50;
+function grade(score) {
+  return score >= 90 ? "A" : score >= 75 ? "B" : score >= 60 ? "C" : score >= 40 ? "D" : "F";
+}
+function scoreServer(server2, findings, basis) {
+  const own2 = findings.filter((f) => f.server === server2.name && f.file === server2.source);
+  const byRule = /* @__PURE__ */ new Map();
+  for (const f of own2) byRule.set(f.rule, Math.min(RULE_CAP, (byRule.get(f.rule) ?? 0) + PENALTY[f.severity]));
+  let score = Math.max(0, 100 - [...byRule.values()].reduce((a, b) => a + b, 0));
+  if (own2.some((f) => f.severity === "critical")) score = Math.min(score, 39);
+  else if (own2.some((f) => f.severity === "high")) score = Math.min(score, 59);
+  return { server: server2, score, grade: grade(score), basis };
+}
+function scoreTable(scores) {
+  if (!scores.length) return "";
+  const rows = [...scores].sort((a, b) => a.score - b.score).map((s) => `| ${excerpt(s.server.name, 50)} | ${s.server.scope} | **${s.score}** | ${s.grade} | ${s.basis === "config" ? "config only" : "config + tools"} |`);
+  return ["**Security score per server** (100 = no findings; any critical caps at F, any high at D):", "", "| Server | Scope | Score | Grade | Basis |", "|---|---|---|---|---|", ...rows].join("\n");
 }
 
 // src/capabilities.ts
@@ -41132,6 +41173,29 @@ server.registerTool(
   async ({ server_name, tools }) => {
     const findings = analyzeTools(server_name, tools);
     return text(report(`Tool definition analysis: ${excerpt(server_name, 60)}`, findings, [`Analyzed **${tools.length}** tool(s).`]));
+  }
+);
+server.registerTool(
+  "query_audit_log",
+  {
+    title: "Query the MCP call audit log",
+    description: "Summarises the local audit log written by the plugin's hooks: MCP tool calls per server and tool, and every call where a credential was sent, a credential came back, or the output contained injected instructions. The log stores hashes and sizes only, never arguments or outputs.",
+    inputSchema: { since_hours: external_exports.number().positive().max(24 * 90).default(24).describe("Look-back window in hours.") },
+    annotations: { readOnlyHint: true, openWorldHint: false }
+  },
+  async ({ since_hours }) => {
+    const s = summarizeAudit(readAudit(), since_hours);
+    const rows = s.byServer.map((b) => `| ${excerpt(b.server, 50)} | ${b.calls} | ${b.tools} | ${b.withFindings} |`);
+    const flagged = s.flagged.slice(-25).map((e) => `- ${e.ts} **${excerpt(e.server, 40)}/${excerpt(e.tool, 40)}** (${e.event})${e.decision ? ` decision=${e.decision}` : ""}: ${e.findings.join(", ")}`);
+    return text(
+      [
+        `# MCP audit log: last ${since_hours}h`,
+        `**${s.calls}** MCP tool call(s) recorded. Log: ${auditLogPath()}`,
+        rows.length ? ["| Server | Calls | Distinct tools | Calls with findings |", "|---|---|---|---|", ...rows].join("\n") : "_No MCP calls recorded in this window._",
+        flagged.length ? `**Flagged calls** (latest ${flagged.length}):
+${flagged.join("\n")}` : "No flagged calls."
+      ].join("\n\n")
+    );
   }
 );
 await server.connect(new StdioServerTransport());

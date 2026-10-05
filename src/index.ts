@@ -5,6 +5,7 @@ import { auditConfig } from "./audit.js";
 import { discoverServers, transportOf } from "./config.js";
 import { loadPins, pinEntry, pinKey, pinsPath, savePins } from "./pins.js";
 import { report } from "./report.js";
+import { auditLogPath, readAudit, summarizeAudit } from "./runtime.js";
 import { scoreServer, scoreTable } from "./score.js";
 import { analyzeTools } from "./rules/tool-rules.js";
 import { excerpt } from "./sanitize.js";
@@ -137,6 +138,30 @@ server.registerTool(
   async ({ server_name, tools }) => {
     const findings = analyzeTools(server_name, tools as ToolDefinition[]);
     return text(report(`Tool definition analysis: ${excerpt(server_name, 60)}`, findings, [`Analyzed **${tools.length}** tool(s).`]));
+  },
+);
+
+server.registerTool(
+  "query_audit_log",
+  {
+    title: "Query the MCP call audit log",
+    description:
+      "Summarises the local audit log written by the plugin's hooks: MCP tool calls per server and tool, and every call where a credential was sent, a credential came back, or the output contained injected instructions. The log stores hashes and sizes only, never arguments or outputs.",
+    inputSchema: { since_hours: z.number().positive().max(24 * 90).default(24).describe("Look-back window in hours.") },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  },
+  async ({ since_hours }) => {
+    const s = summarizeAudit(readAudit(), since_hours);
+    const rows = s.byServer.map((b) => `| ${excerpt(b.server, 50)} | ${b.calls} | ${b.tools} | ${b.withFindings} |`);
+    const flagged = s.flagged.slice(-25).map((e) => `- ${e.ts} **${excerpt(e.server, 40)}/${excerpt(e.tool, 40)}** (${e.event})${e.decision ? ` decision=${e.decision}` : ""}: ${e.findings.join(", ")}`);
+    return text(
+      [
+        `# MCP audit log: last ${since_hours}h`,
+        `**${s.calls}** MCP tool call(s) recorded. Log: ${auditLogPath()}`,
+        rows.length ? ["| Server | Calls | Distinct tools | Calls with findings |", "|---|---|---|---|", ...rows].join("\n") : "_No MCP calls recorded in this window._",
+        flagged.length ? `**Flagged calls** (latest ${flagged.length}):\n${flagged.join("\n")}` : "No flagged calls.",
+      ].join("\n\n"),
+    );
   },
 );
 

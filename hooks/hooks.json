@@ -1,5 +1,5 @@
 {
-  "description": "Re-verifies pinned MCP servers at session start and warns only when something changed (rug-pull detection).",
+  "description": "Re-verifies pinned MCP servers at session start; guards MCP tool calls against credential leaks and prompt injection in outputs; keeps a local, content-free audit log.",
   "hooks": {
     "SessionStart": [
       {
@@ -9,6 +9,30 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/dist/cli.mjs\" session-check",
             "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/dist/hook.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/dist/hook.mjs\"",
+            "timeout": 10
           }
         ]
       }
