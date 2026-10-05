@@ -41731,7 +41731,7 @@ function scoreTable(scores) {
 }
 
 // src/cloud.ts
-var DEFAULT_ENDPOINT = void 0;
+var DEFAULT_ENDPOINT = "https://mcp-security-cloud.petrovicistefan.workers.dev";
 var MAX_PACKAGES = 500;
 var MAX_TOOL_HASHES = 5e3;
 var MAX_FINDINGS = 1e3;

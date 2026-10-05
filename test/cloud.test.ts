@@ -43,6 +43,8 @@ describe("cloud request", () => {
     expect(r).toEqual({ status: "disabled", findings: [] });
     expect(called).toBe(false);
     expect(cloudOptionsFromEnv({}).apiKey).toBeUndefined();
+    expect(cloudOptionsFromEnv({ MCP_SECURITY_API_KEY: "k" }).endpoint).toMatch(/^https:\/\//);
+    expect(cloudOptionsFromEnv({ MCP_SECURITY_API_KEY: "k", MCP_SECURITY_API_URL: "http://localhost:8787" }).endpoint).toBe("http://localhost:8787");
   });
 });
 

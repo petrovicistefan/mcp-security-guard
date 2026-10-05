@@ -25,6 +25,6 @@ Only when you opt in:
 - **Supply-chain check** (`check_supply_chain`, `audit --supply-chain`, or the GitHub Action's default `supply-chain: true`) sends **package names and versions** to `registry.npmjs.org`, `pypi.org` and `api.osv.dev`.
 - **Scanning a remote MCP server** connects to the URL in your own configuration, sending the headers you configured there.
 
-- **Threat feed (paid plan)**, only when you set `MCP_SECURITY_API_KEY`: package names and versions, plus SHA-256 hashes of tool definitions (never the definitions themselves), are sent to the mcp-security service, deduplicated and without saying which server uses what. The key is only sent over https. If the service is unreachable the audit continues without it.
+- **Threat feed (paid plan)**, only when you set `MCP_SECURITY_API_KEY`: package names and versions, plus SHA-256 hashes of tool definitions (never the definitions themselves), are sent to the mcp-security service (`mcp-security-cloud.petrovicistefan.workers.dev`, or the URL in `MCP_SECURITY_API_URL`), deduplicated and without saying which server uses what. The key is only sent over https. If the service is unreachable the audit continues without it.
 
 Nothing else is sent. Secrets found in configs or tool traffic are masked in every output and never logged.

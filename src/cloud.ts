@@ -10,8 +10,8 @@ import type { Ecosystem, PackageRef } from "./supply-chain.js";
 import { SEVERITY_ORDER, type Finding, type ServerConfig, type Severity, type ToolDefinition } from "./types.js";
 import { VERSION } from "./version.js";
 
-/** Set once the backend is deployed. Until then MCP_SECURITY_API_URL must point at it. */
-const DEFAULT_ENDPOINT: string | undefined = undefined;
+/** The hosted backend. MCP_SECURITY_API_URL overrides it, e.g. for a self-hosted or local backend. */
+const DEFAULT_ENDPOINT: string | undefined = "https://mcp-security-cloud.petrovicistefan.workers.dev";
 
 export const MAX_PACKAGES = 500;
 export const MAX_TOOL_HASHES = 5000;
