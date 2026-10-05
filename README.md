@@ -182,6 +182,12 @@ npm run bench      # false-positive gate on real servers (network; Docker images
 
 `test/fixtures/poisoned-server.mjs` is a deliberately malicious server used by the end-to-end test.
 
+## Pro & Team (early access)
+
+Everything above is free and stays free: it runs locally and needs no account. Paid plans add what needs a server: a daily threat feed of known malicious MCP servers and packages, alerts when a server you use ships changed tool descriptions, history, and team policies and dashboards. They are opt-in through `MCP_SECURITY_API_KEY`; see [PRIVACY.md](PRIVACY.md) for exactly what is sent.
+
+Interested? [Join the early access list](https://tally.so/r/dW5lZK). Early sign-ups get launch pricing, including a limited lifetime license.
+
 ## Security, privacy, license
 
 - Found a vulnerability? See [SECURITY.md](SECURITY.md).
