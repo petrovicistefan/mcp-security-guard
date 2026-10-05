@@ -1,4 +1,4 @@
-# Benchmark results (2026-10-05, v0.4.0)
+# Benchmark results (2026-10-05, v0.5.0)
 
 Used to calibrate rules and catch false positives before release. Re-run with:
 
@@ -71,6 +71,11 @@ What changed:
 **Known miss:** `multilingual-override` (a Romanian "ignore previous instructions"). The regex rules are English-only. That is the case for the planned LLM-based semantic analysis.
 
 Out of scope for static checks: Advanced Tool Poisoning (instructions in tool *outputs* at runtime, CyberArk) and rug pulls between scans. Pinning covers rug pulls; outputs need the planned `PostToolUse` hook.
+
+## 5. Supply chain and adversarial testing (v0.5.0)
+
+- **Supply chain, live:** context7, firebase-tools and @playwright/mcp checked against npm and OSV in under 1 s. No vulnerabilities, install scripts or publisher changes, so 0 false positives.
+- **Adversarial, fixture server:** command injection found in the `exec`-based tool (critical) and path traversal in the unchecked file reader (high). The `execFile`-based equivalent was not flagged, the destructive tool was skipped, and every canary was cleaned up.
 
 ## Not yet covered
 - OAuth-protected remote servers (GitHub, Linear, Semgrep, Vercel…).

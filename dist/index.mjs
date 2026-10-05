@@ -40333,7 +40333,7 @@ function transportOf(s) {
 }
 
 // src/version.ts
-var VERSION = "0.4.0";
+var VERSION = "0.5.0";
 
 // src/client.ts
 function expand(value) {

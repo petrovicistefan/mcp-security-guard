@@ -13,6 +13,7 @@ import { loadPolicy, policyFromServers } from "./policy.js";
 import { checkSupplyChain } from "./supply-chain.js";
 import { auditTools, toolAuditSections } from "./tool-audit.js";
 import { report } from "./report.js";
+import { scoreServer, scoreTable } from "./score.js";
 import { analyzeTools } from "./rules/tool-rules.js";
 import { toSarif } from "./sarif.js";
 import { sessionCheck, type CheckMode } from "./session-check.js";
@@ -132,6 +133,7 @@ async function main(): Promise<number> {
     if (supply) findings.push(...supply.findings);
     emit("MCP configuration audit", findings, projectDir, values.format!, values.output, [
       `Scanned **${servers.length}** server(s) from ${sources.filter((s) => s.status === "ok").length} config file(s).`,
+      scoreTable(servers.map((sv) => scoreServer(sv, findings, "config"))),
       supply ? `Supply chain: checked ${supply.checked.length} package(s) against npm/PyPI and OSV.${supply.errors.length ? ` Failed lookups: ${supply.errors.join("; ")}` : ""}` : "",
     ]);
     return exitCode(findings, values["fail-on"]!);

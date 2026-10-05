@@ -31,17 +31,17 @@
 - [ ] **Lockfile pentru `.mcp.json`** (`mcp-security.lock`), comis în repo, ca toată echipa să ruleze exact aceleași versiuni și definiții
 
 ### Faza 3: Protecție la runtime
-- [ ] **Hook `PostToolUse` pe `mcp__*`**: scanează *răspunsurile* tool-urilor pentru prompt injection, de exemplu o pagină web sau un issue GitHub care conține „ignore previous instructions”. Acoperă vectorul pe care auditul static nu îl vede.
-- [ ] **Hook `PreToolUse`**: blochează apelurile care trimit în argumente date ce arată a secrete (chei API, conținut din `.env` sau `id_rsa`) către servere MCP
+- [x] **Hook `PostToolUse` pe `mcp__*`**: scanează *răspunsurile* tool-urilor pentru prompt injection, de exemplu o pagină web sau un issue GitHub care conține „ignore previous instructions”. Acoperă vectorul pe care auditul static nu îl vede.
+- [x] **Hook `PreToolUse`**: blochează apelurile care trimit în argumente date ce arată a secrete (chei API, conținut din `.env` sau `id_rsa`) către servere MCP
 - [ ] **Allowlist de domenii pentru exfiltrare**: avertizează când argumentele unui tool conțin URL-uri spre domenii necunoscute
-- [ ] **Generator de permisiuni**: propune reguli `deny`/`ask` pentru `settings.json` pe baza riscului fiecărui server, de exemplu `ask` pentru tool-urile care scriu sau trimit date
+- [x] **Generator de permisiuni**: propune reguli `deny`/`ask` pentru `settings.json` pe baza riscului fiecărui server, de exemplu `ask` pentru tool-urile care scriu sau trimit date
 
 ### Faza 4: Analiză mai profundă
-- [ ] **Reputația pachetelor** (npm/PyPI): vechimea pachetului, numărul de descărcări, schimbări recente de maintainer, typosquatting (`@modelcontextprotocol/server-githbu`), scripturi `postinstall`
-- [ ] **Vulnerabilități cunoscute** (OSV.dev) pentru versiunea exactă a fiecărui server MCP
+- [x] **Reputația pachetelor** (npm/PyPI): vechimea pachetului, numărul de descărcări, schimbări recente de maintainer, typosquatting (`@modelcontextprotocol/server-githbu`), scripturi `postinstall`
+- [x] **Vulnerabilități cunoscute** (OSV.dev) pentru versiunea exactă a fiecărui server MCP
 - [ ] **Scanare în sandbox** (`scan --sandbox`): pornește serverele stdio într-un container fără rețea și fără acces la home. Rețeta e deja validată în bench/sandbox (Docker cu `--network none --read-only --cap-drop ALL`)
 - [ ] **Audit OAuth pentru servere remote**: scope-urile cerute versus cele necesare
-- [ ] **Scor de risc per server** (0–100), cu explicație și cu pași concreți de reducere a scorului
+- [x] **Scor de risc per server** (0–100), cu explicație și cu pași concreți de reducere a scorului
 - [ ] **Reducerea fals pozitivelor**: testare pe cele mai populare 50 de servere reale (GitHub, filesystem, Slack, Postgres…) și o listă de excepții documentate
 
 ### Faza 5: Publicare
@@ -113,9 +113,27 @@ Prețurile trebuie validate cu utilizatori reali înainte de lansare. Mai jos, l
 6. [ ] **Repo public pe GitHub** + instalare prin `/plugin marketplace add`
 7. [ ] **Trimitere în Anthropic Directory**
 8. [ ] **Waitlist pentru Pro/Team** în README, ca să validezi cererea
-9. [ ] Hook `PostToolUse` pentru scanarea răspunsurilor tool-urilor (protecție la runtime)
+9. [x] Hook-uri runtime (PreToolUse/PostToolUse) + audit log
+9b. [x] Acoperire OWASP MCP Top 10: 10/10 local, inspirat din 42Crunch MCP Security Governance
+9c. [x] Testare adversarială pentru autorii de servere (MCP05)
 5b. [x] **Rata de detecție**: corpus cu 27 de atacuri + 13 cazuri benigne; detecție 70% → **96%**, alarme false high 4 → **0** (vezi bench/RESULTS.md)
 10. [ ] Primul raport de cercetare: „Am scanat N servere MCP populare”
+
+## Acoperire OWASP MCP Top 10 (v0.5.0): 10/10 local
+| ID | Înainte | Acum | Ce s-a adăugat |
+|---|---|---|---|
+| MCP01 Secrete | ✅ | ✅ | + hook runtime: secrete trimise sau primite |
+| MCP02 Scope creep | 🟡 | ✅ | inventar capabilități, reguli `permissions.ask` |
+| MCP03 Tool poisoning | ✅ | ✅ | 96% detecție |
+| MCP04 Supply chain | 🟡 | ✅ | OSV, pachete malițioase, typosquat, install scripts, schimbare de publisher |
+| MCP05 Command injection | 🔴 | ✅ | `adversarial_test` + detectarea tool-urilor care execută comenzi |
+| MCP06 Prompt injection | 🟡 | ✅ | hook `PostToolUse` pe răspunsuri |
+| MCP07 AuthN/AuthZ | 🟡 | ✅ | servere remote fără autentificare cu tool-uri de scriere |
+| MCP08 Audit | 🔴 | ✅ | jurnal local fără conținut + `query_audit_log` |
+| MCP09 Shadow servers | 🟡 | ✅ | politică `.mcp-security.json` în audit, CI și la pornirea sesiunii |
+| MCP10 Over-sharing | 🟡 | ✅ | context harvesting, secrete în răspunsuri, inventar egress |
+
+Rămân pentru planul Team: descoperire și audit la nivel de organizație, review pentru scope-urile OAuth.
 
 ## Interfață vizuală (board)
 - **Gratuit, faza 3:** raport HTML local generat de `generate_report`, care se deschide în browser și merge în orice IDE.

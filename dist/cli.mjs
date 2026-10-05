@@ -20311,7 +20311,7 @@ function transportOf(s) {
 }
 
 // src/version.ts
-var VERSION = "0.4.0";
+var VERSION = "0.5.0";
 
 // src/client.ts
 function expand(value) {
@@ -21520,6 +21520,7 @@ async function main() {
     if (supply) findings.push(...supply.findings);
     emit("MCP configuration audit", findings, projectDir, values.format, values.output, [
       `Scanned **${servers.length}** server(s) from ${sources.filter((s) => s.status === "ok").length} config file(s).`,
+      scoreTable(servers.map((sv) => scoreServer(sv, findings, "config"))),
       supply ? `Supply chain: checked ${supply.checked.length} package(s) against npm/PyPI and OSV.${supply.errors.length ? ` Failed lookups: ${supply.errors.join("; ")}` : ""}` : ""
     ]);
     return exitCode(findings, values["fail-on"]);

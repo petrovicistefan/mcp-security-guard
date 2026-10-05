@@ -7,8 +7,8 @@
     {
       "name": "mcp-security",
       "source": "./",
-      "description": "Audits installed MCP servers for tool poisoning, shadowing, rug pulls and risky configuration.",
-      "version": "0.4.0"
+      "description": "OWASP MCP Top 10 security for the MCP servers you use: poisoning, rug pulls, supply chain, runtime guards, policy.",
+      "version": "0.5.0"
     }
   ]
 }
