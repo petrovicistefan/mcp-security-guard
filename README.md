@@ -167,8 +167,8 @@ npm run bench      # false-positive gate on real servers (network; Docker images
 
 ## About the author
 
-I'm Stefan Petrovici, and I built mcp-security on my own. **I'm looking for a job.** I want to join a team where I can build things with other people and keep learning.
+I'm Stefan Petrovici: passionate about IT, a husband and a father. I built mcp-security on my own. **I'm looking for a job.**
 
-I build web applications end to end, frontend, backend, APIs and deployment, and I'm happy to work on anything else that needs building: developer tools, integrations, automation, AI and MCP tooling. This repository is a good example of how I work: tests, CI, careful documentation and attention to security.
+I build web applications end to end, frontend, backend, APIs and deployment, and I'm happy to work on anything else that needs building. This repository shows how I work: tests, CI, careful documentation and attention to security.
 
-If your team is hiring, or you know a team that is, please get in touch through my GitHub profile: [github.com/petrovicistefan](https://github.com/petrovicistefan).
+If your team is hiring, write to me at [hello@petrovicistefan.ro](mailto:hello@petrovicistefan.ro).
