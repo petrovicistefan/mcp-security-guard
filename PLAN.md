@@ -80,13 +80,19 @@ Principiul: tot ce protejează un utilizator individual pe mașina lui rămâne 
 - Reguli personalizate și SLA de suport
 - **Registry privat de servere MCP aprobate**, cu scanare automată la fiecare versiune nouă
 
-### 💰 Prețuri (ipoteze de validat)
+### 💰 Prețuri (ipoteze de validat, revizuite 2026-10-06 după piață)
 | Plan | Preț orientativ | Pentru |
 |---|---|---|
 | Free | 0 | Tot ce e local (fazele 1–4) |
-| Pro | ~5–10 $/lună | Dezvoltatori individuali, freelanceri |
-| Team | ~10–20 $/utilizator/lună | Echipe de 5–100 |
+| Pro | 8 $/lună sau 79 $/an | Dezvoltatori individuali, freelanceri |
+| Pro Founder Lifetime | 149 $ o singură dată, doar primii 100–200 | Primii utilizatori; feed și monitorizare incluse, analiza LLM cu cotă lunară |
+| Team | 15 $/dezvoltator/lună, minimum 3 | Echipe mici și medii |
+| Team Unlimited | 199 $/lună, sumă fixă, oricâți dezvoltatori | Organizații care nu vor să numere locuri |
 | Enterprise | la cerere | Companii cu cerințe de conformitate |
+
+**Repere din piață (octombrie 2026):** mcp-scan / Snyk Agent Scan e gratuit; Snyk Team și Socket Team costă ~25 $/dezvoltator/lună (Socket Business 50 $); GitGuardian e gratuit până la 25 de dezvoltatori; Aikido vinde pachete cu sumă fixă (350–1.050 $/lună pentru 10 utilizatori). Concluzii: scanarea de bază e gratuită peste tot, banii sunt la echipe, iar Team la 15 $ e sub piață intenționat.
+
+**Lifetime:** limitat ca număr, pentru că feed-ul și monitorizarea au costuri lunare. Singurul cost care crește cu utilizarea e analiza LLM, deci are cotă. Lemon Squeezy reține ~5% + 0,50 $ (plus ~1,5% la plăți internaționale): din 149 $ rămân ~139 $.
 
 Prețurile trebuie validate cu utilizatori reali înainte de lansare. Mai jos, la „Pași pentru monetizare”, e un mod ieftin de a face asta.
 
