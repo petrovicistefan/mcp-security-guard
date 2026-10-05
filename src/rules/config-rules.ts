@@ -3,17 +3,17 @@ import { excerpt } from "../sanitize.js";
 import { findKnownSecret, isEnvReference, looksLikeSecretValue } from "../secrets.js";
 import type { Finding, ServerConfig } from "../types.js";
 
-const NODE_RUNNERS = new Set(["npx", "bunx", "pnpx"]);
-const PY_RUNNERS = new Set(["uvx", "pipx"]);
+export const NODE_RUNNERS = new Set(["npx", "bunx", "pnpx"]);
+export const PY_RUNNERS = new Set(["uvx", "pipx"]);
 const SHELLS = new Set(["sh", "bash", "zsh", "fish", "cmd", "cmd.exe", "powershell", "pwsh"]);
 const EXACT_NPM_VERSION = /@\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
 
-function baseCommand(cmd: string): string {
+export function baseCommand(cmd: string): string {
   return cmd.split(/[\\/]/).pop()!.toLowerCase();
 }
 
 /** First positional arg after the runner, skipping flags and `dlx`/`exec`/`run` subcommands. */
-function packageSpec(args: string[]): string | undefined {
+export function packageSpec(args: string[]): string | undefined {
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a === "--") continue;

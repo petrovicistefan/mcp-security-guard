@@ -6,6 +6,7 @@ import { discoverServers, transportOf } from "./config.js";
 import { loadPins, pinEntry, pinKey, pinsPath, savePins } from "./pins.js";
 import { loadPolicy, policyFromServers, policyPaths } from "./policy.js";
 import { report } from "./report.js";
+import { checkSupplyChain } from "./supply-chain.js";
 import { auditLogPath, readAudit, summarizeAudit } from "./runtime.js";
 import { scoreServer, scoreTable } from "./score.js";
 import { analyzeTools } from "./rules/tool-rules.js";
@@ -139,6 +140,34 @@ server.registerTool(
   async ({ server_name, tools }) => {
     const findings = analyzeTools(server_name, tools as ToolDefinition[]);
     return text(report(`Tool definition analysis: ${excerpt(server_name, 60)}`, findings, [`Analyzed **${tools.length}** tool(s).`]));
+  },
+);
+
+server.registerTool(
+  "check_supply_chain",
+  {
+    title: "Check MCP server packages (npm/PyPI)",
+    description:
+      "For servers launched with npx/uvx and similar, checks the package on its registry and in the OSV database: known vulnerabilities, known malicious versions, typosquats of popular MCP packages, non-existent names, very new packages or releases, install scripts, deprecation and npm publisher changes. Sends package names and versions to registry.npmjs.org, pypi.org and api.osv.dev; nothing else leaves the machine.",
+    inputSchema: {
+      servers: z.array(z.string()).min(1).default(["*"]).describe('Server names, or ["*"] for all.'),
+      confirm_network: z.boolean().describe("Must be true: package names and versions are sent to the registries and OSV."),
+      project_dir: z.string().optional(),
+    },
+    annotations: { readOnlyHint: true, openWorldHint: true },
+  },
+  async ({ servers: names, confirm_network, project_dir }) => {
+    if (!confirm_network) return text("Not started: this check sends package names and versions to npm, PyPI and OSV. Ask the user, then call again with confirm_network=true.");
+    const { servers } = discoverServers(project_dir ?? projectDir());
+    const { picked, unknown } = selectServers(servers, names);
+    const r = await checkSupplyChain(picked);
+    return text(
+      report("MCP supply-chain check", r.findings, [
+        `Checked **${r.checked.length}** package(s): ${r.checked.map((p) => `${p.ecosystem}:${excerpt(p.name, 60)}${p.version ? `@${excerpt(p.version, 20)}` : " (latest)"}`).join(", ") || "none (no npx/uvx servers)"}.`,
+        unknown.length ? `**Unknown server names:** ${unknown.map((u) => excerpt(u, 50)).join(", ")}` : "",
+        r.errors.length ? `**Lookups that failed:**\n${r.errors.map((e) => `- ${e}`).join("\n")}` : "",
+      ]),
+    );
   },
 );
 

@@ -8256,6 +8256,180 @@ function auditConfig(projectDir, opts = {}) {
   return { ...discovered, servers, findings, policy };
 }
 
+// src/supply-chain.ts
+var DAY = 864e5;
+var POPULAR_PACKAGES = {
+  npm: [
+    "@modelcontextprotocol/server-filesystem",
+    "@modelcontextprotocol/server-memory",
+    "@modelcontextprotocol/server-everything",
+    "@modelcontextprotocol/server-sequential-thinking",
+    "@modelcontextprotocol/server-github",
+    "@modelcontextprotocol/server-gitlab",
+    "@modelcontextprotocol/server-slack",
+    "@modelcontextprotocol/server-postgres",
+    "@modelcontextprotocol/server-puppeteer",
+    "@modelcontextprotocol/server-brave-search",
+    "@modelcontextprotocol/server-google-maps",
+    "@playwright/mcp",
+    "@upstash/context7-mcp",
+    "@notionhq/notion-mcp-server",
+    "@supabase/mcp-server-supabase",
+    "@stripe/mcp",
+    "@sentry/mcp-server",
+    "@browsermcp/mcp",
+    "mcp-remote",
+    "firebase-tools",
+    "figma-developer-mcp",
+    "exa-mcp-server",
+    "tavily-mcp"
+  ],
+  PyPI: ["mcp-server-git", "mcp-server-fetch", "mcp-server-time", "mcp-server-sqlite", "mcp", "fastmcp"]
+};
+function packagesOf(s) {
+  if (!s.command) return [];
+  const cmd = baseCommand(s.command);
+  const args = s.args ?? [];
+  const isNode = NODE_RUNNERS.has(cmd) || (cmd === "npm" || cmd === "pnpm") && (args[0] === "exec" || args[0] === "dlx");
+  const isPy = PY_RUNNERS.has(cmd);
+  const spec = (isNode || isPy) && packageSpec(args);
+  if (!spec || /^(git\+|https?:|ssh:|github:|file:|\.|\/)/.test(spec)) return [];
+  if (isNode) {
+    const m2 = /^(@[^/@]+\/[^@]+|[^@]+)(?:@(.+))?$/.exec(spec);
+    if (!m2) return [];
+    const v = m2[2];
+    return [{ server: s, ecosystem: "npm", name: m2[1], version: v && /^\d+\.\d+\.\d+/.test(v) ? v : void 0 }];
+  }
+  const m = /^([A-Za-z0-9._-]+)(?:\[[^\]]*\])?(?:(?:==|@)([0-9][^\s;]*))?$/.exec(spec);
+  return m ? [{ server: s, ecosystem: "PyPI", name: m[1], version: m[2] }] : [];
+}
+function editDistance(a, b) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+function typosquatOf(p) {
+  const name = p.name.toLowerCase();
+  const popular = POPULAR_PACKAGES[p.ecosystem];
+  if (popular.includes(name)) return void 0;
+  const unscoped = name.replace(/^@[^/]+\//, "");
+  return popular.find((q) => {
+    const dist = editDistance(name, q);
+    const qUnscoped = q.replace(/^@[^/]+\//, "");
+    return dist > 0 && dist <= (q.length > 12 ? 2 : 1) || q.startsWith("@") && name !== q && unscoped === qUnscoped;
+  });
+}
+function osvSeverity(vuln) {
+  if (String(vuln?.id ?? "").startsWith("MAL-")) return "critical";
+  const s = String(vuln?.database_specific?.severity ?? "").toUpperCase();
+  return s === "CRITICAL" ? "critical" : s === "HIGH" ? "high" : s === "LOW" ? "low" : "medium";
+}
+async function npmInfo(name, version2, fetcher) {
+  const r = await fetcher(`https://registry.npmjs.org/${name.replace("/", "%2f")}`);
+  if (r.status === 404) return { exists: false };
+  if (!r.ok) throw new Error(`npm registry HTTP ${r.status}`);
+  const d = await r.json();
+  const v = version2 ?? d["dist-tags"]?.latest;
+  const meta2 = d.versions?.[v] ?? {};
+  const scripts = Object.keys(meta2.scripts ?? {}).filter((k) => ["preinstall", "install", "postinstall"].includes(k));
+  const ordered = Object.keys(d.time ?? {}).filter((k) => d.versions?.[k] && !/-/.test(k)).sort((a, b) => Date.parse(d.time[a]) - Date.parse(d.time[b]));
+  const prev = ordered[ordered.indexOf(v) - 1];
+  const who = (x) => x ? d.versions?.[x]?._npmUser?.name : void 0;
+  const from = who(prev);
+  const to = who(v);
+  return {
+    exists: true,
+    version: v,
+    created: Date.parse(d.time?.created),
+    versionPublished: Date.parse(d.time?.[v]),
+    installScripts: scripts,
+    deprecated: typeof meta2.deprecated === "string" ? meta2.deprecated : void 0,
+    publisherChanged: from && to && from !== to ? { from, to } : void 0
+  };
+}
+async function pypiInfo(name, version2, fetcher) {
+  const r = await fetcher(`https://pypi.org/pypi/${encodeURIComponent(name)}/json`);
+  if (r.status === 404) return { exists: false };
+  if (!r.ok) throw new Error(`PyPI HTTP ${r.status}`);
+  const d = await r.json();
+  const v = version2 ?? d.info?.version;
+  const uploads = Object.values(d.releases ?? {}).flat().map((f) => Date.parse(f.upload_time_iso_8601));
+  const files = d.releases?.[v] ?? [];
+  return {
+    exists: true,
+    version: v,
+    created: uploads.length ? Math.min(...uploads) : void 0,
+    versionPublished: files.length ? Math.min(...files.map((f) => Date.parse(f.upload_time_iso_8601))) : void 0,
+    deprecated: files.some((f) => f.yanked) ? "yanked" : void 0
+  };
+}
+async function osvVulns(pkgs, fetcher) {
+  if (!pkgs.length) return [];
+  const r = await fetcher("https://api.osv.dev/v1/querybatch", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ queries: pkgs.map((p) => ({ package: { name: p.name, ecosystem: p.ecosystem }, version: p.version })) })
+  });
+  if (!r.ok) throw new Error(`OSV HTTP ${r.status}`);
+  const results = (await r.json()).results ?? [];
+  return Promise.all(
+    results.map(
+      async (res) => Promise.all(
+        (res.vulns ?? []).slice(0, 10).map(async (v) => {
+          const d = await fetcher(`https://api.osv.dev/v1/vulns/${encodeURIComponent(v.id)}`);
+          return d.ok ? d.json() : { id: v.id };
+        })
+      )
+    )
+  );
+}
+async function checkSupplyChain(servers, fetcher = fetch, now = Date.now()) {
+  const pkgs = servers.flatMap(packagesOf);
+  const findings = [];
+  const errors = [];
+  const add = (p, severity, rule, title, remediation, evidence) => findings.push({ severity, rule, title, location: `server "${p.server.name}" (${p.server.scope}) \u203A ${p.ecosystem} ${excerpt(p.name, 80)}`, evidence, remediation, file: p.server.source, server: p.server.name });
+  const infos = await Promise.all(
+    pkgs.map(async (p) => {
+      try {
+        return await (p.ecosystem === "npm" ? npmInfo(p.name, p.version, fetcher) : pypiInfo(p.name, p.version, fetcher));
+      } catch (e) {
+        errors.push(`${p.ecosystem} ${p.name}: ${excerpt(e instanceof Error ? e.message : String(e), 100)}`);
+        return void 0;
+      }
+    })
+  );
+  pkgs.forEach((p, i) => {
+    const squat = typosquatOf(p);
+    if (squat) add(p, "high", "supply-chain/typosquat", `Package name is suspiciously close to the popular "${squat}"`, `Check the name character by character. If you meant "${squat}", fix the config.`);
+    const info = infos[i];
+    if (!info) return;
+    if (!info.exists) {
+      add(p, "high", "supply-chain/package-not-found", "Package does not exist on the registry", "Anyone can register this name and get code execution on your machine at the next launch (name squatting / dependency confusion). Fix the name or remove the server.");
+      return;
+    }
+    if (info.created && now - info.created < 30 * DAY) add(p, "medium", "supply-chain/new-package", `Package was first published ${Math.max(1, Math.round((now - info.created) / DAY))} day(s) ago`, "Very new packages have no track record. Prefer established servers, or review the source first.");
+    if (info.versionPublished && now - info.versionPublished < 3 * DAY) add(p, "low", "supply-chain/fresh-release", `Version ${excerpt(info.version ?? "?", 30)} was published less than 3 days ago`, "Compromised releases are usually caught within days. Pin the previous version until this one has aged.");
+    if (info.installScripts?.length) add(p, "medium", "supply-chain/install-scripts", `Package runs install scripts (${info.installScripts.join(", ")})`, "Install scripts execute before any MCP check can run. Review them, or launch with --ignore-scripts.");
+    if (info.deprecated) add(p, "medium", "supply-chain/deprecated", `Version is ${info.deprecated === "yanked" ? "yanked" : "deprecated"}`, "Move to a maintained version or server.", info.deprecated === "yanked" ? void 0 : excerpt(info.deprecated, 120));
+    if (info.publisherChanged) add(p, "medium", "supply-chain/publisher-changed", `Published by a different npm account than the previous version ("${excerpt(info.publisherChanged.from, 40)}" \u2192 "${excerpt(info.publisherChanged.to, 40)}")`, "A new publisher is how account takeovers show up. Confirm the change with the project before upgrading.");
+  });
+  try {
+    const versioned = pkgs.map((p, i) => ({ p, version: p.version ?? infos[i]?.version })).filter((x) => !!x.version && infos[pkgs.indexOf(x.p)]?.exists !== false);
+    const vulns = await osvVulns(versioned.map((x) => ({ ecosystem: x.p.ecosystem, name: x.p.name, version: x.version })), fetcher);
+    versioned.forEach(({ p, version: version2 }, i) => {
+      for (const v of vulns[i] ?? []) {
+        const malicious = String(v.id).startsWith("MAL-");
+        add(p, osvSeverity(v), malicious ? "supply-chain/malicious-package" : "supply-chain/known-vulnerability", malicious ? `Version ${excerpt(version2, 30)} is a known MALICIOUS package (${v.id})` : `Version ${excerpt(version2, 30)} has a known vulnerability: ${excerpt(v.id, 40)}${v.summary ? ` (${excerpt(v.summary, 100)})` : ""}`, malicious ? "Remove the server immediately and rotate every credential it could reach." : `Upgrade to a fixed version. Details: https://osv.dev/vulnerability/${encodeURIComponent(v.id)}`);
+      }
+    });
+  } catch (e) {
+    errors.push(`OSV: ${excerpt(e instanceof Error ? e.message : String(e), 100)}`);
+  }
+  return { findings, checked: pkgs, errors };
+}
+
 // src/capabilities.ts
 var words = (name) => name.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
 var EXEC_WORDS = /* @__PURE__ */ new Set(["exec", "execute", "shell", "bash", "sh", "cmd", "powershell", "terminal", "spawn", "eval", "subprocess", "script", "repl"]);
@@ -21138,7 +21312,7 @@ async function sessionCheck(projectDir, mode, timeoutMs = 1e4) {
 var USAGE = `mcp-security ${VERSION}
 
 Usage:
-  mcp-security audit [--project DIR] [--project-only] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
+  mcp-security audit [--project DIR] [--project-only] [--supply-chain] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
   mcp-security analyze-tools FILE [--name NAME] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
   mcp-security policy-init [--project DIR] [--force]
   mcp-security scan FILE --confirm-launch [--timeout SECONDS] [--format ...] [--output FILE] [--fail-on SEVERITY]
@@ -21147,6 +21321,7 @@ Usage:
                    stdio servers and connects to remote ones (initialize + tools/list only, no tool calls)
 
   policy-init      writes .mcp-security.json approving the servers configured now (review it, then commit it)
+  --supply-chain   (audit) also check npx/uvx packages on npm/PyPI and OSV (network)
   --project-only   only audit the project's .mcp.json (recommended in CI)
   --fail-on        critical | high | medium | low | info | none   (default: high)
 `;
@@ -21211,7 +21386,8 @@ async function main() {
       "confirm-launch": { type: "boolean", default: false },
       timeout: { type: "string", default: "20" },
       help: { type: "boolean", short: "h" },
-      force: { type: "boolean", default: false }
+      force: { type: "boolean", default: false },
+      "supply-chain": { type: "boolean", default: false }
     }
   });
   if (values.help || !command) {
@@ -21222,8 +21398,11 @@ async function main() {
   const projectDir = resolve3(values.project);
   if (command === "audit") {
     const { findings, servers, sources } = auditConfig(projectDir, { projectOnly: values["project-only"] });
+    const supply = values["supply-chain"] ? await checkSupplyChain(servers) : void 0;
+    if (supply) findings.push(...supply.findings);
     emit("MCP configuration audit", findings, projectDir, values.format, values.output, [
-      `Scanned **${servers.length}** server(s) from ${sources.filter((s) => s.status === "ok").length} config file(s).`
+      `Scanned **${servers.length}** server(s) from ${sources.filter((s) => s.status === "ok").length} config file(s).`,
+      supply ? `Supply chain: checked ${supply.checked.length} package(s) against npm/PyPI and OSV.${supply.errors.length ? ` Failed lookups: ${supply.errors.join("; ")}` : ""}` : ""
     ]);
     return exitCode(findings, values["fail-on"]);
   }

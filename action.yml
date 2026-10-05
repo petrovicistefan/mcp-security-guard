@@ -12,6 +12,9 @@ inputs:
   fail-on:
     description: "Fail the step at or above this severity: critical, high, medium, low, info, none"
     default: "high"
+  supply-chain:
+    description: "Also check npx/uvx packages on npm/PyPI and the OSV vulnerability database (network)"
+    default: "true"
   sarif-file:
     description: "Where to write SARIF output (upload it with github/codeql-action/upload-sarif)"
     default: "mcp-security.sarif"
@@ -30,8 +33,11 @@ runs:
         PROJECT_DIR: ${{ inputs.project-dir }}
         FAIL_ON: ${{ inputs.fail-on }}
         SARIF_FILE: ${{ inputs.sarif-file }}
+        SUPPLY_CHAIN: ${{ inputs.supply-chain }}
       run: |
         status=0
-        node "$GITHUB_ACTION_PATH/dist/cli.mjs" audit --project "$PROJECT_DIR" --project-only --format sarif --output "$SARIF_FILE" --fail-on none
-        node "$GITHUB_ACTION_PATH/dist/cli.mjs" audit --project "$PROJECT_DIR" --project-only --fail-on "$FAIL_ON" >> "$GITHUB_STEP_SUMMARY" || status=$?
+        extra=()
+        [ "$SUPPLY_CHAIN" = "true" ] && extra+=(--supply-chain)
+        node "$GITHUB_ACTION_PATH/dist/cli.mjs" audit --project "$PROJECT_DIR" --project-only "${extra[@]}" --format sarif --output "$SARIF_FILE" --fail-on none
+        node "$GITHUB_ACTION_PATH/dist/cli.mjs" audit --project "$PROJECT_DIR" --project-only "${extra[@]}" --fail-on "$FAIL_ON" >> "$GITHUB_STEP_SUMMARY" || status=$?
         exit $status

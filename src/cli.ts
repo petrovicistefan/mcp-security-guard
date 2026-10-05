@@ -9,6 +9,7 @@ import { parseArgs } from "node:util";
 import { auditConfig } from "./audit.js";
 import { discoverServers, toServers } from "./config.js";
 import { loadPolicy, policyFromServers } from "./policy.js";
+import { checkSupplyChain } from "./supply-chain.js";
 import { auditTools, toolAuditSections } from "./tool-audit.js";
 import { report } from "./report.js";
 import { analyzeTools } from "./rules/tool-rules.js";
@@ -20,7 +21,7 @@ import { VERSION } from "./version.js";
 const USAGE = `mcp-security ${VERSION}
 
 Usage:
-  mcp-security audit [--project DIR] [--project-only] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
+  mcp-security audit [--project DIR] [--project-only] [--supply-chain] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
   mcp-security analyze-tools FILE [--name NAME] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
   mcp-security policy-init [--project DIR] [--force]
   mcp-security scan FILE --confirm-launch [--timeout SECONDS] [--format ...] [--output FILE] [--fail-on SEVERITY]
@@ -29,6 +30,7 @@ Usage:
                    stdio servers and connects to remote ones (initialize + tools/list only, no tool calls)
 
   policy-init      writes .mcp-security.json approving the servers configured now (review it, then commit it)
+  --supply-chain   (audit) also check npx/uvx packages on npm/PyPI and OSV (network)
   --project-only   only audit the project's .mcp.json (recommended in CI)
   --fail-on        critical | high | medium | low | info | none   (default: high)
 `;
@@ -104,6 +106,7 @@ async function main(): Promise<number> {
       timeout: { type: "string", default: "20" },
       help: { type: "boolean", short: "h" },
       force: { type: "boolean", default: false },
+      "supply-chain": { type: "boolean", default: false },
     },
   });
   if (values.help || !command) {
@@ -115,8 +118,11 @@ async function main(): Promise<number> {
 
   if (command === "audit") {
     const { findings, servers, sources } = auditConfig(projectDir, { projectOnly: values["project-only"] });
+    const supply = values["supply-chain"] ? await checkSupplyChain(servers) : undefined;
+    if (supply) findings.push(...supply.findings);
     emit("MCP configuration audit", findings, projectDir, values.format!, values.output, [
       `Scanned **${servers.length}** server(s) from ${sources.filter((s) => s.status === "ok").length} config file(s).`,
+      supply ? `Supply chain: checked ${supply.checked.length} package(s) against npm/PyPI and OSV.${supply.errors.length ? ` Failed lookups: ${supply.errors.join("; ")}` : ""}` : "",
     ]);
     return exitCode(findings, values["fail-on"]!);
   }
