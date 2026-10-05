@@ -1,4 +1,4 @@
-import { fetchTools } from "./client.js";
+import { fetchSurface, surfaceDefinitions } from "./client.js";
 import { discoverServers } from "./config.js";
 import { computeDrift, hasDrift, hashConfig, loadPins, pinKey } from "./pins.js";
 import { auditPolicy, loadPolicy } from "./policy.js";
@@ -30,10 +30,11 @@ export async function sessionCheck(projectDir: string, mode: CheckMode, timeoutM
       if (pin.config && pin.config !== hashConfig(s)) issues.push("launch command or version changed");
       if (mode === "full") {
         try {
-          const tools = await fetchTools(s, timeoutMs);
+          const surface = await fetchSurface(s, timeoutMs);
+          const tools = [...surface.tools, ...surfaceDefinitions(surface).map((x) => x.def)];
           const d = computeDrift(pin, tools);
           if (hasDrift(d)) {
-            const parts = [d.changed.length && `${d.changed.length} tool(s) changed`, d.added.length && `${d.added.length} added`, d.removed.length && `${d.removed.length} removed`].filter(Boolean);
+            const parts = [d.changed.length && `${d.changed.length} definition(s) changed`, d.added.length && `${d.added.length} added`, d.removed.length && `${d.removed.length} removed`].filter(Boolean);
             const severe = analyzeTools(s.name, tools.filter((t) => d.changed.includes(t.name) || d.added.includes(t.name))).filter((f) => f.severity === "critical" || f.severity === "high");
             issues.push(parts.join(", ") + (severe.length ? `, ${severe.length} critical/high poisoning finding(s) in them` : ""));
           }

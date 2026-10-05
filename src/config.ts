@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { homedir, platform } from "node:os";
 import { join, resolve } from "node:path";
 import type { ConfigScope, ServerConfig } from "./types.js";
@@ -65,6 +65,7 @@ export function discoverServers(projectDir: string, home = homedir()): Discovery
   if (claudeJson) {
     servers.push(...toServers(claudeJson.mcpServers, "user", claudeJsonPath));
     servers.push(...toServers(claudeJson.projects?.[project]?.mcpServers, "local", claudeJsonPath));
+    servers.push(...discoverClaudeAiConnectors(claudeJson, claudeJsonPath));
   }
 
   const projectMcpPath = join(project, ".mcp.json");
@@ -100,56 +101,95 @@ function substitutePluginRoot(s: ServerConfig, root: string): ServerConfig {
  * `mcpServers` field of `.claude-plugin/plugin.json` (inline object or path). Disabled plugins and
  * project-scoped installs for other projects are skipped. Names are `<plugin>:<server>`.
  */
+/** MCP servers declared by one plugin directory: its `.mcp.json` and the `mcpServers` field of plugin.json (inline or path). */
+function pluginDirServers(root: string, pluginName: string, sources: DiscoveryResult["sources"]): ServerConfig[] {
+  const blocks: { block: unknown; source: string }[] = [];
+  const mcpPath = join(root, ".mcp.json");
+  if (existsSync(mcpPath)) blocks.push({ block: readJson(mcpPath, sources)?.mcpServers, source: mcpPath });
+
+  const manifestPath = join(root, ".claude-plugin", "plugin.json");
+  const field = existsSync(manifestPath) ? readJson(manifestPath, sources)?.mcpServers : undefined;
+  for (const f of Array.isArray(field) ? field : [field]) {
+    if (typeof f === "string") {
+      const p = resolve(root, f.replaceAll("${CLAUDE_PLUGIN_ROOT}", root));
+      // Never follow a manifest path outside the plugin directory.
+      if (p.startsWith(resolve(root)) && p !== mcpPath && existsSync(p)) {
+        const data = readJson(p, sources);
+        blocks.push({ block: data?.mcpServers ?? data, source: p });
+      }
+    } else if (f && typeof f === "object") {
+      blocks.push({ block: f, source: manifestPath });
+    }
+  }
+  return blocks.flatMap(({ block, source }) => toServers(block, "plugin", source).map((sv) => substitutePluginRoot({ ...sv, name: `${pluginName}:${sv.name}` }, root)));
+}
+
+/**
+ * MCP servers shipped inside plugins: installed ones (installed_plugins.json, honouring enabledPlugins
+ * and project-scoped installs) and plugins synced from the claude.ai account
+ * (~/.claude/plugins/synced/<account>/<plugin>/). Names are `<plugin>:<server>`.
+ */
 function discoverPluginServers(project: string, home: string, sources: DiscoveryResult["sources"]): ServerConfig[] {
-  const installedPath = join(home, ".claude", "plugins", "installed_plugins.json");
-  if (!existsSync(installedPath)) return [];
-  const installed = readJson(installedPath, sources)?.plugins;
-  if (!installed || typeof installed !== "object") return [];
   const enabled = enabledPlugins(project, home, sources);
   const out: ServerConfig[] = [];
 
-  for (const [key, entries] of Object.entries(installed as Record<string, any[]>)) {
-    if (enabled[key] === false || !Array.isArray(entries)) continue;
-    const pluginName = key.split("@")[0];
-    for (const e of entries) {
-      if (typeof e?.installPath !== "string") continue;
-      if (e.scope && e.scope !== "user" && e.projectPath && resolve(e.projectPath) !== project) continue;
-      const root = e.installPath as string;
-      const blocks: { block: unknown; source: string }[] = [];
-
-      const mcpPath = join(root, ".mcp.json");
-      if (existsSync(mcpPath)) blocks.push({ block: readJson(mcpPath, sources)?.mcpServers, source: mcpPath });
-
-      const manifestPath = join(root, ".claude-plugin", "plugin.json");
-      const field = existsSync(manifestPath) ? readJson(manifestPath, sources)?.mcpServers : undefined;
-      for (const f of Array.isArray(field) ? field : [field]) {
-        if (typeof f === "string") {
-          const p = resolve(root, f.replaceAll("${CLAUDE_PLUGIN_ROOT}", root));
-          // Never follow a manifest path outside the plugin directory.
-          if (p.startsWith(resolve(root)) && p !== mcpPath && existsSync(p)) {
-            const data = readJson(p, sources);
-            blocks.push({ block: data?.mcpServers ?? data, source: p });
-          }
-        } else if (f && typeof f === "object") {
-          blocks.push({ block: f, source: manifestPath });
-        }
+  const installedPath = join(home, ".claude", "plugins", "installed_plugins.json");
+  const installed = existsSync(installedPath) ? readJson(installedPath, sources)?.plugins : undefined;
+  if (installed && typeof installed === "object") {
+    for (const [key, entries] of Object.entries(installed as Record<string, any[]>)) {
+      if (enabled[key] === false || !Array.isArray(entries)) continue;
+      const pluginName = key.split("@")[0];
+      for (const e of entries) {
+        if (typeof e?.installPath !== "string") continue;
+        if (e.scope && e.scope !== "user" && e.projectPath && resolve(e.projectPath) !== project) continue;
+        out.push(...pluginDirServers(e.installPath, pluginName, sources));
       }
+    }
+  }
 
-      for (const { block, source } of blocks) {
-        for (const s of toServers(block, "plugin", source)) {
-          out.push(substitutePluginRoot({ ...s, name: `${pluginName}:${s.name}` }, root));
-        }
+  const syncedRoot = join(home, ".claude", "plugins", "synced");
+  for (const bucket of listDirs(syncedRoot)) {
+    for (const dir of listDirs(join(syncedRoot, bucket))) {
+      const root = join(syncedRoot, bucket, dir);
+      const manifest = join(root, ".claude-plugin", "plugin.json");
+      if (!existsSync(manifest)) continue;
+      const name = readJson(manifest, sources)?.name;
+      const pluginName = typeof name === "string" && name ? name : dir;
+      if (enabled[`${pluginName}@synced`] === false) continue;
+      for (const sv of pluginDirServers(root, pluginName, sources)) {
+        if (!out.some((o) => o.name === sv.name)) out.push(sv);
       }
     }
   }
   return out;
 }
 
+function listDirs(dir: string): string[] {
+  try {
+    return readdirSync(dir, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && !d.name.startsWith("."))
+      .map((d) => d.name)
+      .sort();
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Connectors added in the claude.ai account (Claude Docs, Canva…). Their configuration lives in the
+ * account, so only the names Claude Code has recorded locally are known.
+ */
+function discoverClaudeAiConnectors(claudeJson: any, source: string): ServerConfig[] {
+  const names = Array.isArray(claudeJson?.claudeAiMcpEverConnected) ? claudeJson.claudeAiMcpEverConnected : [];
+  return [...new Set<string>(names.filter((n: unknown): n is string => typeof n === "string"))].map((n) => ({ name: n.replace(/^claude\.ai\s+/, ""), scope: "claude-ai" as const, source }));
+}
+
 export function describeServer(s: ServerConfig): string {
   return `server "${s.name}" (${s.scope})`;
 }
 
-export function transportOf(s: ServerConfig): "stdio" | "http" | "sse" | "unknown" {
+export function transportOf(s: ServerConfig): "stdio" | "http" | "sse" | "claude-ai" | "unknown" {
+  if (s.scope === "claude-ai") return "claude-ai";
   if (s.type === "sse") return "sse";
   if (s.url) return "http";
   if (s.command) return "stdio";

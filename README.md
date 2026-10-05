@@ -15,7 +15,9 @@ A Claude Code plugin that audits the **MCP servers you have installed**. Your co
 | Policy | `.mcp-security.json` approved/blocked servers and hosts, enforced in audits, CI and at session start |
 | Configuration | Plaintext secrets in env/headers/args/URLs, plain-HTTP remotes, unpinned `npx`/`uvx` packages, privileged or unpinned Docker images, pipe-to-shell launches, duplicate names across scopes |
 
-It discovers servers from every place Claude Code and Claude Desktop load them: user, local and project scope, **servers shipped inside installed plugins** (named `plugin:<plugin>:<server>`), and `claude_desktop_config.json`.
+It discovers servers from every place Claude Code and Claude Desktop load them: user, local and project scope, **servers shipped inside installed plugins and plugins synced from your claude.ai account** (named `<plugin>:<server>`), `claude_desktop_config.json`, and the **claude.ai connectors** you have used (names only: their configuration lives in your account).
+
+It scans everything a server puts into Claude's context, not only tools: **server instructions, prompts, resources and resource templates** go through the same poisoning checks and are pinned for rug-pull detection.
 
 Everything runs locally. Nothing is sent anywhere.
 
@@ -55,7 +57,7 @@ Then run `/mcp-audit`, or ask Claude *"are my MCP servers safe?"*.
 |---|---|
 | `list_mcp_servers` | No |
 | `audit_mcp_config` | No |
-| `audit_server_tools` | Yes, after explicit `confirm_launch: true`. Sends only `initialize` and `tools/list`; never calls a scanned tool |
+| `audit_server_tools` | Yes, after explicit `confirm_launch: true`. Sends only `initialize` and list requests (tools, prompts, resources); never calls a tool, renders a prompt or reads a resource |
 | `pin_tools` | Yes (same as above). Writes `~/.claude/mcp-security/pins.json` |
 | `analyze_tool_definitions` | No. Offline analysis of a `tools/list` payload, for MCP server authors |
 | `check_supply_chain` | No. Sends package names and versions to npm, PyPI and OSV after `confirm_network: true` |
@@ -151,6 +153,7 @@ The hooks add about 40 ms per MCP call.
 npm install
 npm run build      # bundles to dist/index.mjs (committed, so the plugin runs without npm install)
 npm test
+npm run bench      # false-positive gate on real servers (network; Docker images optional, see bench/RESULTS.md)
 ```
 
 `test/fixtures/poisoned-server.mjs` is a deliberately malicious server used by the end-to-end test.

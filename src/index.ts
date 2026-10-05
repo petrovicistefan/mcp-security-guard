@@ -39,7 +39,7 @@ server.registerTool(
   },
   async ({ project_dir }) => {
     const { servers, sources } = discoverServers(project_dir ?? projectDir());
-    const rows = servers.map((s) => `| ${excerpt(s.name, 50)} | ${s.scope} | ${transportOf(s)} | ${excerpt(s.url ? s.url.replace(/\?.*$/, "?…") : [s.command, ...(s.args ?? [])].join(" "), 90)} |`);
+    const rows = servers.map((s) => `| ${excerpt(s.name, 50)} | ${s.scope} | ${transportOf(s)} | ${excerpt(s.scope === "claude-ai" ? "managed in your claude.ai account" : s.url ? s.url.replace(/\?.*$/, "?…") : [s.command, ...(s.args ?? [])].join(" "), 90)} |`);
     return text(
       [
         `# Configured MCP servers (${servers.length})`,
@@ -118,8 +118,8 @@ server.registerTool(
         lines.push(`- ❌ **${excerpt(r.server.name, 50)}** (${r.server.scope}): ${r.error}`);
         continue;
       }
-      pins.servers[pinKey(r.server.scope, r.server.name)] = pinEntry(r.server, r.tools!);
-      lines.push(`- 📌 **${excerpt(r.server.name, 50)}** (${r.server.scope}): ${r.tools!.length} tool(s) pinned`);
+      pins.servers[pinKey(r.server.scope, r.server.name)] = pinEntry(r.server, r.definitions);
+      lines.push(`- 📌 **${excerpt(r.server.name, 50)}** (${r.server.scope}): ${r.tools.length} tool(s) and ${r.definitions.length - r.tools.length} instruction/prompt/resource definition(s) pinned`);
     }
     savePins(pins);
     return text([`# Pinned tool definitions`, ...lines, unknown.length ? `Unknown: ${unknown.map((u) => excerpt(u, 50)).join(", ")}` : "", `Saved to ${pinsPath()}`].filter(Boolean).join("\n"));

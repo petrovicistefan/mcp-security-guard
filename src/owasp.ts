@@ -26,7 +26,7 @@ const BY_RULE: [RegExp, string[]][] = [
   [/^drift\/tool-/, ["MCP03", "MCP04"]],
   [/^config\/(insecure-transport|invalid-url)$/, ["MCP07"]],
   [/^auth\//, ["MCP07"]],
-  [/^config\/duplicate-name$/, ["MCP09"]],
+  [/^config\/(duplicate-name|claude-ai-connector)$/, ["MCP09"]],
   [/^policy\//, ["MCP09"]],
   [/^tool\/(instruction-override|role-hijack)$/, ["MCP03", "MCP06"]],
   [/^runtime\/injection-in-output$/, ["MCP06"]],

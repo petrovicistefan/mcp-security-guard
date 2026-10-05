@@ -1,4 +1,4 @@
-# Benchmark results (2026-10-05, v0.5.0)
+# Benchmark results (2026-10-06, v0.6.0)
 
 Used to calibrate rules and catch false positives before release. Re-run with:
 
@@ -76,6 +76,18 @@ Out of scope for static checks: Advanced Tool Poisoning (instructions in tool *o
 
 - **Supply chain, live:** context7, firebase-tools and @playwright/mcp checked against npm and OSV in under 1 s. No vulnerabilities, install scripts or publisher changes, so 0 false positives.
 - **Adversarial, fixture server:** command injection found in the `exec`-based tool (critical) and path traversal in the unchecked file reader (high). The `execFile`-based equivalent was not flagged, the destructive tool was skipped, and every canary was cleaned up.
+
+## 6. Instructions, prompts and resources; capability heuristics (v0.6.0)
+
+The scan now covers everything a server puts in the model's context: server `instructions`, prompts, resources and resource templates. On the 17 real servers that is 8 prompts, 374 resources/templates and instructions from 6 servers.
+
+| Finding | Verdict | Action |
+|---|---|---|
+| `capability/command-execution` and `auth/unauthenticated-write-access` (high) on svelte's `svelte-autofixer`, because it takes a parameter named `code` | ❌ false positive, introduced in v0.5.0 and missed because the real-server benchmark was not re-run after adding capabilities | Fixed: `code`/`script` parameters no longer imply execution; "executes … code" and "runs shell commands" phrases still do |
+| `oversized-description` on long server instructions (everything, deepwiki, microsoft-learn, huggingface) | ✅ correct, low | Kept |
+| `embedded-url` in instructions and prompts | ✅ correct, info | Kept |
+
+After the fix: **0 critical/high/medium findings on 17 legitimate servers** across tools, prompts, resources and instructions. **Lesson:** the real-server benchmark now has to be re-run after every rule change, not only after tool-rule changes.
 
 ## Not yet covered
 - OAuth-protected remote servers (GitHub, Linear, Semgrep, Vercel…).

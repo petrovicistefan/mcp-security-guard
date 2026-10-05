@@ -161,13 +161,16 @@ function checkRemote(s: ServerConfig, loc: string): Finding[] {
 
 export function auditServerConfig(s: ServerConfig): Finding[] {
   const loc = describeServer(s);
+  if (s.scope === "claude-ai") {
+    return [{ severity: "info", rule: "config/claude-ai-connector", title: "claude.ai connector: configured in your claude.ai account", location: loc, remediation: "Its settings are not on this machine, so only its name is checked (e.g. against your server policy). Review connectors in claude.ai › Settings › Connectors; the runtime hooks still inspect every call to it.", file: s.source, server: s.name }];
+  }
   return [...checkSecrets(s, loc), ...checkRemote(s, loc), ...checkShell(s, loc), ...checkUnpinned(s, loc), ...checkDocker(s, loc)].map((f) => ({ ...f, file: s.source, server: s.name }));
 }
 
 /** The same server name defined in several scopes: the one that wins may not be the one you reviewed. */
 export function auditDuplicates(servers: ServerConfig[]): Finding[] {
   const byName = new Map<string, ServerConfig[]>();
-  for (const s of servers.filter((s) => s.scope !== "claude-desktop")) byName.set(s.name, [...(byName.get(s.name) ?? []), s]);
+  for (const s of servers.filter((s) => s.scope !== "claude-desktop" && s.scope !== "claude-ai")) byName.set(s.name, [...(byName.get(s.name) ?? []), s]);
   return [...byName.entries()]
     .filter(([, list]) => list.length > 1)
     .map(([name, list]) => ({

@@ -37178,8 +37178,8 @@ function excerptAround(text2, index, length, radius = 70) {
 // src/capabilities.ts
 var words = (name) => name.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
 var EXEC_WORDS = /* @__PURE__ */ new Set(["exec", "execute", "shell", "bash", "sh", "cmd", "powershell", "terminal", "spawn", "eval", "subprocess", "script", "repl"]);
-var EXEC_PHRASE = /\b(run|execute)s?\s+(a\s+|an\s+|arbitrary\s+|the\s+given\s+)?(shell\s+|terminal\s+|system\s+)?(commands?|scripts?|code)\b|\brun_command\b/i;
-var EXEC_PARAMS = /* @__PURE__ */ new Set(["command", "cmd", "script", "code", "shell", "bash"]);
+var EXEC_PHRASE = /\bexecute[sd]?\s+(?:[a-z-]+\s+){0,2}(?:commands?|scripts?|code)\b|\bruns?\s+(?:an?\s+|the\s+|arbitrary\s+)?(?:shell|terminal|system|python|bash|javascript|js|node|sql)\s+(?:commands?|scripts?|code)\b|\bruns?\s+(?:arbitrary\s+)?commands?\b|\brun_command\b/i;
+var EXEC_PARAMS = /* @__PURE__ */ new Set(["command", "cmd", "shell", "bash", "shell_command"]);
 var DESTRUCTIVE_VERBS = /* @__PURE__ */ new Set(["delete", "remove", "rm", "drop", "destroy", "purge", "truncate", "kill", "terminate", "reset", "revoke", "wipe", "force"]);
 var WRITE_VERBS = /* @__PURE__ */ new Set(["write", "create", "update", "edit", "modify", "move", "rename", "upload", "push", "merge", "deploy", "publish", "send", "post", "transfer", "pay", "set", "insert", "patch", "commit", "apply", "install", "approve"]);
 var FS_PARAMS = /^(path|file|filepath|file_path|filename|dir|directory|dest|destination|target_path)$/i;
@@ -37236,7 +37236,7 @@ function capabilityFindings(inv) {
   return out.map((f) => ({ ...f, file: s.source, server: s.name }));
 }
 function permissionName(s, tool) {
-  if (s.scope === "claude-desktop") return void 0;
+  if (s.scope === "claude-desktop" || s.scope === "claude-ai") return void 0;
   const server2 = s.scope === "plugin" ? `plugin_${s.name.replace(":", "_")}` : s.name;
   return `mcp__${server2}__${tool}`;
 }
@@ -40208,7 +40208,7 @@ var StreamableHTTPClientTransport = class {
 };
 
 // src/config.ts
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { homedir, platform } from "node:os";
 import { join, resolve } from "node:path";
 function claudeDesktopConfigPath(home) {
@@ -40261,6 +40261,7 @@ function discoverServers(projectDir2, home = homedir()) {
   if (claudeJson) {
     servers.push(...toServers(claudeJson.mcpServers, "user", claudeJsonPath));
     servers.push(...toServers(claudeJson.projects?.[project]?.mcpServers, "local", claudeJsonPath));
+    servers.push(...discoverClaudeAiConnectors(claudeJson, claudeJsonPath));
   }
   const projectMcpPath = join(project, ".mcp.json");
   servers.push(...toServers(readJson(projectMcpPath, sources)?.mcpServers, "project", projectMcpPath));
@@ -40283,49 +40284,73 @@ function substitutePluginRoot(s, root) {
   const subRec = (r) => r ? Object.fromEntries(Object.entries(r).map(([k, v]) => [k, sub(v)])) : void 0;
   return { ...s, command: s.command && sub(s.command), args: s.args?.map(sub), env: subRec(s.env), url: s.url && sub(s.url), headers: subRec(s.headers) };
 }
+function pluginDirServers(root, pluginName, sources) {
+  const blocks = [];
+  const mcpPath = join(root, ".mcp.json");
+  if (existsSync(mcpPath)) blocks.push({ block: readJson(mcpPath, sources)?.mcpServers, source: mcpPath });
+  const manifestPath = join(root, ".claude-plugin", "plugin.json");
+  const field = existsSync(manifestPath) ? readJson(manifestPath, sources)?.mcpServers : void 0;
+  for (const f of Array.isArray(field) ? field : [field]) {
+    if (typeof f === "string") {
+      const p = resolve(root, f.replaceAll("${CLAUDE_PLUGIN_ROOT}", root));
+      if (p.startsWith(resolve(root)) && p !== mcpPath && existsSync(p)) {
+        const data = readJson(p, sources);
+        blocks.push({ block: data?.mcpServers ?? data, source: p });
+      }
+    } else if (f && typeof f === "object") {
+      blocks.push({ block: f, source: manifestPath });
+    }
+  }
+  return blocks.flatMap(({ block, source }) => toServers(block, "plugin", source).map((sv) => substitutePluginRoot({ ...sv, name: `${pluginName}:${sv.name}` }, root)));
+}
 function discoverPluginServers(project, home, sources) {
-  const installedPath = join(home, ".claude", "plugins", "installed_plugins.json");
-  if (!existsSync(installedPath)) return [];
-  const installed = readJson(installedPath, sources)?.plugins;
-  if (!installed || typeof installed !== "object") return [];
   const enabled = enabledPlugins(project, home, sources);
   const out = [];
-  for (const [key, entries] of Object.entries(installed)) {
-    if (enabled[key] === false || !Array.isArray(entries)) continue;
-    const pluginName = key.split("@")[0];
-    for (const e of entries) {
-      if (typeof e?.installPath !== "string") continue;
-      if (e.scope && e.scope !== "user" && e.projectPath && resolve(e.projectPath) !== project) continue;
-      const root = e.installPath;
-      const blocks = [];
-      const mcpPath = join(root, ".mcp.json");
-      if (existsSync(mcpPath)) blocks.push({ block: readJson(mcpPath, sources)?.mcpServers, source: mcpPath });
-      const manifestPath = join(root, ".claude-plugin", "plugin.json");
-      const field = existsSync(manifestPath) ? readJson(manifestPath, sources)?.mcpServers : void 0;
-      for (const f of Array.isArray(field) ? field : [field]) {
-        if (typeof f === "string") {
-          const p = resolve(root, f.replaceAll("${CLAUDE_PLUGIN_ROOT}", root));
-          if (p.startsWith(resolve(root)) && p !== mcpPath && existsSync(p)) {
-            const data = readJson(p, sources);
-            blocks.push({ block: data?.mcpServers ?? data, source: p });
-          }
-        } else if (f && typeof f === "object") {
-          blocks.push({ block: f, source: manifestPath });
-        }
+  const installedPath = join(home, ".claude", "plugins", "installed_plugins.json");
+  const installed = existsSync(installedPath) ? readJson(installedPath, sources)?.plugins : void 0;
+  if (installed && typeof installed === "object") {
+    for (const [key, entries] of Object.entries(installed)) {
+      if (enabled[key] === false || !Array.isArray(entries)) continue;
+      const pluginName = key.split("@")[0];
+      for (const e of entries) {
+        if (typeof e?.installPath !== "string") continue;
+        if (e.scope && e.scope !== "user" && e.projectPath && resolve(e.projectPath) !== project) continue;
+        out.push(...pluginDirServers(e.installPath, pluginName, sources));
       }
-      for (const { block, source } of blocks) {
-        for (const s of toServers(block, "plugin", source)) {
-          out.push(substitutePluginRoot({ ...s, name: `${pluginName}:${s.name}` }, root));
-        }
+    }
+  }
+  const syncedRoot = join(home, ".claude", "plugins", "synced");
+  for (const bucket of listDirs(syncedRoot)) {
+    for (const dir of listDirs(join(syncedRoot, bucket))) {
+      const root = join(syncedRoot, bucket, dir);
+      const manifest = join(root, ".claude-plugin", "plugin.json");
+      if (!existsSync(manifest)) continue;
+      const name = readJson(manifest, sources)?.name;
+      const pluginName = typeof name === "string" && name ? name : dir;
+      if (enabled[`${pluginName}@synced`] === false) continue;
+      for (const sv of pluginDirServers(root, pluginName, sources)) {
+        if (!out.some((o) => o.name === sv.name)) out.push(sv);
       }
     }
   }
   return out;
 }
+function listDirs(dir) {
+  try {
+    return readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory() && !d.name.startsWith(".")).map((d) => d.name).sort();
+  } catch {
+    return [];
+  }
+}
+function discoverClaudeAiConnectors(claudeJson, source) {
+  const names = Array.isArray(claudeJson?.claudeAiMcpEverConnected) ? claudeJson.claudeAiMcpEverConnected : [];
+  return [...new Set(names.filter((n) => typeof n === "string"))].map((n) => ({ name: n.replace(/^claude\.ai\s+/, ""), scope: "claude-ai", source }));
+}
 function describeServer(s) {
   return `server "${s.name}" (${s.scope})`;
 }
 function transportOf(s) {
+  if (s.scope === "claude-ai") return "claude-ai";
   if (s.type === "sse") return "sse";
   if (s.url) return "http";
   if (s.command) return "stdio";
@@ -40333,7 +40358,7 @@ function transportOf(s) {
 }
 
 // src/version.ts
-var VERSION = "0.5.0";
+var VERSION = "0.6.0";
 
 // src/client.ts
 function expand(value) {
@@ -40373,8 +40398,49 @@ async function listAllTools(client) {
   } while (cursor && tools.length < 2e3);
   return tools;
 }
-async function fetchTools(s, timeoutMs = 2e4) {
-  return withClient(s, timeoutMs, listAllTools);
+async function paginate(fetchPage, max = 2e3) {
+  const out = [];
+  let cursor;
+  do {
+    const page = await fetchPage(cursor);
+    out.push(...page.items);
+    cursor = page.nextCursor;
+  } while (cursor && out.length < max);
+  return out;
+}
+async function fetchSurface(s, timeoutMs = 2e4) {
+  return withClient(s, timeoutMs, async (client) => {
+    const caps = client.getServerCapabilities() ?? {};
+    const safe = async (enabled, fn) => enabled ? fn().catch(() => []) : [];
+    const [tools, prompts, resources, resourceTemplates] = await Promise.all([
+      // Some servers omit the tools capability but still answer tools/list.
+      listAllTools(client).catch((e) => caps.tools ? Promise.reject(e) : []),
+      safe(caps.prompts, () => paginate(async (cursor) => {
+        const r = await client.listPrompts(cursor ? { cursor } : void 0);
+        return { items: r.prompts, nextCursor: r.nextCursor };
+      })),
+      safe(caps.resources, () => paginate(async (cursor) => {
+        const r = await client.listResources(cursor ? { cursor } : void 0);
+        return { items: r.resources, nextCursor: r.nextCursor };
+      })),
+      safe(caps.resources, () => paginate(async (cursor) => {
+        const r = await client.listResourceTemplates(cursor ? { cursor } : void 0);
+        return { items: r.resourceTemplates, nextCursor: r.nextCursor };
+      }))
+    ]);
+    return { tools, instructions: client.getInstructions() || void 0, prompts, resources, resourceTemplates };
+  });
+}
+function surfaceDefinitions(surface) {
+  return [
+    ...surface.instructions ? [{ kind: "instructions", def: { name: "#instructions", description: surface.instructions } }] : [],
+    ...surface.prompts.map((p) => ({
+      kind: "prompt",
+      def: { name: `prompt:${p.name}`, title: p.title, description: p.description, inputSchema: { type: "object", properties: Object.fromEntries((p.arguments ?? []).map((a) => [a.name, { type: "string", ...a.description ? { description: a.description } : {} }])) } }
+    })),
+    ...surface.resources.map((r) => ({ kind: "resource", def: { name: `resource:${r.uri}`, title: r.title ?? r.name, description: r.description } })),
+    ...surface.resourceTemplates.map((t) => ({ kind: "template", def: { name: `template:${t.uriTemplate}`, title: t.title ?? t.name, description: t.description } }))
+  ];
 }
 
 // src/adversarial.ts
@@ -40748,11 +40814,14 @@ function checkRemote(s, loc) {
 }
 function auditServerConfig(s) {
   const loc = describeServer(s);
+  if (s.scope === "claude-ai") {
+    return [{ severity: "info", rule: "config/claude-ai-connector", title: "claude.ai connector: configured in your claude.ai account", location: loc, remediation: "Its settings are not on this machine, so only its name is checked (e.g. against your server policy). Review connectors in claude.ai \u203A Settings \u203A Connectors; the runtime hooks still inspect every call to it.", file: s.source, server: s.name }];
+  }
   return [...checkSecrets(s, loc), ...checkRemote(s, loc), ...checkShell(s, loc), ...checkUnpinned(s, loc), ...checkDocker(s, loc)].map((f) => ({ ...f, file: s.source, server: s.name }));
 }
 function auditDuplicates(servers) {
   const byName = /* @__PURE__ */ new Map();
-  for (const s of servers.filter((s2) => s2.scope !== "claude-desktop")) byName.set(s.name, [...byName.get(s.name) ?? [], s]);
+  for (const s of servers.filter((s2) => s2.scope !== "claude-desktop" && s2.scope !== "claude-ai")) byName.set(s.name, [...byName.get(s.name) ?? [], s]);
   return [...byName.entries()].filter(([, list2]) => list2.length > 1).map(([name, list2]) => ({
     severity: "low",
     rule: "config/duplicate-name",
@@ -40856,7 +40925,7 @@ var BY_RULE = [
   [/^drift\/tool-/, ["MCP03", "MCP04"]],
   [/^config\/(insecure-transport|invalid-url)$/, ["MCP07"]],
   [/^auth\//, ["MCP07"]],
-  [/^config\/duplicate-name$/, ["MCP09"]],
+  [/^config\/(duplicate-name|claude-ai-connector)$/, ["MCP09"]],
   [/^policy\//, ["MCP09"]],
   [/^tool\/(instruction-override|role-hijack)$/, ["MCP03", "MCP06"]],
   [/^runtime\/injection-in-output$/, ["MCP06"]],
@@ -41346,6 +41415,7 @@ function scoreServer(server2, findings, basis) {
   return { server: server2, score, grade: grade(score), basis };
 }
 function scoreTable(scores) {
+  scores = scores.filter((s) => s.server.scope !== "claude-ai");
   if (!scores.length) return "";
   const rows = [...scores].sort((a, b) => a.score - b.score).map((s) => `| ${excerpt(s.server.name, 50)} | ${s.server.scope} | **${s.score}** | ${s.grade} | ${s.basis === "config" ? "config only" : "config + tools"} |`);
   return ["**Security score per server** (100 = no findings; any critical caps at F, any high at D):", "", "| Server | Scope | Score | Grade | Basis |", "|---|---|---|---|---|", ...rows].join("\n");
@@ -41367,8 +41437,10 @@ function selectServers(all, names) {
 async function fetchAll(servers, timeoutSeconds) {
   return Promise.all(
     servers.map(async (s) => {
+      if (s.scope === "claude-ai") return { server: s, error: "claude.ai connector: configured in your claude.ai account, so it cannot be launched from here. Its calls are still covered by the runtime hooks" };
       try {
-        return { server: s, tools: await fetchTools(s, timeoutSeconds * 1e3) };
+        const surface = await fetchSurface(s, timeoutSeconds * 1e3);
+        return { server: s, tools: surface.tools, definitions: [...surface.tools, ...surfaceDefinitions(surface).map((d) => d.def)] };
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         const status = e?.code;
@@ -41392,7 +41464,7 @@ async function auditTools(servers, timeoutSeconds, pins, policy) {
   for (const r of ok) {
     const own2 = [];
     const others = Object.fromEntries(ok.filter((o) => o !== r).map((o) => [o.server.name, o.tools.map((t) => t.name)]));
-    own2.push(...analyzeTools(r.server.name, r.tools, others));
+    own2.push(...analyzeTools(r.server.name, r.definitions, others));
     const label = `**${excerpt(r.server.name, 50)}** (${r.server.scope})`;
     const where = `server "${r.server.name}" (${r.server.scope})`;
     const pinned = pins?.servers[pinKey(r.server.scope, r.server.name)];
@@ -41401,7 +41473,7 @@ async function auditTools(servers, timeoutSeconds, pins, policy) {
       if (pinned.config && pinned.config !== hashConfig(r.server)) {
         own2.push({ severity: "medium", rule: "drift/config-changed", title: "Launch command, package version or URL changed since pinning", location: `${where} in ${r.server.source}`, remediation: "Check who changed the config and why (e.g. a pulled .mcp.json or a version bump), then re-pin." });
       }
-      const d = computeDrift(pinned, r.tools);
+      const d = computeDrift(pinned, r.definitions);
       driftLines.push(hasDrift(d) ? `- ${label}: \u26A0\uFE0F changed since ${pinned.pinnedAt}` : `- ${label}: unchanged since ${pinned.pinnedAt}`);
       const list2 = (xs) => xs.map((x) => `"${excerpt(x, 50)}"`).join(", ");
       if (d.changed.length) own2.push({ severity: "high", rule: "drift/tool-changed", title: `${d.changed.length} tool definition(s) changed since pinning: ${list2(d.changed)}`, location: where, remediation: "A server that rewrites tool descriptions after approval is the rug-pull pattern. Review the findings for these tools, and re-pin only once you trust the new wording." });
@@ -41413,9 +41485,14 @@ async function auditTools(servers, timeoutSeconds, pins, policy) {
   findings.push(...auditPolicy(servers, policy));
   return { findings: applyPolicy(findings, policy), ok, errors, driftLines, inventories };
 }
+function surfaceCounts(ok) {
+  const count = (re) => ok.reduce((n, r) => n + r.definitions.filter((d) => re.test(d.name)).length, 0);
+  const tools = ok.reduce((n, r) => n + r.tools.length, 0);
+  return [`**${tools}** tool(s)`, `**${count(/^prompt:/)}** prompt(s)`, `**${count(/^resource:/) + count(/^template:/)}** resource(s)/template(s)`, `instructions from **${count(/^#instructions$/)}** server(s)`].join(", ");
+}
 function toolAuditSections(a, unknown2 = [], pinsLocation) {
   return [
-    `Scanned **${a.ok.length}** server(s), **${a.ok.reduce((n, r) => n + r.tools.length, 0)}** tool(s).`,
+    `Scanned **${a.ok.length}** server(s): ${surfaceCounts(a.ok)}.`,
     unknown2.length ? `**Unknown server names:** ${unknown2.map((u) => excerpt(u, 50)).join(", ")}` : "",
     a.errors.length ? `**Could not connect:**
 ${a.errors.map((e) => `- **${excerpt(e.server.name, 50)}** (${e.server.scope}): ${e.error}`).join("\n")}` : "",
@@ -41455,7 +41532,7 @@ server.registerTool(
   },
   async ({ project_dir }) => {
     const { servers, sources } = discoverServers(project_dir ?? projectDir());
-    const rows = servers.map((s) => `| ${excerpt(s.name, 50)} | ${s.scope} | ${transportOf(s)} | ${excerpt(s.url ? s.url.replace(/\?.*$/, "?\u2026") : [s.command, ...s.args ?? []].join(" "), 90)} |`);
+    const rows = servers.map((s) => `| ${excerpt(s.name, 50)} | ${s.scope} | ${transportOf(s)} | ${excerpt(s.scope === "claude-ai" ? "managed in your claude.ai account" : s.url ? s.url.replace(/\?.*$/, "?\u2026") : [s.command, ...s.args ?? []].join(" "), 90)} |`);
     return text(
       [
         `# Configured MCP servers (${servers.length})`,
@@ -41528,8 +41605,8 @@ server.registerTool(
         lines.push(`- \u274C **${excerpt(r.server.name, 50)}** (${r.server.scope}): ${r.error}`);
         continue;
       }
-      pins.servers[pinKey(r.server.scope, r.server.name)] = pinEntry(r.server, r.tools);
-      lines.push(`- \u{1F4CC} **${excerpt(r.server.name, 50)}** (${r.server.scope}): ${r.tools.length} tool(s) pinned`);
+      pins.servers[pinKey(r.server.scope, r.server.name)] = pinEntry(r.server, r.definitions);
+      lines.push(`- \u{1F4CC} **${excerpt(r.server.name, 50)}** (${r.server.scope}): ${r.tools.length} tool(s) and ${r.definitions.length - r.tools.length} instruction/prompt/resource definition(s) pinned`);
     }
     savePins(pins);
     return text([`# Pinned tool definitions`, ...lines, unknown2.length ? `Unknown: ${unknown2.map((u) => excerpt(u, 50)).join(", ")}` : "", `Saved to ${pinsPath()}`].filter(Boolean).join("\n"));

@@ -155,7 +155,7 @@ Rămân pentru planul Team: descoperire și audit la nivel de organizație, revi
   - ✅ formatul `tool_response` pentru MCP e lista de content (`$[0].text`), deci se confirmă
   - ✅ jurnalul de audit are 5 intrări corecte și niciun secret sau conținut
   - Notă: `--strict-mcp-config` oprește și serverul MCP al plugin-ului
-- [ ] **Goluri de descoperire găsite în testul real**:
+- [x] **Goluri de descoperire găsite în testul real** (închise în v0.6.0):
   - conectorii claude.ai (Claude Docs, Canva, Supermetrics, Google Drive) ajung în sesiune, dar nu apar în `list_mcp_servers`
   - plugin-urile sincronizate din cont (`instagram@synced`, `makebox-etsy@synced`) aduc servere MCP pe care nu le citim
 - [ ] **CI pe Linux, macOS și Windows** (căi, `/tmp` la testul adversarial, shell-uri)
@@ -164,7 +164,7 @@ Rămân pentru planul Team: descoperire și audit la nivel de organizație, revi
 - [ ] **Valoarea implicită a verificării la pornire**: probabil `config` în loc de `full` (cu multe servere pinuite, `full` e lent)
 
 ### Goluri de detecție
-- [ ] **`instructions`, prompts și resources**: și ele ajung în contextul lui Claude, dar azi scanăm doar tool-urile (efort mic)
+- [x] **`instructions`, prompts și resources**: scanate și pinuite (v0.6.0)
 - [ ] **Alți clienți MCP**: Cursor, VS Code, Windsurf, extensiile `.mcpb` din Claude Desktop, `managed-mcp.json` (efort mic–mediu)
 - [ ] **Hash pentru serverele locale** (`node ./server.js`), ca drift-ul să prindă și schimbările de fișier (efort mic)
 - [ ] **Prompt injection în alte limbi**: câteva limbi prin regex; acoperirea completă prin LLM, în planul plătit

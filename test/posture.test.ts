@@ -16,6 +16,10 @@ describe("capability classification", () => {
     [{ name: "write_file", inputSchema: { properties: { path: {}, content: {} } } }, ["filesystem-write"]],
     [{ name: "fetch", inputSchema: { properties: { url: {} } } }, ["network-egress"]],
     [{ name: "list_issues" }, ["read-only"]],
+    [{ name: "svelte-autofixer", description: "Analyzes Svelte code and suggests fixes.", inputSchema: { properties: { code: {} } } }, []],
+    [{ name: "run_python", description: "Executes Python code in a sandbox.", inputSchema: { properties: { code: {} } } }, ["command-execution"]],
+    [{ name: "terminal_helper", description: "Runs shell commands in the project." }, ["command-execution"]],
+    [{ name: "format", description: "Runs the code formatter on a file." }, []],
     [{ name: "remove_label", annotations: { readOnlyHint: true } }, ["read-only"]],
     [{ name: "archive", annotations: { destructiveHint: true } }, ["destructive"]],
   ])("%o", (tool, expected) => expect(classifyTool(tool as any).sort()).toEqual(expected.sort()));

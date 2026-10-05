@@ -32,6 +32,7 @@ export function scoreServer(server: ServerConfig, findings: Finding[], basis: Se
 }
 
 export function scoreTable(scores: ServerScore[]): string {
+  scores = scores.filter((s) => s.server.scope !== "claude-ai");
   if (!scores.length) return "";
   const rows = [...scores]
     .sort((a, b) => a.score - b.score)

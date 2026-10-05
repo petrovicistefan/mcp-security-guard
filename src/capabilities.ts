@@ -19,8 +19,10 @@ export interface ServerInventory {
 const words = (name: string) => name.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
 
 const EXEC_WORDS = new Set(["exec", "execute", "shell", "bash", "sh", "cmd", "powershell", "terminal", "spawn", "eval", "subprocess", "script", "repl"]);
-const EXEC_PHRASE = /\b(run|execute)s?\s+(a\s+|an\s+|arbitrary\s+|the\s+given\s+)?(shell\s+|terminal\s+|system\s+)?(commands?|scripts?|code)\b|\brun_command\b/i;
-const EXEC_PARAMS = new Set(["command", "cmd", "script", "code", "shell", "bash"]);
+// "Executes Python code", "runs shell commands"; but not "runs the code formatter".
+const EXEC_PHRASE = /\bexecute[sd]?\s+(?:[a-z-]+\s+){0,2}(?:commands?|scripts?|code)\b|\bruns?\s+(?:an?\s+|the\s+|arbitrary\s+)?(?:shell|terminal|system|python|bash|javascript|js|node|sql)\s+(?:commands?|scripts?|code)\b|\bruns?\s+(?:arbitrary\s+)?commands?\b|\brun_command\b/i;
+// "code" and "script" are left out: linters, formatters and fixers take code to analyse, not to run.
+const EXEC_PARAMS = new Set(["command", "cmd", "shell", "bash", "shell_command"]);
 const DESTRUCTIVE_VERBS = new Set(["delete", "remove", "rm", "drop", "destroy", "purge", "truncate", "kill", "terminate", "reset", "revoke", "wipe", "force"]);
 const WRITE_VERBS = new Set(["write", "create", "update", "edit", "modify", "move", "rename", "upload", "push", "merge", "deploy", "publish", "send", "post", "transfer", "pay", "set", "insert", "patch", "commit", "apply", "install", "approve"]);
 const FS_PARAMS = /^(path|file|filepath|file_path|filename|dir|directory|dest|destination|target_path)$/i;
@@ -90,7 +92,7 @@ export function capabilityFindings(inv: ServerInventory): Finding[] {
 
 /** Claude Code permission-rule name of a server's tool. Plugin servers are namespaced as plugin_<plugin>_<server>. */
 export function permissionName(s: ServerConfig, tool: string): string | undefined {
-  if (s.scope === "claude-desktop") return undefined;
+  if (s.scope === "claude-desktop" || s.scope === "claude-ai") return undefined;
   const server = s.scope === "plugin" ? `plugin_${s.name.replace(":", "_")}` : s.name;
   return `mcp__${server}__${tool}`;
 }

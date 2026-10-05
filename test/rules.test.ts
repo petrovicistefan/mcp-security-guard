@@ -54,6 +54,23 @@ describe("config rules", () => {
     expect(servers.map((s) => `${s.scope}:${s.name}`)).toEqual(["user:a", "local:b", "project:c"]);
   });
 
+  it("discovers account-synced plugins and claude.ai connectors", () => {
+    const home = mkdtempSync(join(tmpdir(), "mcpsec-"));
+    const proj = join(home, "proj");
+    mkdirSync(proj);
+    const synced = join(home, ".claude/plugins/synced/acct/abc123");
+    mkdirSync(join(synced, ".claude-plugin"), { recursive: true });
+    writeFileSync(join(synced, ".claude-plugin/plugin.json"), JSON.stringify({ name: "shop" }));
+    writeFileSync(join(synced, ".mcp.json"), JSON.stringify({ mcpServers: { api: { type: "http", url: "https://shop.example/mcp" } } }));
+    writeFileSync(join(home, ".claude.json"), JSON.stringify({ claudeAiMcpEverConnected: ["claude.ai Canva", "claude.ai Canva"] }));
+    const { servers } = discoverServers(proj, home);
+    expect(servers.map((s) => `${s.scope}:${s.name}`)).toEqual(["claude-ai:Canva", "plugin:shop:api"]);
+    expect(auditServerConfig(servers[0]).map((f) => f.rule)).toEqual(["config/claude-ai-connector"]);
+
+    writeFileSync(join(home, ".claude/settings.json"), JSON.stringify({ enabledPlugins: { "shop@synced": false } }));
+    expect(discoverServers(proj, home).servers.map((s) => s.name)).toEqual(["Canva"]);
+  });
+
   it("discovers servers shipped by enabled plugins and expands CLAUDE_PLUGIN_ROOT", () => {
     const home = mkdtempSync(join(tmpdir(), "mcpsec-"));
     const proj = join(home, "proj");

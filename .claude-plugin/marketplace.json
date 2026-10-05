@@ -8,7 +8,7 @@
       "name": "mcp-security",
       "source": "./",
       "description": "OWASP MCP Top 10 security for the MCP servers you use: poisoning, rug pulls, supply chain, runtime guards, policy.",
-      "version": "0.5.0"
+      "version": "0.6.0"
     }
   ]
 }

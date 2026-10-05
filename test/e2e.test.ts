@@ -40,7 +40,9 @@ describe("scanner end to end", () => {
     expect(first).toContain("tool/invisible-characters");
     expect(first).toContain("not pinned yet");
 
-    expect(await call("pin_tools", { servers: ["poisoned"], confirm_launch: true })).toContain("2 tool(s) pinned");
+    expect(first).toContain("1** prompt(s)");
+    expect(first).toContain("instructions from **1** server(s)");
+    expect(await call("pin_tools", { servers: ["poisoned"], confirm_launch: true })).toContain("2 tool(s) and 3 instruction/prompt/resource definition(s) pinned");
 
     expect(runHook()).toBe("");
 
@@ -49,9 +51,13 @@ describe("scanner end to end", () => {
     expect(second).toContain("drift/tool-changed");
     expect(second).toContain("tool/sensitive-path");
     expect(second).toContain("tool/conceal-from-user");
+    // The rug pull also rewrote the server instructions and a prompt, not only tools.
+    expect(second).toMatch(/server "poisoned" › server instructions/);
+    expect(second).toMatch(/server "poisoned" › prompt "summarize"/);
+    expect(second).toMatch(/3 tool definition\(s\) changed since pinning/);
 
     const hook = JSON.parse(runHook());
-    expect(hook.systemMessage).toContain('"poisoned" (project): 1 tool(s) changed');
+    expect(hook.systemMessage).toContain('"poisoned" (project): 3 definition(s) changed');
     expect(hook.systemMessage).toContain("critical/high poisoning finding");
     expect(hook.hookSpecificOutput.hookEventName).toBe("SessionStart");
   }, 60_000);

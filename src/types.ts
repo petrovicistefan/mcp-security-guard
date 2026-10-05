@@ -17,7 +17,7 @@ export interface Finding {
   server?: string;
 }
 
-export type ConfigScope = "user" | "local" | "project" | "plugin" | "claude-desktop";
+export type ConfigScope = "user" | "local" | "project" | "plugin" | "claude-desktop" | "claude-ai";
 
 export interface ServerConfig {
   name: string;

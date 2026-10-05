@@ -9,10 +9,10 @@ Use the `mcp-security` tools. Each finding carries its OWASP MCP Top 10 id.
 
 ## Workflow
 
-1. **`list_mcp_servers`** shows what is configured.
+1. **`list_mcp_servers`** shows what is configured, including plugin and account-synced plugin servers, and claude.ai connectors (names only; those are managed in claude.ai and cannot be launched from here).
 2. **`audit_mcp_config`** is always safe: it reads files only. It covers secrets, transports, pinning, Docker, policy violations, and gives a config-only score per server.
 3. **Ask before anything that launches or connects:**
-   - **`audit_server_tools`** (`confirm_launch: true`) starts the selected servers and lists their tools. It covers poisoning, shadowing, name collisions, the capability inventory, unauthenticated write access and drift since pinning. It also returns a full score per server and ready-to-paste `permissions.ask` rules. Scan all servers together (`["*"]`): shadowing and collisions are only visible across servers scanned in the same call.
+   - **`audit_server_tools`** (`confirm_launch: true`) starts the selected servers and lists their tools, prompts, resources and server instructions. It covers poisoning (in all of them), shadowing, name collisions, the capability inventory, unauthenticated write access and drift since pinning. It also returns a full score per server and ready-to-paste `permissions.ask` rules. Scan all servers together (`["*"]`): shadowing and collisions are only visible across servers scanned in the same call.
    - **`check_supply_chain`** (`confirm_network: true`) sends package names and versions to npm, PyPI and OSV. It covers known vulnerabilities, malicious versions, typosquats, new packages, install scripts and publisher changes.
 4. **Explain the results.** Start with critical and high findings: what an attacker could achieve, and the concrete fix. Offer to add the recommended permission rules to `.claude/settings.json`.
 5. **Offer pinning (`pin_tools`)** once the user trusts a server, so later changes are caught at every session start. Never pin a server that has unresolved critical or high tool findings unless the user explicitly asks.
