@@ -180,4 +180,6 @@ I'm Stefan Petrovici: passionate about IT, a husband and a father. I built mcp-s
 
 I build web applications end to end, frontend, backend, APIs and deployment, and I'm happy to work on anything else that needs building. This repository shows how I work: tests, CI, careful documentation and attention to security.
 
+I also build WordPress and WooCommerce plugins, available at [pluginsforstores.com](https://pluginsforstores.com).
+
 If your team is hiring, write to me at [hello@petrovicistefan.ro](mailto:hello@petrovicistefan.ro).
