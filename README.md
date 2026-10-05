@@ -186,7 +186,7 @@ npm run bench      # false-positive gate on real servers (network; Docker images
 
 Everything above is free and stays free: it runs locally and needs no account. Paid plans add what needs a server: a daily threat feed of known malicious MCP servers and packages, alerts when a server you use ships changed tool descriptions, history, and team policies and dashboards. They are opt-in through `MCP_SECURITY_API_KEY`; see [PRIVACY.md](PRIVACY.md) for exactly what is sent.
 
-Interested? [Join the early access list](https://tally.so/r/dW5lZK), or email [hello@petrovicistefan.ro](mailto:hello@petrovicistefan.ro?subject=mcp-security-guard%20early%20access) with "mcp-security-guard early access" in the subject. Early sign-ups get launch pricing, including a limited lifetime license.
+Interested? [Join the early access list](https://tally.so/r/dW5lZK). Early sign-ups get launch pricing, including a limited lifetime license.
 
 ## Security, privacy, license
 
