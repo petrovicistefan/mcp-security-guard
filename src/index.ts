@@ -2,49 +2,17 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { auditConfig } from "./audit.js";
-import { VERSION } from "./version.js";
-import { fetchTools } from "./client.js";
 import { discoverServers, transportOf } from "./config.js";
-import { computeDrift, hasDrift, hashConfig, loadPins, pinEntry, pinKey, pinsPath, savePins } from "./pins.js";
+import { loadPins, pinEntry, pinKey, pinsPath, savePins } from "./pins.js";
 import { report } from "./report.js";
 import { analyzeTools } from "./rules/tool-rules.js";
 import { excerpt } from "./sanitize.js";
-import type { Finding, ServerConfig, ToolDefinition } from "./types.js";
+import { auditTools, fetchAll, selectServers, toolAuditSections } from "./tool-audit.js";
+import type { ToolDefinition } from "./types.js";
+import { VERSION } from "./version.js";
 
 const projectDir = () => process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
-
-function select(all: ServerConfig[], names: string[]): { picked: ServerConfig[]; unknown: string[] } {
-  if (names.includes("*")) return { picked: all, unknown: [] };
-  const picked: ServerConfig[] = [];
-  const unknown: string[] = [];
-  for (const n of names) {
-    const [scope, name] = n.includes(":") ? n.split(/:(.*)/s) : [undefined, n];
-    const hits = all.filter((s) => s.name === name && (!scope || s.scope === scope));
-    if (hits.length) picked.push(...hits.filter((h) => !picked.includes(h)));
-    else unknown.push(n);
-  }
-  return { picked, unknown };
-}
-
-async function fetchAll(servers: ServerConfig[], timeoutSeconds: number) {
-  return Promise.all(
-    servers.map(async (s) => {
-      try {
-        return { server: s, tools: await fetchTools(s, timeoutSeconds * 1000) };
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        const needsAuth = s.url && /\b401\b|unauthori[sz]ed|invalid_token|www-authenticate/i.test(msg);
-        return {
-          server: s,
-          error: needsAuth
-            ? "requires OAuth sign-in. The scanner cannot reuse Claude Code's tokens; its config was still audited by audit_mcp_config"
-            : excerpt(msg, 200),
-        };
-      }
-    }),
-  );
-}
 
 const server = new McpServer(
   { name: "mcp-security", version: VERSION },
@@ -116,50 +84,9 @@ server.registerTool(
   async ({ servers: names, confirm_launch, timeout_seconds, project_dir }) => {
     if (!confirm_launch) return text("Not started: this scan launches the selected servers. Ask the user, then call again with confirm_launch=true.");
     const { servers } = discoverServers(project_dir ?? projectDir());
-    const { picked, unknown } = select(servers, names);
-    const results = await fetchAll(picked, timeout_seconds);
-    const ok = results.filter((r): r is { server: ServerConfig; tools: ToolDefinition[] } => "tools" in r);
-    const pins = loadPins();
-
-    const findings: Finding[] = [];
-    const driftLines: string[] = [];
-    for (const r of ok) {
-      const others = Object.fromEntries(ok.filter((o) => o !== r).map((o) => [o.server.name, o.tools.map((t) => t.name)]));
-      findings.push(...analyzeTools(r.server.name, r.tools, others));
-      const pinned = pins.servers[pinKey(r.server.scope, r.server.name)];
-      if (!pinned) {
-        driftLines.push(`- **${excerpt(r.server.name, 50)}** (${r.server.scope}): not pinned yet`);
-        continue;
-      }
-      if (pinned.config && pinned.config !== hashConfig(r.server)) {
-        findings.push({ severity: "medium", rule: "drift/config-changed", title: "Launch command, package version or URL changed since pinning", location: `server "${r.server.name}" (${r.server.scope}) in ${r.server.source}`, remediation: "Check who changed the config and why (e.g. a pulled .mcp.json or a version bump), then re-pin." });
-      }
-      const d = computeDrift(pinned.tools, r.tools);
-      if (!hasDrift(d)) {
-        driftLines.push(`- **${excerpt(r.server.name, 50)}** (${r.server.scope}): unchanged since ${pinned.pinnedAt}`);
-        continue;
-      }
-      driftLines.push(`- **${excerpt(r.server.name, 50)}** (${r.server.scope}): ⚠️ changed since ${pinned.pinnedAt}`);
-      const list = (xs: string[]) => xs.map((x) => `"${excerpt(x, 50)}"`).join(", ");
-      if (d.changed.length) findings.push({ severity: "high", rule: "drift/tool-changed", title: `${d.changed.length} tool definition(s) changed since pinning: ${list(d.changed)}`, location: `server "${r.server.name}" (${r.server.scope})`, remediation: "A server that rewrites tool descriptions after approval is the rug-pull pattern. Review the findings for these tools, and re-pin only once you trust the new wording." });
-      if (d.added.length) findings.push({ severity: "medium", rule: "drift/tool-added", title: `${d.added.length} new tool(s) since pinning: ${list(d.added)}`, location: `server "${r.server.name}" (${r.server.scope})`, remediation: "Check that the new tools match a release you expected, then re-pin." });
-      if (d.removed.length) findings.push({ severity: "low", rule: "drift/tool-removed", title: `${d.removed.length} tool(s) removed since pinning: ${list(d.removed)}`, location: `server "${r.server.name}" (${r.server.scope})`, remediation: "Usually a normal upgrade. Re-pin after reviewing." });
-    }
-
-    for (const f of findings) {
-      const owner = ok.find((r) => f.location.startsWith(`server "${r.server.name}"`));
-      if (owner) Object.assign(f, { file: owner.server.source, server: owner.server.name });
-    }
-
-    const errors = results.filter((r) => "error" in r).map((r) => `- **${excerpt(r.server.name, 50)}** (${r.server.scope}): ${(r as { error: string }).error}`);
-    return text(
-      report("MCP tool definition audit", findings, [
-        `Scanned **${ok.length}** server(s), **${ok.reduce((n, r) => n + r.tools.length, 0)}** tool(s).`,
-        unknown.length ? `**Unknown server names:** ${unknown.map((u) => excerpt(u, 50)).join(", ")}` : "",
-        errors.length ? `**Could not connect:**\n${errors.join("\n")}` : "",
-        driftLines.length ? `**Pinning status** (${pinsPath()}):\n${driftLines.join("\n")}` : "",
-      ]),
-    );
+    const { picked, unknown } = selectServers(servers, names);
+    const audit = await auditTools(picked, timeout_seconds, loadPins());
+    return text(report("MCP tool definition audit", audit.findings, toolAuditSections(audit, unknown, pinsPath())));
   },
 );
 
@@ -175,7 +102,7 @@ server.registerTool(
   async ({ servers: names, confirm_launch, timeout_seconds, project_dir }) => {
     if (!confirm_launch) return text("Not started: pinning launches the selected servers. Ask the user, then call again with confirm_launch=true.");
     const { servers } = discoverServers(project_dir ?? projectDir());
-    const { picked, unknown } = select(servers, names);
+    const { picked, unknown } = selectServers(servers, names);
     const results = await fetchAll(picked, timeout_seconds);
     const pins = loadPins();
     const lines: string[] = [];

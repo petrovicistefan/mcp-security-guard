@@ -109,7 +109,7 @@ Prețurile trebuie validate cu utilizatori reali înainte de lansare. Mai jos, l
 2. [x] **Hook `SessionStart` pentru drift**: verificare rapidă la fiecare sesiune, cu avertisment doar când se schimbă ceva
 3. [x] **Scanarea serverelor MCP din plugin-uri** (`~/.claude/plugins/`)
 4. [x] **Ieșire SARIF/JSON** + GitHub Action de bază + CLI pentru CI
-5. [ ] **Test pe 10–20 de servere MCP populare** pentru calibrarea fals pozitivelor
+5. [~] **Test pe 10–20 de servere MCP populare** (15 remote + 15 configurații din marketplace făcute, vezi bench/RESULTS.md; urmează serverele stdio în Docker) pentru calibrarea fals pozitivelor
 6. [ ] **Repo public pe GitHub** + instalare prin `/plugin marketplace add`
 7. [ ] **Trimitere în Anthropic Directory**
 8. [ ] **Waitlist pentru Pro/Team** în README, ca să validezi cererea

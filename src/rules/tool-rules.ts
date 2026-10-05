@@ -70,7 +70,8 @@ const PATTERNS: { rule: string; severity: Severity; title: string; re: RegExp; r
     rule: "tool/sensitive-path",
     severity: "high",
     title: "References credential files or sensitive paths",
-    re: /(?:~|\$HOME|\/Users\/[^/\s]+|\/home\/[^/\s]+|%USERPROFILE%)?[\\/]?\.(?:ssh|aws|gnupg|kube|docker|config\/gh)\b|\bid_(?:rsa|ed25519|ecdsa)\b|(?:^|[\s/"'`])\.env\b|\.netrc\b|\.npmrc\b|\.pypirc\b|\bcredentials\.json\b|\.git-credentials\b|\bclaude(?:_desktop_config)?\.json\b|\bmcp\.json\b|\/etc\/(?:passwd|shadow)\b|\bkeychain\b/i,
+    // Dot-directories must start a path segment, so domains like repost.aws or docs.docker.com do not match.
+    re: /(?:^|[\s"'`(~\\/])\.(?:ssh|aws|gnupg|kube|docker|config\/gh)(?![\w.-])|\bid_(?:rsa|ed25519|ecdsa)\b|(?:^|[\s/"'`])\.env\b|\.netrc\b|\.npmrc\b|\.pypirc\b|\bcredentials\.json\b|\.git-credentials\b|\bclaude(?:_desktop_config)?\.json\b|\bmcp\.json\b|\/etc\/(?:passwd|shadow)\b|\bkeychain\b/i,
     remediation: "A tool description should not point the model at secrets. Unless this is a file-system tool documenting what it refuses to touch, remove the server.",
   },
   {

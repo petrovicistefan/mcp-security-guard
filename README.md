@@ -73,6 +73,12 @@ node dist/cli.mjs audit --project-only --format sarif --output mcp.sarif
 node dist/cli.mjs analyze-tools tools.json --name my-server   # for MCP server authors: a saved tools/list result
 ```
 
+Check a server **before installing it** (launches it, sends only `initialize` and `tools/list`):
+
+```
+node dist/cli.mjs scan some-server.mcp.json --confirm-launch
+```
+
 Exit codes: `0` clean, `1` findings at or above `--fail-on`, `2` usage error.
 
 ## Limitations

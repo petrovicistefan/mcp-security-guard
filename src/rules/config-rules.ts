@@ -35,8 +35,22 @@ function checkUnpinned(s: ServerConfig, loc: string): Finding[] {
 
   const spec = packageSpec(args);
   if (!spec || spec.startsWith(".") || spec.startsWith("/")) return [];
-  const pinned = isNode ? EXACT_NPM_VERSION.test(spec) : /==\d|@\d/.test(spec);
+  const isGit = /^git\+|^(https?|ssh):\/\/.*\.git\b|^github:/.test(spec);
+  // A git source is pinned only by a full commit SHA; tags and branches can be moved.
+  const pinned = isGit ? /[#@][0-9a-f]{40}$/.test(spec) : isNode ? EXACT_NPM_VERSION.test(spec) : /==\d|@\d/.test(spec);
   if (pinned) return [];
+  if (isGit) {
+    return [
+      {
+        severity: "medium",
+        rule: "config/unpinned-package",
+        title: "Server is installed from a git source without a commit SHA",
+        location: `${loc} › args`,
+        evidence: excerpt([s.command, ...args].join(" ")),
+        remediation: `Pin the source to a full commit SHA (e.g. "${spec.replace(/[#@][^/#@]*$/, "")}@<40-char sha>"). Each launch otherwise runs the latest commit of the default branch.`,
+      },
+    ];
+  }
   return [
     {
       severity: "medium",

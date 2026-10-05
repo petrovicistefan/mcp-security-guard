@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "cloudflare-docs": { "type": "http", "url": "https://docs.mcp.cloudflare.com/mcp" },
+    "context7": { "type": "http", "url": "https://mcp.context7.com/mcp" },
+    "deepwiki": { "type": "http", "url": "https://mcp.deepwiki.com/mcp" },
+    "microsoft-learn": { "type": "http", "url": "https://learn.microsoft.com/api/mcp" },
+    "aws-knowledge": { "type": "http", "url": "https://knowledge-mcp.global.api.aws" },
+    "gitmcp-docs": { "type": "http", "url": "https://gitmcp.io/docs" },
+    "semgrep": { "type": "http", "url": "https://mcp.semgrep.ai/mcp" },
+    "astro-docs": { "type": "http", "url": "https://mcp.docs.astro.build/mcp" },
+    "svelte": { "type": "http", "url": "https://mcp.svelte.dev/mcp" },
+    "huggingface": { "type": "http", "url": "https://huggingface.co/mcp" },
+    "exa": { "type": "http", "url": "https://mcp.exa.ai/mcp" },
+    "fetch": { "type": "http", "url": "https://remote.mcpservers.org/fetch/mcp" },
+    "sequential-thinking": { "type": "http", "url": "https://remote.mcpservers.org/sequentialthinking/mcp" },
+    "github": { "type": "http", "url": "https://api.githubcopilot.com/mcp/" },
+    "linear": { "type": "http", "url": "https://mcp.linear.app/mcp" }
+  }
+}

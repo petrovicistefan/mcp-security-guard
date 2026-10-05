@@ -35,7 +35,7 @@ function readJson(path: string, sources: DiscoveryResult["sources"]): any | unde
   }
 }
 
-function toServers(block: unknown, scope: ConfigScope, source: string): ServerConfig[] {
+export function toServers(block: unknown, scope: ConfigScope, source: string): ServerConfig[] {
   if (!block || typeof block !== "object") return [];
   return Object.entries(block as Record<string, any>).map(([name, raw]) => ({
     name,

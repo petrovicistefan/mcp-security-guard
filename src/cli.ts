@@ -2,10 +2,14 @@
 //   session-check                    SessionStart hook: never blocks a session, always exits 0.
 //   audit [options]                  Static config audit for CI. Exits 1 at or above --fail-on.
 //   analyze-tools <file> [options]   Tool-poisoning checks on a saved tools/list payload.
+//   scan <mcp.json> --confirm-launch Full audit (config + live tools/list) of servers you have not installed yet.
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { auditConfig } from "./audit.js";
+import { toServers } from "./config.js";
+import { auditServerConfig } from "./rules/config-rules.js";
+import { auditTools, toolAuditSections } from "./tool-audit.js";
 import { report } from "./report.js";
 import { analyzeTools } from "./rules/tool-rules.js";
 import { toSarif } from "./sarif.js";
@@ -18,6 +22,10 @@ const USAGE = `mcp-security ${VERSION}
 Usage:
   mcp-security audit [--project DIR] [--project-only] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
   mcp-security analyze-tools FILE [--name NAME] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
+  mcp-security scan FILE --confirm-launch [--timeout SECONDS] [--format ...] [--output FILE] [--fail-on SEVERITY]
+
+  scan             audits servers from any mcpServers JSON file *before* you install them. It launches
+                   stdio servers and connects to remote ones (initialize + tools/list only, no tool calls)
 
   --project-only   only audit the project's .mcp.json (recommended in CI)
   --fail-on        critical | high | medium | low | info | none   (default: high)
@@ -90,6 +98,8 @@ async function main(): Promise<number> {
       output: { type: "string" },
       "fail-on": { type: "string", default: "high" },
       name: { type: "string" },
+      "confirm-launch": { type: "boolean", default: false },
+      timeout: { type: "string", default: "20" },
       help: { type: "boolean", short: "h" },
     },
   });
@@ -117,6 +127,20 @@ async function main(): Promise<number> {
     const name = values.name ?? file;
     const findings = analyzeTools(name, tools).map((f) => ({ ...f, file: resolve(file) }));
     emit(`Tool definition analysis: ${name}`, findings, projectDir, values.format!, values.output, [`Analyzed **${tools.length}** tool(s).`]);
+    return exitCode(findings, values["fail-on"]!);
+  }
+
+  if (command === "scan") {
+    const file = positionals[0];
+    if (!file) throw new Error("scan needs a JSON file with an mcpServers object");
+    if (!values["confirm-launch"]) throw new Error("scan launches the servers in the file; re-run with --confirm-launch once you are OK with that");
+    const source = resolve(file);
+    const data = JSON.parse(readFileSync(source, "utf8"));
+    const servers = toServers(data.mcpServers ?? data, "project", source);
+    if (!servers.length) throw new Error(`no servers found in ${file}`);
+    const audit = await auditTools(servers, Number(values.timeout) || 20);
+    const findings = [...servers.flatMap(auditServerConfig), ...audit.findings];
+    emit(`MCP server scan: ${file}`, findings, projectDir, values.format!, values.output, toolAuditSections(audit));
     return exitCode(findings, values["fail-on"]!);
   }
 
