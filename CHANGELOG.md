@@ -2,6 +2,7 @@
 
 ## 0.6.0
 
+- Discovers MCP servers of **other clients** (Cursor, VS Code incl. JSON-with-comments settings, Windsurf), **Claude Desktop extensions** (.mcpb) and the organisation-managed **managed-mcp.json**
 - **Non-English prompt injection**: instruction-override and concealment patterns in Romanian, Spanish, French, German, Portuguese, Italian, Chinese and Russian, kept within one sentence. Corpus: 32/32 attacks detected, 0/14 benign flagged
 - Local server files (`node ./server.js`) are hashed into the pinned launch config, so editing them counts as drift
 - **Automatic fixes** (`apply_fixes`, `fix`): add recommended `permissions.ask` rules, pin npx/uvx packages to the current version, replace literal secrets with `${VAR}` references. Dry run by default; backups are kept outside the project (secret-bearing ones 0600) so they can never be committed

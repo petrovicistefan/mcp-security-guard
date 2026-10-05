@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { homedir, platform } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import type { ConfigScope, ServerConfig } from "./types.js";
 
 export interface DiscoveryResult {
@@ -20,13 +20,41 @@ function claudeDesktopConfigPath(home: string): string {
   }
 }
 
-function readJson(path: string, sources: DiscoveryResult["sources"]): any | undefined {
+/** JSON with comments and trailing commas (VS Code settings), string-aware so "http://x" survives. */
+export function stripJsonComments(text: string): string {
+  let out = "";
+  let inString = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inString) {
+      out += c;
+      if (c === "\\") out += text[++i] ?? "";
+      else if (c === '"') inString = false;
+    } else if (c === '"') {
+      inString = true;
+      out += c;
+    } else if (c === "/" && text[i + 1] === "/") {
+      while (i < text.length && text[i] !== "\n") i++;
+      out += "\n";
+    } else if (c === "/" && text[i + 1] === "*") {
+      i += 2;
+      while (i < text.length && !(text[i] === "*" && text[i + 1] === "/")) i++;
+      i++;
+    } else {
+      out += c;
+    }
+  }
+  return out.replace(/,(\s*[}\]])/g, "$1");
+}
+
+function readJson(path: string, sources: DiscoveryResult["sources"], jsonc = false): any | undefined {
   if (!existsSync(path)) {
     sources.push({ path, status: "missing" });
     return undefined;
   }
   try {
-    const data = JSON.parse(readFileSync(path, "utf8"));
+    const raw = readFileSync(path, "utf8");
+    const data = JSON.parse(jsonc ? stripJsonComments(raw) : raw);
     sources.push({ path, status: "ok" });
     return data;
   } catch {
@@ -41,11 +69,12 @@ export function toServers(block: unknown, scope: ConfigScope, source: string): S
     name,
     scope,
     source,
-    type: typeof raw?.type === "string" ? raw.type : undefined,
+    // Cursor uses `transport`, Windsurf `serverUrl`.
+    type: typeof raw?.type === "string" ? raw.type : typeof raw?.transport === "string" ? raw.transport : undefined,
     command: typeof raw?.command === "string" ? raw.command : undefined,
     args: Array.isArray(raw?.args) ? raw.args.map(String) : undefined,
     env: raw?.env && typeof raw.env === "object" ? stringRecord(raw.env) : undefined,
-    url: typeof raw?.url === "string" ? raw.url : undefined,
+    url: typeof raw?.url === "string" ? raw.url : typeof raw?.serverUrl === "string" ? raw.serverUrl : undefined,
     headers: raw?.headers && typeof raw.headers === "object" ? stringRecord(raw.headers) : undefined,
   }));
 }
@@ -73,10 +102,78 @@ export function discoverServers(projectDir: string, home = homedir()): Discovery
 
   servers.push(...discoverPluginServers(project, home, sources));
 
+  servers.push(...discoverOtherClients(project, home, sources));
+
   const desktopPath = claudeDesktopConfigPath(home);
   servers.push(...toServers(readJson(desktopPath, sources)?.mcpServers, "claude-desktop", desktopPath));
 
   return { servers, sources };
+}
+
+function appDataDir(home: string): string {
+  return platform() === "darwin" ? join(home, "Library", "Application Support") : platform() === "win32" ? (process.env.APPDATA ?? join(home, "AppData", "Roaming")) : join(home, ".config");
+}
+
+function managedMcpPath(): string {
+  return platform() === "darwin"
+    ? "/Library/Application Support/ClaudeCode/managed-mcp.json"
+    : platform() === "win32"
+      ? join(process.env.ProgramData ?? "C:\\ProgramData", "ClaudeCode", "managed-mcp.json")
+      : "/etc/claude-code/managed-mcp.json";
+}
+
+/**
+ * MCP servers of other clients on this machine (Cursor, VS Code, Windsurf), Claude Desktop extensions
+ * and the organisation-managed Claude Code file. They do not all reach Claude, but they are part of the
+ * machine's MCP exposure and a common place for shadow servers.
+ */
+function discoverOtherClients(project: string, home: string, sources: DiscoveryResult["sources"]): ServerConfig[] {
+  const out: ServerConfig[] = [];
+  const add = (path: string, scope: ConfigScope, key: "mcpServers" | "servers", jsonc = false) => {
+    if (!existsSync(path)) return;
+    const data = readJson(path, sources, jsonc);
+    out.push(...toServers(key === "servers" ? (data?.servers ?? data?.mcp?.servers) : data?.mcpServers, scope, path));
+  };
+  add(managedMcpPath(), "managed", "mcpServers");
+  add(join(home, ".cursor", "mcp.json"), "cursor", "mcpServers");
+  add(join(project, ".cursor", "mcp.json"), "cursor", "mcpServers");
+  add(join(home, ".codeium", "windsurf", "mcp_config.json"), "windsurf", "mcpServers");
+  add(join(project, ".vscode", "mcp.json"), "vscode", "servers", true);
+  add(join(appDataDir(home), "Code", "User", "mcp.json"), "vscode", "servers", true);
+  const vsSettings = join(appDataDir(home), "Code", "User", "settings.json");
+  if (existsSync(vsSettings)) {
+    // Only read the `mcp` key of the (large) settings file; ignore the file when it has none.
+    try {
+      const mcp = JSON.parse(stripJsonComments(readFileSync(vsSettings, "utf8")))?.mcp;
+      if (mcp?.servers) {
+        sources.push({ path: vsSettings, status: "ok" });
+        out.push(...toServers(mcp.servers, "vscode", vsSettings));
+      }
+    } catch {
+      sources.push({ path: vsSettings, status: "unreadable" });
+    }
+  }
+
+  // Claude Desktop extensions (.mcpb / DXT): <extensions dir>/<id>/manifest.json with server.mcp_config.
+  const extDir = join(dirname(claudeDesktopConfigPath(home)), "Claude Extensions");
+  for (const id of listDirs(extDir)) {
+    const manifestPath = join(extDir, id, "manifest.json");
+    if (!existsSync(manifestPath)) continue;
+    const m = readJson(manifestPath, sources);
+    const cfg = m?.server?.mcp_config;
+    if (!cfg) continue;
+    const root = join(extDir, id);
+    const sub = (v: unknown) => String(v).replaceAll("${__dirname}", root);
+    out.push({
+      name: typeof m.name === "string" ? m.name : id,
+      scope: "claude-desktop-extension",
+      source: manifestPath,
+      command: cfg.command ? sub(cfg.command) : undefined,
+      args: Array.isArray(cfg.args) ? cfg.args.map(sub) : undefined,
+      env: cfg.env && typeof cfg.env === "object" ? Object.fromEntries(Object.entries(cfg.env).map(([k, v]) => [k, sub(v)])) : undefined,
+    });
+  }
+  return out;
 }
 
 /** `enabledPlugins` merged from user, project and local settings; later files win. */

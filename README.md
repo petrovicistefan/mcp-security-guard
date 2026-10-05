@@ -15,7 +15,7 @@ A Claude Code plugin that audits the **MCP servers you have installed**. Your co
 | Policy | `.mcp-security.json` approved/blocked servers and hosts, enforced in audits, CI and at session start |
 | Configuration | Plaintext secrets in env/headers/args/URLs, plain-HTTP remotes, unpinned `npx`/`uvx` packages, privileged or unpinned Docker images, pipe-to-shell launches, duplicate names across scopes |
 
-It discovers servers from every place Claude Code and Claude Desktop load them: user, local and project scope, **servers shipped inside installed plugins and plugins synced from your claude.ai account** (named `<plugin>:<server>`), `claude_desktop_config.json`, and the **claude.ai connectors** you have used (names only: their configuration lives in your account).
+It discovers servers from every place Claude Code and Claude Desktop load them: user, local and project scope, **servers shipped inside installed plugins and plugins synced from your claude.ai account** (named `<plugin>:<server>`), `claude_desktop_config.json` and **Claude Desktop extensions**, the organisation-managed `managed-mcp.json`, other clients on the machine (**Cursor, VS Code, Windsurf**, user and project configs), and the **claude.ai connectors** you have used (names only: their configuration lives in your account).
 
 It scans everything a server puts into Claude's context, not only tools: **server instructions, prompts, resources and resource templates** go through the same poisoning checks and are pinned for rug-pull detection.
 

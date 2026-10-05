@@ -168,7 +168,7 @@ Rămân pentru planul Team: descoperire și audit la nivel de organizație, revi
 
 ### Goluri de detecție
 - [x] **`instructions`, prompts și resources**: scanate și pinuite (v0.6.0)
-- [ ] **Alți clienți MCP**: Cursor, VS Code, Windsurf, extensiile `.mcpb` din Claude Desktop, `managed-mcp.json` (efort mic–mediu)
+- [x] **Alți clienți MCP**: Cursor, VS Code, Windsurf, extensiile `.mcpb` din Claude Desktop, `managed-mcp.json` (v0.6.0)
 - [x] **Hash pentru serverele locale** (`node ./server.js`): conținutul fișierului intră în hash-ul configurației pinuite
 - [x] **Prompt injection în alte limbi**: 8 limbi prin regex (ro, es, fr, de, pt, it, zh, ru), 32/32 detecție; restul limbilor: LLM, în planul plătit
 - [ ] **Vulnerabilități în imaginile Docker**, prin Trivy sau Grype dacă sunt instalate

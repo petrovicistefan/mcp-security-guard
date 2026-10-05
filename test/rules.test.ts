@@ -54,6 +54,36 @@ describe("config rules", () => {
     expect(servers.map((s) => `${s.scope}:${s.name}`)).toEqual(["user:a", "local:b", "project:c"]);
   });
 
+  it("discovers Cursor, Windsurf and VS Code servers, including JSON with comments", () => {
+    const home = mkdtempSync(join(tmpdir(), "mcpsec-"));
+    const proj = join(home, "proj");
+    for (const d of [".cursor", ".codeium/windsurf"]) mkdirSync(join(home, d), { recursive: true });
+    for (const d of [".cursor", ".vscode"]) mkdirSync(join(proj, d), { recursive: true });
+    writeFileSync(join(home, ".cursor/mcp.json"), JSON.stringify({ mcpServers: { roblox: { transport: "stdio", command: "roblox-mcp" } } }));
+    writeFileSync(join(proj, ".cursor/mcp.json"), JSON.stringify({ mcpServers: { team: { url: "https://team.example/mcp" } } }));
+    writeFileSync(join(home, ".codeium/windsurf/mcp_config.json"), JSON.stringify({ mcpServers: { ws: { serverUrl: "http://ws.example/mcp" } } }));
+    writeFileSync(join(proj, ".vscode/mcp.json"), `{
+      // VS Code allows comments
+      "servers": { "gh": { "type": "http", "url": "https://api.example/mcp/", }, },
+      "inputs": [],
+    }`);
+    const byScope = discoverServers(proj, home).servers.map((s) => `${s.scope}:${s.name}:${s.type ?? ""}:${s.url ?? s.command}`);
+    expect(byScope).toEqual(expect.arrayContaining(["cursor:roblox:stdio:roblox-mcp", "cursor:team::https://team.example/mcp", "windsurf:ws::http://ws.example/mcp", "vscode:gh:http:https://api.example/mcp/"]));
+    // Windsurf's serverUrl gets the same transport check as everyone else.
+    const ws = discoverServers(proj, home).servers.find((s) => s.name === "ws")!;
+    expect(auditServerConfig(ws).map((f) => f.rule)).toContain("config/insecure-transport");
+  });
+
+  it.skipIf(process.platform === "win32")("discovers Claude Desktop extensions", () => {
+    const home = mkdtempSync(join(tmpdir(), "mcpsec-"));
+    const base = process.platform === "darwin" ? join(home, "Library/Application Support/Claude") : join(home, ".config/Claude");
+    const ext = join(base, "Claude Extensions", "ant.dir.files");
+    mkdirSync(ext, { recursive: true });
+    writeFileSync(join(ext, "manifest.json"), JSON.stringify({ name: "files", server: { mcp_config: { command: "node", args: ["${__dirname}/server/index.js"], env: { ROOT: "/" } } } }));
+    const s = discoverServers(join(home, "nowhere"), home).servers.find((x) => x.scope === "claude-desktop-extension")!;
+    expect(s).toMatchObject({ name: "files", command: "node", args: [`${ext}/server/index.js`] });
+  });
+
   it("discovers account-synced plugins and claude.ai connectors", () => {
     const home = mkdtempSync(join(tmpdir(), "mcpsec-"));
     const proj = join(home, "proj");

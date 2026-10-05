@@ -1,5 +1,5 @@
 import { excerpt } from "./sanitize.js";
-import type { Finding, ServerConfig, ToolDefinition } from "./types.js";
+import { CLAUDE_CODE_SCOPES, type Finding, type ServerConfig, type ToolDefinition } from "./types.js";
 
 export type Capability = "command-execution" | "destructive" | "filesystem-write" | "network-egress" | "read-only";
 
@@ -92,7 +92,7 @@ export function capabilityFindings(inv: ServerInventory): Finding[] {
 
 /** Claude Code permission-rule name of a server's tool. Plugin servers are namespaced as plugin_<plugin>_<server>. */
 export function permissionName(s: ServerConfig, tool: string): string | undefined {
-  if (s.scope === "claude-desktop" || s.scope === "claude-ai") return undefined;
+  if (!CLAUDE_CODE_SCOPES.includes(s.scope)) return undefined;
   const server = s.scope === "plugin" ? `plugin_${s.name.replace(":", "_")}` : s.name;
   return `mcp__${server}__${tool}`;
 }

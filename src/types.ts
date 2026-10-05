@@ -17,7 +17,21 @@ export interface Finding {
   server?: string;
 }
 
-export type ConfigScope = "user" | "local" | "project" | "plugin" | "claude-desktop" | "claude-ai";
+export type ConfigScope =
+  | "user"
+  | "local"
+  | "project"
+  | "plugin"
+  | "managed"
+  | "claude-desktop"
+  | "claude-desktop-extension"
+  | "claude-ai"
+  | "cursor"
+  | "vscode"
+  | "windsurf";
+
+/** Scopes Claude Code itself loads (and whose tools get mcp__… permission names). */
+export const CLAUDE_CODE_SCOPES: ConfigScope[] = ["user", "local", "project", "plugin", "managed"];
 
 export interface ServerConfig {
   name: string;
