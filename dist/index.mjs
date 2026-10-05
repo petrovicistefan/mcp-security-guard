@@ -37273,6 +37273,11 @@ function transportOf(s) {
   return "unknown";
 }
 
+// src/policy.ts
+import { existsSync as existsSync2, readFileSync as readFileSync2 } from "node:fs";
+import { homedir as homedir2 } from "node:os";
+import { join as join2 } from "node:path";
+
 // src/sanitize.ts
 var INVISIBLE_RE = /[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\u3164\uFE00-\uFE0F\uFEFF\uFFA0\u{E0000}-\u{E007F}\u{E0100}-\u{E01EF}]/gu;
 var CONTROL_CHARS_RE = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/g;
@@ -37294,6 +37299,82 @@ function excerptAround(text2, index, length, radius = 70) {
   const start = Math.max(0, index - radius);
   const end = Math.min(text2.length, index + length + radius);
   return `${start > 0 ? "\u2026" : ""}${excerpt(text2.slice(start, end), radius * 2 + length + 20)}${end < text2.length ? "\u2026" : ""}`;
+}
+
+// src/policy.ts
+function policyPaths(projectDir2) {
+  return [join2(process.env.MCP_SECURITY_HOME ?? join2(homedir2(), ".claude", "mcp-security"), "policy.json"), join2(projectDir2, ".mcp-security.json")];
+}
+function loadPolicy(projectDir2) {
+  const merged = {};
+  const sources = [];
+  for (const p of policyPaths(projectDir2)) {
+    if (!existsSync2(p)) continue;
+    try {
+      Object.assign(merged, JSON.parse(readFileSync2(p, "utf8")));
+      sources.push(p);
+    } catch {
+      sources.push(`${p} (unreadable)`);
+    }
+  }
+  return sources.length ? { policy: merged, sources } : void 0;
+}
+function globToRegExp(pattern) {
+  return new RegExp(`^${pattern.split("*").map((p) => p.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join(".*")}$`, "i");
+}
+function matchesServer(s, pattern) {
+  const re = globToRegExp(pattern);
+  return re.test(`${s.scope}:${s.name}`) || re.test(s.name);
+}
+function matchesHost(url2, patterns) {
+  let host;
+  try {
+    host = new URL(url2.replace(/\$\{[^}]+\}/g, "x")).hostname;
+  } catch {
+    return false;
+  }
+  return patterns.some((p) => globToRegExp(p).test(host));
+}
+function auditPolicy(servers, loaded) {
+  if (!loaded) return [];
+  const { policy, sources } = loaded;
+  const out = sources.filter((s) => s.endsWith("(unreadable)")).map((s) => ({ severity: "high", rule: "policy/unreadable", title: "Policy file could not be parsed", location: s, remediation: "Fix the JSON. Until then the policy is not enforced." }));
+  const ref = `policy (${sources.join(", ")})`;
+  for (const s of servers) {
+    const where = `server "${s.name}" (${s.scope})`;
+    const tag = { file: s.source, server: s.name };
+    const blocked = policy.blockedServers?.find((p) => matchesServer(s, p));
+    if (blocked) {
+      out.push({ severity: "critical", rule: "policy/blocked-server", title: `Server is on the block list ("${excerpt(blocked, 60)}")`, location: where, remediation: `Remove it. Blocked by ${ref}.`, ...tag });
+      continue;
+    }
+    if (policy.allowedServers && !policy.allowedServers.some((p) => matchesServer(s, p))) {
+      out.push({ severity: "high", rule: "policy/unapproved-server", title: "Server is not on the approved list (shadow MCP server)", location: where, remediation: `Get it reviewed and add "${s.scope}:${s.name}" to allowedServers, or remove it. Enforced by ${ref}.`, ...tag });
+    }
+    if (s.url && policy.allowedRemoteHosts && !matchesHost(s.url, policy.allowedRemoteHosts)) {
+      out.push({ severity: "high", rule: "policy/remote-host-not-allowed", title: "Remote server host is not on the allowed hosts list", location: `${where} \u203A url`, evidence: excerpt(s.url.replace(/\?.*$/, ""), 100), remediation: `Use an approved host or extend allowedRemoteHosts in ${ref}.`, ...tag });
+    }
+  }
+  return out;
+}
+function applyPolicy(findings, loaded) {
+  if (!loaded?.policy.requirePinnedVersions) return findings;
+  return findings.map((f) => f.rule === "config/unpinned-package" || f.rule === "config/docker-unpinned-image" ? { ...f, severity: "high", title: `${f.title} (policy requires pinned versions)` } : f);
+}
+function policyFromServers(servers) {
+  const hosts = servers.flatMap((s) => {
+    try {
+      return s.url ? [new URL(s.url.replace(/\$\{[^}]+\}/g, "x")).hostname] : [];
+    } catch {
+      return [];
+    }
+  });
+  return {
+    allowedServers: [...new Set(servers.filter((s) => s.scope !== "claude-desktop").map((s) => `${s.scope}:${s.name}`))].sort(),
+    blockedServers: [],
+    allowedRemoteHosts: [...new Set(hosts)].sort(),
+    requirePinnedVersions: true
+  };
 }
 
 // src/secrets.ts
@@ -37507,16 +37588,18 @@ function auditDuplicates(servers) {
 function auditConfig(projectDir2, opts = {}) {
   const discovered = discoverServers(projectDir2);
   const servers = opts.projectOnly ? discovered.servers.filter((s) => s.scope === "project") : discovered.servers;
-  return { ...discovered, servers, findings: [...servers.flatMap(auditServerConfig), ...auditDuplicates(servers)] };
+  const policy = loadPolicy(projectDir2);
+  const findings = applyPolicy([...servers.flatMap(auditServerConfig), ...auditDuplicates(servers), ...auditPolicy(servers, policy)], policy);
+  return { ...discovered, servers, findings, policy };
 }
 
 // src/pins.ts
 import { createHash } from "node:crypto";
-import { existsSync as existsSync2, mkdirSync, readFileSync as readFileSync2, renameSync, writeFileSync } from "node:fs";
-import { homedir as homedir2 } from "node:os";
-import { dirname, join as join2 } from "node:path";
+import { existsSync as existsSync3, mkdirSync, readFileSync as readFileSync3, renameSync, writeFileSync } from "node:fs";
+import { homedir as homedir3 } from "node:os";
+import { dirname, join as join3 } from "node:path";
 function pinsPath() {
-  return join2(process.env.MCP_SECURITY_HOME ?? join2(homedir2(), ".claude", "mcp-security"), "pins.json");
+  return join3(process.env.MCP_SECURITY_HOME ?? join3(homedir3(), ".claude", "mcp-security"), "pins.json");
 }
 function stableStringify(v) {
   if (Array.isArray(v)) return `[${v.map(stableStringify).join(",")}]`;
@@ -37535,9 +37618,9 @@ function pinEntry(s, tools) {
   return { pinnedAt: (/* @__PURE__ */ new Date()).toISOString(), tools: Object.fromEntries(tools.map((t) => [t.name, hashTool(t)])), config: hashConfig(s) };
 }
 function loadPins(path = pinsPath()) {
-  if (!existsSync2(path)) return { version: 1, servers: {} };
+  if (!existsSync3(path)) return { version: 1, servers: {} };
   try {
-    const data = JSON.parse(readFileSync2(path, "utf8"));
+    const data = JSON.parse(readFileSync3(path, "utf8"));
     return data?.version === 1 && data.servers ? data : { version: 1, servers: {} };
   } catch {
     return { version: 1, servers: {} };
@@ -37635,9 +37718,9 @@ function report(title, findings, sections = []) {
 }
 
 // src/runtime.ts
-import { appendFileSync, existsSync as existsSync3, mkdirSync as mkdirSync2, readFileSync as readFileSync3, renameSync as renameSync2, statSync } from "node:fs";
-import { homedir as homedir3 } from "node:os";
-import { dirname as dirname2, join as join3 } from "node:path";
+import { appendFileSync, existsSync as existsSync4, mkdirSync as mkdirSync2, readFileSync as readFileSync4, renameSync as renameSync2, statSync } from "node:fs";
+import { homedir as homedir4 } from "node:os";
+import { dirname as dirname2, join as join4 } from "node:path";
 
 // src/rules/tool-rules.ts
 function collectText(tool) {
@@ -37852,11 +37935,11 @@ function analyzeTools(serverName, tools, otherServersTools = {}) {
 var MAX_SCAN_BYTES = 256 * 1024;
 var MAX_LOG_BYTES = 10 * 1024 * 1024;
 function auditLogPath() {
-  return join3(process.env.MCP_SECURITY_HOME ?? join3(homedir3(), ".claude", "mcp-security"), "audit.jsonl");
+  return join4(process.env.MCP_SECURITY_HOME ?? join4(homedir4(), ".claude", "mcp-security"), "audit.jsonl");
 }
 function readAudit(path = auditLogPath()) {
-  if (!existsSync3(path)) return [];
-  return readFileSync3(path, "utf8").split("\n").filter(Boolean).flatMap((l) => {
+  if (!existsSync4(path)) return [];
+  return readFileSync4(path, "utf8").split("\n").filter(Boolean).flatMap((l) => {
     try {
       return [JSON.parse(l)];
     } catch {
@@ -41006,7 +41089,7 @@ async function fetchAll(servers, timeoutSeconds) {
     })
   );
 }
-async function auditTools(servers, timeoutSeconds, pins) {
+async function auditTools(servers, timeoutSeconds, pins, policy) {
   const results = await fetchAll(servers, timeoutSeconds);
   const ok = results.filter((r) => "tools" in r);
   const errors = results.filter((r) => "error" in r);
@@ -41035,7 +41118,8 @@ async function auditTools(servers, timeoutSeconds, pins) {
     }
     findings.push(...own2.map((f) => ({ ...f, file: r.server.source, server: r.server.name })));
   }
-  return { findings, ok, errors, driftLines, inventories };
+  findings.push(...auditPolicy(servers, policy));
+  return { findings: applyPolicy(findings, policy), ok, errors, driftLines, inventories };
 }
 function toolAuditSections(a, unknown2 = [], pinsLocation) {
   return [
@@ -41128,7 +41212,7 @@ server.registerTool(
     if (!confirm_launch) return text("Not started: this scan launches the selected servers. Ask the user, then call again with confirm_launch=true.");
     const { servers } = discoverServers(project_dir ?? projectDir());
     const { picked, unknown: unknown2 } = selectServers(servers, names);
-    const audit = await auditTools(picked, timeout_seconds, loadPins());
+    const audit = await auditTools(picked, timeout_seconds, loadPins(), loadPolicy(project_dir ?? projectDir()));
     return text(report("MCP tool definition audit", audit.findings, toolAuditSections(audit, unknown2, pinsPath())));
   }
 );
@@ -41173,6 +41257,29 @@ server.registerTool(
   async ({ server_name, tools }) => {
     const findings = analyzeTools(server_name, tools);
     return text(report(`Tool definition analysis: ${excerpt(server_name, 60)}`, findings, [`Analyzed **${tools.length}** tool(s).`]));
+  }
+);
+server.registerTool(
+  "generate_policy",
+  {
+    title: "Generate an approved-server policy",
+    description: "Returns a .mcp-security.json policy that approves exactly the MCP servers configured now (and their remote hosts) and requires pinned versions. Commit it to the repository so CI, session checks and audits flag any server added later that is not on the list (shadow MCP servers). Read-only: returns the JSON, does not write it.",
+    inputSchema: { project_dir: external_exports.string().optional() },
+    annotations: { readOnlyHint: true, openWorldHint: false }
+  },
+  async ({ project_dir }) => {
+    const dir = project_dir ?? projectDir();
+    const { servers } = discoverServers(dir);
+    const [userPath, projectPath] = policyPaths(dir);
+    return text(
+      [
+        "# Proposed MCP server policy",
+        `Save as \`${projectPath}\` (shared with the team via git) or \`${userPath}\` (just you). Review the list first: it approves everything configured today.`,
+        "```json",
+        JSON.stringify(policyFromServers(servers), null, 2),
+        "```"
+      ].join("\n\n")
+    );
   }
 );
 server.registerTool(

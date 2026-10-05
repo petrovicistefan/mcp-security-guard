@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auditConfig } from "./audit.js";
 import { discoverServers, transportOf } from "./config.js";
 import { loadPins, pinEntry, pinKey, pinsPath, savePins } from "./pins.js";
+import { loadPolicy, policyFromServers, policyPaths } from "./policy.js";
 import { report } from "./report.js";
 import { auditLogPath, readAudit, summarizeAudit } from "./runtime.js";
 import { scoreServer, scoreTable } from "./score.js";
@@ -89,7 +90,7 @@ server.registerTool(
     if (!confirm_launch) return text("Not started: this scan launches the selected servers. Ask the user, then call again with confirm_launch=true.");
     const { servers } = discoverServers(project_dir ?? projectDir());
     const { picked, unknown } = selectServers(servers, names);
-    const audit = await auditTools(picked, timeout_seconds, loadPins());
+    const audit = await auditTools(picked, timeout_seconds, loadPins(), loadPolicy(project_dir ?? projectDir()));
     return text(report("MCP tool definition audit", audit.findings, toolAuditSections(audit, unknown, pinsPath())));
   },
 );
@@ -138,6 +139,31 @@ server.registerTool(
   async ({ server_name, tools }) => {
     const findings = analyzeTools(server_name, tools as ToolDefinition[]);
     return text(report(`Tool definition analysis: ${excerpt(server_name, 60)}`, findings, [`Analyzed **${tools.length}** tool(s).`]));
+  },
+);
+
+server.registerTool(
+  "generate_policy",
+  {
+    title: "Generate an approved-server policy",
+    description:
+      "Returns a .mcp-security.json policy that approves exactly the MCP servers configured now (and their remote hosts) and requires pinned versions. Commit it to the repository so CI, session checks and audits flag any server added later that is not on the list (shadow MCP servers). Read-only: returns the JSON, does not write it.",
+    inputSchema: { project_dir: z.string().optional() },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  },
+  async ({ project_dir }) => {
+    const dir = project_dir ?? projectDir();
+    const { servers } = discoverServers(dir);
+    const [userPath, projectPath] = policyPaths(dir);
+    return text(
+      [
+        "# Proposed MCP server policy",
+        `Save as \`${projectPath}\` (shared with the team via git) or \`${userPath}\` (just you). Review the list first: it approves everything configured today.`,
+        "```json",
+        JSON.stringify(policyFromServers(servers), null, 2),
+        "```",
+      ].join("\n\n"),
+    );
   },
 );
 

@@ -1,5 +1,6 @@
 import { capabilityFindings, inventory, recommendPermissions, type ServerInventory } from "./capabilities.js";
 import { fetchTools } from "./client.js";
+import { applyPolicy, auditPolicy, type LoadedPolicy } from "./policy.js";
 import { computeDrift, hasDrift, hashConfig, pinKey, type PinFile } from "./pins.js";
 import { auditServerConfig } from "./rules/config-rules.js";
 import { analyzeTools } from "./rules/tool-rules.js";
@@ -54,7 +55,7 @@ export interface ToolAudit {
  * Full audit of the given servers: configuration rules, then tools/list for poisoning, shadowing,
  * capability and authentication checks across all of them, and a comparison with pins if given.
  */
-export async function auditTools(servers: ServerConfig[], timeoutSeconds: number, pins?: PinFile): Promise<ToolAudit> {
+export async function auditTools(servers: ServerConfig[], timeoutSeconds: number, pins?: PinFile, policy?: LoadedPolicy): Promise<ToolAudit> {
   const results = await fetchAll(servers, timeoutSeconds);
   const ok = results.filter((r): r is { server: ServerConfig; tools: ToolDefinition[] } => "tools" in r);
   const errors = results.filter((r): r is { server: ServerConfig; error: string } => "error" in r);
@@ -85,7 +86,8 @@ export async function auditTools(servers: ServerConfig[], timeoutSeconds: number
     }
     findings.push(...own.map((f) => ({ ...f, file: r.server.source, server: r.server.name })));
   }
-  return { findings, ok, errors, driftLines, inventories };
+  findings.push(...auditPolicy(servers, policy));
+  return { findings: applyPolicy(findings, policy), ok, errors, driftLines, inventories };
 }
 
 export function toolAuditSections(a: ToolAudit, unknown: string[] = [], pinsLocation?: string): string[] {

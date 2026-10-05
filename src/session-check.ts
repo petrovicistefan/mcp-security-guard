@@ -1,6 +1,7 @@
 import { fetchTools } from "./client.js";
 import { discoverServers } from "./config.js";
 import { computeDrift, hasDrift, hashConfig, loadPins, pinKey } from "./pins.js";
+import { auditPolicy, loadPolicy } from "./policy.js";
 import { analyzeTools } from "./rules/tool-rules.js";
 import { excerpt } from "./sanitize.js";
 
@@ -13,7 +14,7 @@ export interface SessionCheckResult {
 }
 
 /**
- * Re-verifies only servers the user has pinned (pinning is the consent to launch them).
+ * Checks the approved-server policy, and re-verifies servers the user has pinned (pinning is the consent to launch them).
  * "config" mode compares launch configs without starting anything; "full" also re-lists tools.
  */
 export async function sessionCheck(projectDir: string, mode: CheckMode, timeoutMs = 10_000): Promise<SessionCheckResult> {
@@ -43,5 +44,9 @@ export async function sessionCheck(projectDir: string, mode: CheckMode, timeoutM
       return issues.length ? `${label}: ${issues.join("; ")}` : undefined;
     }),
   );
-  return { problems: results.filter((r): r is string => !!r), checked: pinned.length };
+  // Policy violations need no launch, so they are reported for every configured server.
+  const policyProblems = auditPolicy(servers, loadPolicy(projectDir))
+    .filter((f) => f.severity === "critical" || f.severity === "high")
+    .map((f) => `${f.server ? `"${excerpt(f.server, 50)}"` : "policy"}: ${f.title}`);
+  return { problems: [...results.filter((r): r is string => !!r), ...policyProblems], checked: pinned.length };
 }
