@@ -2990,7 +2990,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve4.call(this, root, ref);
+      let _sch = resolve5.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a3 = root.localRefs) === null || _a3 === void 0 ? void 0 : _a3[ref];
         const { schemaId } = this.opts;
@@ -3017,7 +3017,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve4(root, ref) {
+    function resolve5(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -3847,7 +3847,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve4(baseURI, relativeURI, options) {
+    function resolve5(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const {
         parsed: baseParsed,
@@ -4216,7 +4216,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve4,
+      resolve: resolve5,
       resolveComponent,
       equal,
       serialize: serialize2,
@@ -7299,12 +7299,12 @@ var require_isexe = __commonJS({
         if (typeof Promise !== "function") {
           throw new TypeError("callback not provided");
         }
-        return new Promise(function(resolve4, reject) {
+        return new Promise(function(resolve5, reject) {
           isexe(path, options || {}, function(er, is) {
             if (er) {
               reject(er);
             } else {
-              resolve4(is);
+              resolve5(is);
             }
           });
         });
@@ -7370,27 +7370,27 @@ var require_which = __commonJS({
         opt = {};
       const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt);
       const found = [];
-      const step = (i) => new Promise((resolve4, reject) => {
+      const step = (i) => new Promise((resolve5, reject) => {
         if (i === pathEnv.length)
-          return opt.all && found.length ? resolve4(found) : reject(getNotFoundError(cmd));
+          return opt.all && found.length ? resolve5(found) : reject(getNotFoundError(cmd));
         const ppRaw = pathEnv[i];
         const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw;
         const pCmd = path.join(pathPart, cmd);
         const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd : pCmd;
-        resolve4(subStep(p, i, 0));
+        resolve5(subStep(p, i, 0));
       });
-      const subStep = (p, i, ii) => new Promise((resolve4, reject) => {
+      const subStep = (p, i, ii) => new Promise((resolve5, reject) => {
         if (ii === pathExt.length)
-          return resolve4(step(i + 1));
+          return resolve5(step(i + 1));
         const ext = pathExt[ii];
         isexe(p + ext, { pathExt: pathExtExe }, (er, is) => {
           if (!er && is) {
             if (opt.all)
               found.push(p + ext);
             else
-              return resolve4(p + ext);
+              return resolve5(p + ext);
           }
-          return resolve4(subStep(p, i, ii + 1));
+          return resolve5(subStep(p, i, ii + 1));
         });
       });
       return cb ? step(0).then((res) => cb(null, res), cb) : step(0);
@@ -7808,7 +7808,7 @@ var require_content_type = __commonJS({
 
 // src/cli.ts
 import { existsSync as existsSync7, readFileSync as readFileSync6, writeFileSync as writeFileSync3 } from "node:fs";
-import { resolve as resolve3 } from "node:path";
+import { resolve as resolve4 } from "node:path";
 import { parseArgs } from "node:util";
 
 // src/adversarial.ts
@@ -11278,7 +11278,7 @@ var recursive = /* @__PURE__ */ new WeakMap();
 var NONE = 0;
 var ASSUMED = 1;
 var PROVEN = 2;
-function isRecursive(inst, stack, resolve4) {
+function isRecursive(inst, stack, resolve5) {
   const cached2 = recursive.get(inst);
   if (cached2 !== void 0)
     return cached2 ? PROVEN : NONE;
@@ -11288,7 +11288,7 @@ function isRecursive(inst, stack, resolve4) {
   let result = NONE;
   const check = (child) => {
     if (result !== PROVEN && child?._zod) {
-      const answer = isRecursive(child, stack, resolve4);
+      const answer = isRecursive(child, stack, resolve5);
       if (answer > result)
         result = answer;
     }
@@ -11299,7 +11299,7 @@ function isRecursive(inst, stack, resolve4) {
       const desc = Object.getOwnPropertyDescriptor(sh, key);
       if (spread && !desc.enumerable)
         continue;
-      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve4) : NONE;
+      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve5) : NONE;
       if (child > answer)
         answer = child;
     }
@@ -11363,7 +11363,7 @@ function isRecursive(inst, stack, resolve4) {
       break;
     // `$ZodLazy` caches its inner on the def, so a resolved edge is followed exactly
     case "lazy": {
-      const inner = def._cachedInner ?? (resolve4 ? inst._zod.innerType : void 0);
+      const inner = def._cachedInner ?? (resolve5 ? inst._zod.innerType : void 0);
       merge2(inner ? isRecursive(inner, stack, false) : ASSUMED);
       break;
     }
@@ -16630,7 +16630,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve4) => setTimeout(resolve4, pollInterval));
+        await new Promise((resolve5) => setTimeout(resolve5, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error2) {
@@ -16647,7 +16647,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve4, reject) => {
+    return new Promise((resolve5, reject) => {
       const earlyReject = (error2) => {
         reject(error2);
       };
@@ -16725,7 +16725,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve4(parseResult.data);
+            resolve5(parseResult.data);
           }
         } catch (error2) {
           reject(error2);
@@ -16987,12 +16987,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve4, reject) => {
+    return new Promise((resolve5, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve4, interval);
+      const timeoutId = setTimeout(resolve5, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -19390,7 +19390,7 @@ var SSEClientTransport = class {
     const baseFetch = this?._eventSourceInit?.fetch ?? this._fetch ?? fetch;
     const fetchImpl = this._followRedirects ? baseFetch : fetchWithinOrigin(baseFetch);
     let redirect;
-    return new Promise((resolve4, reject) => {
+    return new Promise((resolve5, reject) => {
       this._eventSource = new EventSource(this._url.href, {
         ...this._eventSourceInit,
         fetch: async (url2, init) => {
@@ -19412,7 +19412,7 @@ var SSEClientTransport = class {
       this._abortController = new AbortController();
       this._eventSource.onerror = (event) => {
         if (event.code === 401 && this._authProvider) {
-          this._authThenStart().then(resolve4, reject);
+          this._authThenStart().then(resolve5, reject);
           return;
         }
         const error2 = new SseError(event.code, redirect ?? event.message, event);
@@ -19434,7 +19434,7 @@ var SSEClientTransport = class {
           void this.close();
           return;
         }
-        resolve4();
+        resolve5();
       });
       this._eventSource.onmessage = (event) => {
         const messageEvent = event;
@@ -19613,7 +19613,7 @@ var StdioClientTransport = class {
     if (this._process) {
       throw new Error("StdioClientTransport already started! If using Client class, note that connect() calls start() automatically.");
     }
-    return new Promise((resolve4, reject) => {
+    return new Promise((resolve5, reject) => {
       this._process = (0, import_cross_spawn.default)(this._serverParams.command, this._serverParams.args ?? [], {
         // merge default env with server env because mcp server needs some env vars
         env: {
@@ -19630,7 +19630,7 @@ var StdioClientTransport = class {
         this.onerror?.(error2);
       });
       this._process.on("spawn", () => {
-        resolve4();
+        resolve5();
       });
       this._process.on("close", (_code) => {
         this._process = void 0;
@@ -19695,22 +19695,22 @@ var StdioClientTransport = class {
     if (this._process) {
       const processToClose = this._process;
       this._process = void 0;
-      const closePromise = new Promise((resolve4) => {
+      const closePromise = new Promise((resolve5) => {
         processToClose.once("close", () => {
-          resolve4();
+          resolve5();
         });
       });
       try {
         processToClose.stdin?.end();
       } catch {
       }
-      await Promise.race([closePromise, new Promise((resolve4) => setTimeout(resolve4, 2e3).unref())]);
+      await Promise.race([closePromise, new Promise((resolve5) => setTimeout(resolve5, 2e3).unref())]);
       if (processToClose.exitCode === null) {
         try {
           processToClose.kill("SIGTERM");
         } catch {
         }
-        await Promise.race([closePromise, new Promise((resolve4) => setTimeout(resolve4, 2e3).unref())]);
+        await Promise.race([closePromise, new Promise((resolve5) => setTimeout(resolve5, 2e3).unref())]);
       }
       if (processToClose.exitCode === null) {
         try {
@@ -19722,15 +19722,15 @@ var StdioClientTransport = class {
     this._readBuffer.clear();
   }
   send(message) {
-    return new Promise((resolve4) => {
+    return new Promise((resolve5) => {
       if (!this._process?.stdin) {
         throw new Error("Not connected");
       }
       const json = serializeMessage(message);
       if (this._process.stdin.write(json)) {
-        resolve4();
+        resolve5();
       } else {
-        this._process.stdin.once("drain", resolve4);
+        this._process.stdin.once("drain", resolve5);
       }
     });
   }
@@ -21123,9 +21123,9 @@ function describePlan(plan, applied) {
 
 // src/pins.ts
 import { createHash as createHash2 } from "node:crypto";
-import { existsSync as existsSync5, mkdirSync as mkdirSync2, readFileSync as readFileSync4, renameSync as renameSync2, writeFileSync as writeFileSync2 } from "node:fs";
+import { existsSync as existsSync5, mkdirSync as mkdirSync2, readFileSync as readFileSync4, renameSync as renameSync2, statSync, writeFileSync as writeFileSync2 } from "node:fs";
 import { homedir as homedir4 } from "node:os";
-import { dirname as dirname2, join as join5 } from "node:path";
+import { dirname as dirname2, isAbsolute, join as join5, resolve as resolve2 } from "node:path";
 function pinsPath() {
   return join5(process.env.MCP_SECURITY_HOME ?? join5(homedir4(), ".claude", "mcp-security"), "pins.json");
 }
@@ -21139,8 +21139,23 @@ function stableStringify(v) {
 function hashTool(t) {
   return createHash2("sha256").update(stableStringify({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })).digest("hex");
 }
+var MAX_HASHED_FILE = 20 * 1024 * 1024;
+function localFileHashes(s) {
+  const out = {};
+  for (const a of [s.command, ...s.args ?? []]) {
+    if (!a || a.startsWith("-") || a.includes("${") || !/[\\/]|\.(m?[jt]s|cjs|py|rb|sh|php|jar)$/i.test(a)) continue;
+    const p = isAbsolute(a) ? a : resolve2(dirname2(s.source), a);
+    try {
+      const st = statSync(p);
+      if (st.isFile() && st.size <= MAX_HASHED_FILE) out[a] = createHash2("sha256").update(readFileSync4(p)).digest("hex");
+    } catch {
+    }
+  }
+  return out;
+}
 function hashConfig(s) {
-  return createHash2("sha256").update(stableStringify({ type: s.type, command: s.command, args: s.args, url: s.url, env: Object.keys(s.env ?? {}).sort(), headers: Object.keys(s.headers ?? {}).sort() })).digest("hex");
+  const files = localFileHashes(s);
+  return createHash2("sha256").update(stableStringify({ type: s.type, command: s.command, args: s.args, url: s.url, env: Object.keys(s.env ?? {}).sort(), headers: Object.keys(s.headers ?? {}).sort(), ...Object.keys(files).length ? { files } : {} })).digest("hex");
 }
 function loadPins(path = pinsPath()) {
   if (!existsSync5(path)) return { version: 1, servers: {} };
@@ -21211,6 +21226,22 @@ var PATTERNS = [
     severity: "critical",
     title: "Asks the model to hide something from the user",
     re: /\b(do not|don't|dont|never|without)\b.{0,25}\b(tell|telling|inform|informing|mention|mentioning|notify|notifying|reveal|revealing|show|showing|alert|alerting)\b.{0,25}\b(the )?user\b/i,
+    remediation: "Legitimate tools never ask for secrecy. Remove the server and check what it has already been called with."
+  },
+  // Non-English variants of the two most common payloads. JS `\b` only knows ASCII letters, so
+  // words ending in diacritics, Cyrillic or CJK are matched without a trailing boundary.
+  {
+    rule: "tool/instruction-override",
+    severity: "critical",
+    title: "Tries to override the model's instructions (non-English)",
+    re: /(?:ignor[ăa]|uit[ăa])\s[^.!?。\n]{0,30}instruc[țţt]iunile\s+(?:anterioare|precedente|de\s+mai\s+sus)|\bignora\s[^.!?。\n]{0,20}instrucciones\s+(?:anteriores|previas)|\bignore[rz]?\s[^.!?。\n]{0,20}instructions\s+(?:précédentes|antérieures)|\bignorier(?:e|en)?\s[^.!?。\n]{0,30}(?:vorherigen|bisherigen|obigen)\s+(?:Anweisungen|Instruktionen)|\bignore\s[^.!?。\n]{0,20}instruções\s+(?:anteriores|prévias)|\bignora\s[^.!?。\n]{0,20}istruzioni\s+(?:precedenti|sopra)|忽略[^.!?。\n]{0,6}(?:之前|以上|先前|所有)[^.!?。\n]{0,6}(?:指令|指示|说明)|игнорируй(?:те)?\s+(?:все\s+)?(?:предыдущие|прежние)\s+инструкции/iu,
+    remediation: "A tool description has no reason to talk about the model's other instructions. Treat this server as malicious and remove it."
+  },
+  {
+    rule: "tool/conceal-from-user",
+    severity: "critical",
+    title: "Asks the model to hide something from the user (non-English)",
+    re: /\bnu\s*-?\s*(?:i\s+)?(?:spune|informa|men[țţt]iona|ar[ăa]ta)\s[^.!?。\n]{0,25}utilizatorului|\bno\s+(?:le\s+)?(?:digas|informes|menciones|muestres)\s[^.!?。\n]{0,20}usuario|\bne\s+(?:le\s+|lui\s+)?(?:dis|dites|mentionne[sz]?|montre[sz]?)\s+(?:pas|rien)\s[^.!?。\n]{0,25}utilisateur|\bnicht\s[^.!?。\n]{0,20}(?:dem\s+)?(?:Benutzer|Nutzer)\s[^.!?。\n]{0,20}(?:sagen|mitteilen|zeigen|erzählen)|\bnão\s+(?:conte|diga|informe|mencione|mostre)\s[^.!?。\n]{0,20}usuário|\bnon\s+(?:dire|dirlo|informare|menzionare|mostrare)\s[^.!?。\n]{0,20}utente|不要[^.!?。\n]{0,4}(?:告诉|通知|让)[^.!?。\n]{0,2}用户|не\s+(?:говори|сообщай|рассказывай)(?:те)?\s+пользователю/iu,
     remediation: "Legitimate tools never ask for secrecy. Remove the server and check what it has already been called with."
   },
   {
@@ -21444,7 +21475,7 @@ async function auditTools(servers, timeoutSeconds, pins, policy) {
     if (pins && !pinned) driftLines.push(`- ${label}: not pinned yet`);
     if (pinned) {
       if (pinned.config && pinned.config !== hashConfig(r.server)) {
-        own2.push({ severity: "medium", rule: "drift/config-changed", title: "Launch command, package version or URL changed since pinning", location: `${where} in ${r.server.source}`, remediation: "Check who changed the config and why (e.g. a pulled .mcp.json or a version bump), then re-pin." });
+        own2.push({ severity: "medium", rule: "drift/config-changed", title: "Launch command, package version, URL or local server file changed since pinning", location: `${where} in ${r.server.source}`, remediation: "Check who changed the config and why (e.g. a pulled .mcp.json or a version bump), then re-pin." });
       }
       const d = computeDrift(pinned, r.definitions);
       driftLines.push(hasDrift(d) ? `- ${label}: \u26A0\uFE0F changed since ${pinned.pinnedAt}` : `- ${label}: unchanged since ${pinned.pinnedAt}`);
@@ -21558,7 +21589,7 @@ function report(title, findings, sections = []) {
 
 // src/sarif.ts
 import { existsSync as existsSync6, readFileSync as readFileSync5 } from "node:fs";
-import { relative, resolve as resolve2, sep } from "node:path";
+import { relative, resolve as resolve3, sep } from "node:path";
 var LEVEL = { critical: "error", high: "error", medium: "warning", low: "note", info: "note" };
 var SECURITY_SEVERITY = { critical: "9.5", high: "8.0", medium: "5.5", low: "3.0", info: "1.0" };
 function lineOf(file, server) {
@@ -21570,7 +21601,7 @@ function lineOf(file, server) {
 }
 function artifactUri(file, projectDir) {
   if (!file) return ".mcp.json";
-  const rel = relative(resolve2(projectDir), file);
+  const rel = relative(resolve3(projectDir), file);
   return rel.startsWith("..") ? file : rel.split(sep).join("/");
 }
 function toSarif(findings, projectDir, version2) {
@@ -21734,7 +21765,7 @@ async function main() {
     return 0;
   }
   if (!["markdown", "json", "sarif"].includes(values.format)) throw new Error(`invalid --format: ${values.format}`);
-  const projectDir = resolve3(values.project);
+  const projectDir = resolve4(values.project);
   if (command === "audit") {
     const { findings, servers, sources } = auditConfig(projectDir, { projectOnly: values["project-only"] });
     const supply = values["supply-chain"] ? await checkSupplyChain(servers) : void 0;
@@ -21753,7 +21784,7 @@ async function main() {
     const tools = Array.isArray(data) ? data : data.tools ?? data.result?.tools ?? [];
     if (!tools.length) throw new Error(`no tools found in ${file}`);
     const name = values.name ?? file;
-    const findings = analyzeTools(name, tools).map((f) => ({ ...f, file: resolve3(file) }));
+    const findings = analyzeTools(name, tools).map((f) => ({ ...f, file: resolve4(file) }));
     emit(`Tool definition analysis: ${name}`, findings, projectDir, values.format, values.output, [`Analyzed **${tools.length}** tool(s).`]);
     return exitCode(findings, values["fail-on"]);
   }
@@ -21761,7 +21792,7 @@ async function main() {
     const file = positionals[0];
     if (!file || !values.server) throw new Error("adversarial needs a JSON file with mcpServers and --server NAME");
     if (!values["i-own-this-server"] || !values["confirm-launch"]) throw new Error("adversarial calls the server's tools with attack payloads; it needs --i-own-this-server and --confirm-launch");
-    const source = resolve3(file);
+    const source = resolve4(file);
     const data = JSON.parse(readFileSync6(source, "utf8"));
     const target = toServers(data.mcpServers ?? data, "project", source).find((s) => s.name === values.server);
     if (!target) throw new Error(`server "${values.server}" not found in ${file}`);
@@ -21789,7 +21820,7 @@ ${r.skippedTools.map((t) => `- ${t.tool}: ${t.reason}`).join("\n")}` : ""
     return 0;
   }
   if (command === "policy-init") {
-    const target = resolve3(projectDir, ".mcp-security.json");
+    const target = resolve4(projectDir, ".mcp-security.json");
     if (existsSync7(target) && !values.force) throw new Error(`${target} already exists (use --force to overwrite)`);
     writeFileSync3(target, JSON.stringify(policyFromServers(discoverServers(projectDir).servers), null, 2) + "\n");
     process.stdout.write(`Wrote ${target}. Review allowedServers, then commit it.
@@ -21800,7 +21831,7 @@ ${r.skippedTools.map((t) => `- ${t.tool}: ${t.reason}`).join("\n")}` : ""
     const file = positionals[0];
     if (!file) throw new Error("scan needs a JSON file with an mcpServers object");
     if (!values["confirm-launch"]) throw new Error("scan launches the servers in the file; re-run with --confirm-launch once you are OK with that");
-    const source = resolve3(file);
+    const source = resolve4(file);
     const data = JSON.parse(readFileSync6(source, "utf8"));
     const servers = toServers(data.mcpServers ?? data, "project", source);
     if (!servers.length) throw new Error(`no servers found in ${file}`);

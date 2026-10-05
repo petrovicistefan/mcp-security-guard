@@ -11,7 +11,7 @@ const worst = (id: string) => {
 };
 
 /** Malicious samples that are known gaps: documented in bench/RESULTS.md instead of hidden. */
-const KNOWN_MISSES = new Set(["multilingual-override"]);
+const KNOWN_MISSES = new Set<string>();
 /** Benign samples that legitimately deserve a "review" (medium) finding. */
 const ACCEPTED_MEDIUM = new Set<string>();
 

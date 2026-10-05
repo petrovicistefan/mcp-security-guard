@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import type { ServerConfig, ToolDefinition } from "./types.js";
 
 export interface PinEntry {
@@ -46,10 +46,32 @@ export function hashTool(t: ToolDefinition): string {
     .digest("hex");
 }
 
-/** Detects a changed launch command or package version. Env and header *values* are excluded so rotating a secret is not drift. */
+const MAX_HASHED_FILE = 20 * 1024 * 1024;
+
+/**
+ * Content hashes of local files the launch command points at (`node ./server.js`, `python /opt/x.py`),
+ * so editing a local server counts as drift too. Relative paths resolve against the config file's directory.
+ */
+export function localFileHashes(s: ServerConfig): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const a of [s.command, ...(s.args ?? [])]) {
+    if (!a || a.startsWith("-") || a.includes("${") || !/[\\/]|\.(m?[jt]s|cjs|py|rb|sh|php|jar)$/i.test(a)) continue;
+    const p = isAbsolute(a) ? a : resolve(dirname(s.source), a);
+    try {
+      const st = statSync(p);
+      if (st.isFile() && st.size <= MAX_HASHED_FILE) out[a] = createHash("sha256").update(readFileSync(p)).digest("hex");
+    } catch {
+      // Not a local file (e.g. a package name): nothing to hash.
+    }
+  }
+  return out;
+}
+
+/** Detects a changed launch command, package version or local server file. Env and header *values* are excluded so rotating a secret is not drift. */
 export function hashConfig(s: ServerConfig): string {
+  const files = localFileHashes(s);
   return createHash("sha256")
-    .update(stableStringify({ type: s.type, command: s.command, args: s.args, url: s.url, env: Object.keys(s.env ?? {}).sort(), headers: Object.keys(s.headers ?? {}).sort() }))
+    .update(stableStringify({ type: s.type, command: s.command, args: s.args, url: s.url, env: Object.keys(s.env ?? {}).sort(), headers: Object.keys(s.headers ?? {}).sort(), ...(Object.keys(files).length ? { files } : {}) }))
     .digest("hex");
 }
 

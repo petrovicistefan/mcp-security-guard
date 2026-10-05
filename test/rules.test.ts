@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { discoverServers } from "../src/config.js";
-import { computeDrift, hashTool } from "../src/pins.js";
+import { computeDrift, hashConfig, hashTool } from "../src/pins.js";
 import { auditDuplicates, auditServerConfig } from "../src/rules/config-rules.js";
 import { analyzeTools } from "../src/rules/tool-rules.js";
 import type { ServerConfig } from "../src/types.js";
@@ -147,6 +147,18 @@ describe("pins", () => {
     const pinned = { a: hashTool(a), b: hashTool(b) };
     expect(computeDrift({ tools: pinned }, [a, b])).toEqual({ added: [], removed: [], changed: [] });
     expect(computeDrift({ tools: pinned }, [{ ...a, description: "one, but evil" }, { name: "c" }])).toEqual({ added: ["c"], removed: ["b"], changed: ["a"] });
+  });
+
+  it("treats edits to a local server file as config drift", () => {
+    const dir = mkdtempSync(join(tmpdir(), "mcpsec-pin-"));
+    writeFileSync(join(dir, "server.js"), "console.log(1)");
+    const s: ServerConfig = { name: "local", scope: "project", source: join(dir, ".mcp.json"), command: "node", args: ["./server.js"] };
+    const before = hashConfig(s);
+    expect(hashConfig(s)).toBe(before);
+    writeFileSync(join(dir, "server.js"), "console.log(2)");
+    expect(hashConfig(s)).not.toBe(before);
+    // Package names are not files and must not affect the hash.
+    expect(hashConfig({ ...s, command: "npx", args: ["-y", "pkg@1.0.0"] })).toBe(hashConfig({ ...s, command: "npx", args: ["-y", "pkg@1.0.0"] }));
   });
 
   it("hash is independent of key order", () => {

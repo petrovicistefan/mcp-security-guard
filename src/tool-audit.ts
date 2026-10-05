@@ -83,7 +83,7 @@ export async function auditTools(servers: ServerConfig[], timeoutSeconds: number
     if (pins && !pinned) driftLines.push(`- ${label}: not pinned yet`);
     if (pinned) {
       if (pinned.config && pinned.config !== hashConfig(r.server)) {
-        own.push({ severity: "medium", rule: "drift/config-changed", title: "Launch command, package version or URL changed since pinning", location: `${where} in ${r.server.source}`, remediation: "Check who changed the config and why (e.g. a pulled .mcp.json or a version bump), then re-pin." });
+        own.push({ severity: "medium", rule: "drift/config-changed", title: "Launch command, package version, URL or local server file changed since pinning", location: `${where} in ${r.server.source}`, remediation: "Check who changed the config and why (e.g. a pulled .mcp.json or a version bump), then re-pin." });
       }
       const d = computeDrift(pinned, r.definitions);
       driftLines.push(hasDrift(d) ? `- ${label}: ⚠️ changed since ${pinned.pinnedAt}` : `- ${label}: unchanged since ${pinned.pinnedAt}`);

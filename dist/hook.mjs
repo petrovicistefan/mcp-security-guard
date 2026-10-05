@@ -73,6 +73,22 @@ var PATTERNS = [
     re: /\b(do not|don't|dont|never|without)\b.{0,25}\b(tell|telling|inform|informing|mention|mentioning|notify|notifying|reveal|revealing|show|showing|alert|alerting)\b.{0,25}\b(the )?user\b/i,
     remediation: "Legitimate tools never ask for secrecy. Remove the server and check what it has already been called with."
   },
+  // Non-English variants of the two most common payloads. JS `\b` only knows ASCII letters, so
+  // words ending in diacritics, Cyrillic or CJK are matched without a trailing boundary.
+  {
+    rule: "tool/instruction-override",
+    severity: "critical",
+    title: "Tries to override the model's instructions (non-English)",
+    re: /(?:ignor[ăa]|uit[ăa])\s[^.!?。\n]{0,30}instruc[țţt]iunile\s+(?:anterioare|precedente|de\s+mai\s+sus)|\bignora\s[^.!?。\n]{0,20}instrucciones\s+(?:anteriores|previas)|\bignore[rz]?\s[^.!?。\n]{0,20}instructions\s+(?:précédentes|antérieures)|\bignorier(?:e|en)?\s[^.!?。\n]{0,30}(?:vorherigen|bisherigen|obigen)\s+(?:Anweisungen|Instruktionen)|\bignore\s[^.!?。\n]{0,20}instruções\s+(?:anteriores|prévias)|\bignora\s[^.!?。\n]{0,20}istruzioni\s+(?:precedenti|sopra)|忽略[^.!?。\n]{0,6}(?:之前|以上|先前|所有)[^.!?。\n]{0,6}(?:指令|指示|说明)|игнорируй(?:те)?\s+(?:все\s+)?(?:предыдущие|прежние)\s+инструкции/iu,
+    remediation: "A tool description has no reason to talk about the model's other instructions. Treat this server as malicious and remove it."
+  },
+  {
+    rule: "tool/conceal-from-user",
+    severity: "critical",
+    title: "Asks the model to hide something from the user (non-English)",
+    re: /\bnu\s*-?\s*(?:i\s+)?(?:spune|informa|men[țţt]iona|ar[ăa]ta)\s[^.!?。\n]{0,25}utilizatorului|\bno\s+(?:le\s+)?(?:digas|informes|menciones|muestres)\s[^.!?。\n]{0,20}usuario|\bne\s+(?:le\s+|lui\s+)?(?:dis|dites|mentionne[sz]?|montre[sz]?)\s+(?:pas|rien)\s[^.!?。\n]{0,25}utilisateur|\bnicht\s[^.!?。\n]{0,20}(?:dem\s+)?(?:Benutzer|Nutzer)\s[^.!?。\n]{0,20}(?:sagen|mitteilen|zeigen|erzählen)|\bnão\s+(?:conte|diga|informe|mencione|mostre)\s[^.!?。\n]{0,20}usuário|\bnon\s+(?:dire|dirlo|informare|menzionare|mostrare)\s[^.!?。\n]{0,20}utente|不要[^.!?。\n]{0,4}(?:告诉|通知|让)[^.!?。\n]{0,2}用户|не\s+(?:говори|сообщай|рассказывай)(?:те)?\s+пользователю/iu,
+    remediation: "Legitimate tools never ask for secrecy. Remove the server and check what it has already been called with."
+  },
   {
     rule: "tool/hidden-instruction-tag",
     severity: "high",

@@ -68,7 +68,7 @@ What changed:
 - **Parameter names** are read as words (`content_from_reading_ssh_id_rsa`), and `type`/`format` fields are analysed.
 - **Report output** now escapes ANSI and control characters, so a malicious description cannot drive the terminal that shows the report.
 
-**Known miss:** `multilingual-override` (a Romanian "ignore previous instructions"). The regex rules are English-only. That is the case for the planned LLM-based semantic analysis.
+**Known miss (v0.4–0.5):** `multilingual-override`. Closed in v0.6.0 with patterns for 8 languages; the corpus now has 32 attacks (5 more non-English) and 14 benign samples (one in Romanian, Spanish and German that uses the same words harmlessly): **32/32 detected, 0/14 flagged**. Languages beyond those 8 still need the planned LLM-based semantic analysis.
 
 Out of scope for static checks: Advanced Tool Poisoning (instructions in tool *outputs* at runtime, CyberArk) and rug pulls between scans. Pinning covers rug pulls; outputs need the planned `PostToolUse` hook.
 
