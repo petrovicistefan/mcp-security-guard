@@ -53,6 +53,27 @@ describe("config rules", () => {
     const { servers } = discoverServers(proj, home);
     expect(servers.map((s) => `${s.scope}:${s.name}`)).toEqual(["user:a", "local:b", "project:c"]);
   });
+
+  it("discovers servers shipped by enabled plugins and expands CLAUDE_PLUGIN_ROOT", () => {
+    const home = mkdtempSync(join(tmpdir(), "mcpsec-"));
+    const proj = join(home, "proj");
+    const plug = (n: string) => join(home, ".claude/plugins/cache/mkt", n);
+    for (const n of ["good", "off", "inline"]) mkdirSync(join(plug(n), ".claude-plugin"), { recursive: true });
+    mkdirSync(proj);
+    writeFileSync(join(plug("good"), ".mcp.json"), JSON.stringify({ mcpServers: { srv: { command: "node", args: ["${CLAUDE_PLUGIN_ROOT}/s.js"] } } }));
+    writeFileSync(join(plug("off"), ".mcp.json"), JSON.stringify({ mcpServers: { x: { command: "node" } } }));
+    writeFileSync(join(plug("inline"), ".claude-plugin/plugin.json"), JSON.stringify({ name: "inline", mcpServers: { api: { type: "http", url: "https://api.example.com/mcp" } } }));
+    const entry = (n: string, extra = {}) => [{ scope: "user", installPath: plug(n), ...extra }];
+    writeFileSync(
+      join(home, ".claude/plugins/installed_plugins.json"),
+      JSON.stringify({ version: 2, plugins: { "good@mkt": entry("good"), "off@mkt": entry("off"), "inline@mkt": entry("inline"), "other@mkt": entry("good", { scope: "project", projectPath: "/elsewhere" }) } }),
+    );
+    writeFileSync(join(home, ".claude/settings.json"), JSON.stringify({ enabledPlugins: { "off@mkt": false } }));
+
+    const plugins = discoverServers(proj, home).servers.filter((s) => s.scope === "plugin");
+    expect(plugins.map((s) => s.name)).toEqual(["good:srv", "inline:api"]);
+    expect(plugins[0].args).toEqual([`${plug("good")}/s.js`]);
+  });
 });
 
 describe("tool rules", () => {

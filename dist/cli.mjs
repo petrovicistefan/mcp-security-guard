@@ -20138,9 +20138,63 @@ function discoverServers(projectDir, home = homedir()) {
   }
   const projectMcpPath = join(project, ".mcp.json");
   servers.push(...toServers(readJson(projectMcpPath, sources)?.mcpServers, "project", projectMcpPath));
+  servers.push(...discoverPluginServers(project, home, sources));
   const desktopPath = claudeDesktopConfigPath(home);
   servers.push(...toServers(readJson(desktopPath, sources)?.mcpServers, "claude-desktop", desktopPath));
   return { servers, sources };
+}
+function enabledPlugins(project, home, sources) {
+  const merged = {};
+  for (const p of [join(home, ".claude", "settings.json"), join(project, ".claude", "settings.json"), join(project, ".claude", "settings.local.json")]) {
+    if (!existsSync(p)) continue;
+    const ep = readJson(p, sources)?.enabledPlugins;
+    if (ep && typeof ep === "object") Object.assign(merged, ep);
+  }
+  return merged;
+}
+function substitutePluginRoot(s, root) {
+  const sub = (v) => v.replaceAll("${CLAUDE_PLUGIN_ROOT}", root);
+  const subRec = (r) => r ? Object.fromEntries(Object.entries(r).map(([k, v]) => [k, sub(v)])) : void 0;
+  return { ...s, command: s.command && sub(s.command), args: s.args?.map(sub), env: subRec(s.env), url: s.url && sub(s.url), headers: subRec(s.headers) };
+}
+function discoverPluginServers(project, home, sources) {
+  const installedPath = join(home, ".claude", "plugins", "installed_plugins.json");
+  if (!existsSync(installedPath)) return [];
+  const installed = readJson(installedPath, sources)?.plugins;
+  if (!installed || typeof installed !== "object") return [];
+  const enabled = enabledPlugins(project, home, sources);
+  const out = [];
+  for (const [key, entries] of Object.entries(installed)) {
+    if (enabled[key] === false || !Array.isArray(entries)) continue;
+    const pluginName = key.split("@")[0];
+    for (const e of entries) {
+      if (typeof e?.installPath !== "string") continue;
+      if (e.scope && e.scope !== "user" && e.projectPath && resolve(e.projectPath) !== project) continue;
+      const root = e.installPath;
+      const blocks = [];
+      const mcpPath = join(root, ".mcp.json");
+      if (existsSync(mcpPath)) blocks.push({ block: readJson(mcpPath, sources)?.mcpServers, source: mcpPath });
+      const manifestPath = join(root, ".claude-plugin", "plugin.json");
+      const field = existsSync(manifestPath) ? readJson(manifestPath, sources)?.mcpServers : void 0;
+      for (const f of Array.isArray(field) ? field : [field]) {
+        if (typeof f === "string") {
+          const p = resolve(root, f.replaceAll("${CLAUDE_PLUGIN_ROOT}", root));
+          if (p.startsWith(resolve(root)) && p !== mcpPath && existsSync(p)) {
+            const data = readJson(p, sources);
+            blocks.push({ block: data?.mcpServers ?? data, source: p });
+          }
+        } else if (f && typeof f === "object") {
+          blocks.push({ block: f, source: manifestPath });
+        }
+      }
+      for (const { block, source } of blocks) {
+        for (const s of toServers(block, "plugin", source)) {
+          out.push(substitutePluginRoot({ ...s, name: `${pluginName}:${s.name}` }, root));
+        }
+      }
+    }
+  }
+  return out;
 }
 function transportOf(s) {
   if (s.type === "sse") return "sse";

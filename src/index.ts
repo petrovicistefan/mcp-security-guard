@@ -33,7 +33,14 @@ async function fetchAll(servers: ServerConfig[], timeoutSeconds: number) {
       try {
         return { server: s, tools: await fetchTools(s, timeoutSeconds * 1000) };
       } catch (e) {
-        return { server: s, error: excerpt(e instanceof Error ? e.message : String(e), 200) };
+        const msg = e instanceof Error ? e.message : String(e);
+        const needsAuth = s.url && /\b401\b|unauthori[sz]ed|invalid_token|www-authenticate/i.test(msg);
+        return {
+          server: s,
+          error: needsAuth
+            ? "requires OAuth sign-in. The scanner cannot reuse Claude Code's tokens; its config was still audited by audit_mcp_config"
+            : excerpt(msg, 200),
+        };
       }
     }),
   );

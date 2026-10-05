@@ -10,6 +10,8 @@ A Claude Code plugin that audits the **MCP servers you have installed**. Your co
 | Rug pulls | Tool definitions or launch commands that changed after you pinned them (SHA-256 per tool). Re-checked automatically at every session start |
 | Configuration | Plaintext secrets in env/headers/args/URLs, plain-HTTP remotes, unpinned `npx`/`uvx` packages, privileged or unpinned Docker images, pipe-to-shell launches, duplicate names across scopes |
 
+It discovers servers from every place Claude Code and Claude Desktop load them: user, local and project scope, **servers shipped inside installed plugins** (named `plugin:<plugin>:<server>`), and `claude_desktop_config.json`.
+
 Everything runs locally. Nothing is sent anywhere.
 
 ## Install
@@ -38,6 +40,10 @@ A `SessionStart` hook re-verifies **only the servers you have pinned** (pinning 
 - `full` (default): compare launch configs and re-list tools
 - `config`: compare launch configs only, launch nothing
 - `off`: disable the check
+
+## Limitations
+
+Remote servers that require OAuth (most hosted MCP servers) cannot be scanned at the tool level: the scanner cannot reuse Claude Code's tokens. Their configuration is still audited.
 
 ## Trust model
 

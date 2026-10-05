@@ -70,10 +70,79 @@ export function discoverServers(projectDir: string, home = homedir()): Discovery
   const projectMcpPath = join(project, ".mcp.json");
   servers.push(...toServers(readJson(projectMcpPath, sources)?.mcpServers, "project", projectMcpPath));
 
+  servers.push(...discoverPluginServers(project, home, sources));
+
   const desktopPath = claudeDesktopConfigPath(home);
   servers.push(...toServers(readJson(desktopPath, sources)?.mcpServers, "claude-desktop", desktopPath));
 
   return { servers, sources };
+}
+
+/** `enabledPlugins` merged from user, project and local settings; later files win. */
+function enabledPlugins(project: string, home: string, sources: DiscoveryResult["sources"]): Record<string, boolean> {
+  const merged: Record<string, boolean> = {};
+  for (const p of [join(home, ".claude", "settings.json"), join(project, ".claude", "settings.json"), join(project, ".claude", "settings.local.json")]) {
+    if (!existsSync(p)) continue;
+    const ep = readJson(p, sources)?.enabledPlugins;
+    if (ep && typeof ep === "object") Object.assign(merged, ep);
+  }
+  return merged;
+}
+
+function substitutePluginRoot(s: ServerConfig, root: string): ServerConfig {
+  const sub = (v: string) => v.replaceAll("${CLAUDE_PLUGIN_ROOT}", root);
+  const subRec = (r?: Record<string, string>) => (r ? Object.fromEntries(Object.entries(r).map(([k, v]) => [k, sub(v)])) : undefined);
+  return { ...s, command: s.command && sub(s.command), args: s.args?.map(sub), env: subRec(s.env), url: s.url && sub(s.url), headers: subRec(s.headers) };
+}
+
+/**
+ * MCP servers shipped inside installed Claude Code plugins, from the plugin's `.mcp.json` and the
+ * `mcpServers` field of `.claude-plugin/plugin.json` (inline object or path). Disabled plugins and
+ * project-scoped installs for other projects are skipped. Names are `<plugin>:<server>`.
+ */
+function discoverPluginServers(project: string, home: string, sources: DiscoveryResult["sources"]): ServerConfig[] {
+  const installedPath = join(home, ".claude", "plugins", "installed_plugins.json");
+  if (!existsSync(installedPath)) return [];
+  const installed = readJson(installedPath, sources)?.plugins;
+  if (!installed || typeof installed !== "object") return [];
+  const enabled = enabledPlugins(project, home, sources);
+  const out: ServerConfig[] = [];
+
+  for (const [key, entries] of Object.entries(installed as Record<string, any[]>)) {
+    if (enabled[key] === false || !Array.isArray(entries)) continue;
+    const pluginName = key.split("@")[0];
+    for (const e of entries) {
+      if (typeof e?.installPath !== "string") continue;
+      if (e.scope && e.scope !== "user" && e.projectPath && resolve(e.projectPath) !== project) continue;
+      const root = e.installPath as string;
+      const blocks: { block: unknown; source: string }[] = [];
+
+      const mcpPath = join(root, ".mcp.json");
+      if (existsSync(mcpPath)) blocks.push({ block: readJson(mcpPath, sources)?.mcpServers, source: mcpPath });
+
+      const manifestPath = join(root, ".claude-plugin", "plugin.json");
+      const field = existsSync(manifestPath) ? readJson(manifestPath, sources)?.mcpServers : undefined;
+      for (const f of Array.isArray(field) ? field : [field]) {
+        if (typeof f === "string") {
+          const p = resolve(root, f.replaceAll("${CLAUDE_PLUGIN_ROOT}", root));
+          // Never follow a manifest path outside the plugin directory.
+          if (p.startsWith(resolve(root)) && p !== mcpPath && existsSync(p)) {
+            const data = readJson(p, sources);
+            blocks.push({ block: data?.mcpServers ?? data, source: p });
+          }
+        } else if (f && typeof f === "object") {
+          blocks.push({ block: f, source: manifestPath });
+        }
+      }
+
+      for (const { block, source } of blocks) {
+        for (const s of toServers(block, "plugin", source)) {
+          out.push(substitutePluginRoot({ ...s, name: `${pluginName}:${s.name}` }, root));
+        }
+      }
+    }
+  }
+  return out;
 }
 
 export function describeServer(s: ServerConfig): string {

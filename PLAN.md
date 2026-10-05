@@ -25,7 +25,7 @@
 
 ### Faza 2: Protecție continuă
 - [x] **Hook `SessionStart`**: verifică drift-ul la fiecare sesiune și afișează un avertisment scurt doar când s-a schimbat ceva
-- [ ] **Scanarea serverelor MCP aduse de plugin-uri** (`~/.claude/plugins/**/.mcp.json`), nu doar a celor configurate manual
+- [x] **Scanarea serverelor MCP aduse de plugin-uri** (`~/.claude/plugins/**/.mcp.json`), nu doar a celor configurate manual
 - [ ] **Scanarea skill-urilor, comenzilor și fișierelor CLAUDE.md** pentru prompt injection, pentru că și ele ajung în context
 - [ ] **Ieșire SARIF** pentru GitHub Code Scanning, plus JSON pentru scripturi
 - [ ] **Lockfile pentru `.mcp.json`** (`mcp-security.lock`), comis în repo, ca toată echipa să ruleze exact aceleași versiuni și definiții
@@ -107,7 +107,7 @@ Prețurile trebuie validate cu utilizatori reali înainte de lansare. Mai jos, l
 ## Next steps (în ordine)
 1. [x] Commit pentru MVP
 2. [x] **Hook `SessionStart` pentru drift**: verificare rapidă la fiecare sesiune, cu avertisment doar când se schimbă ceva
-3. [ ] **Scanarea serverelor MCP din plugin-uri** (`~/.claude/plugins/`)
+3. [x] **Scanarea serverelor MCP din plugin-uri** (`~/.claude/plugins/`)
 4. [ ] **Ieșire SARIF/JSON** + GitHub Action de bază
 5. [ ] **Test pe 10–20 de servere MCP populare** pentru calibrarea fals pozitivelor
 6. [ ] **Repo public pe GitHub** + instalare prin `/plugin marketplace add`
@@ -115,6 +115,9 @@ Prețurile trebuie validate cu utilizatori reali înainte de lansare. Mai jos, l
 8. [ ] **Waitlist pentru Pro/Team** în README, ca să validezi cererea
 9. [ ] Hook `PostToolUse` pentru scanarea răspunsurilor tool-urilor (protecție la runtime)
 10. [ ] Primul raport de cercetare: „Am scanat N servere MCP populare”
+
+## Limitări cunoscute
+- Serverele remote cu OAuth (Vercel, Cloudflare API, Runpod) nu pot fi scanate la nivel de tool-uri, pentru că scannerul nu are acces la token-urile Claude Code. Configurația lor se auditează totuși. Idee: un flux OAuth propriu, opțional, sau citirea definițiilor tool-urilor direct din sesiunea Claude (prin skill).
 
 ## Metrici de urmărit
 - Instalări și utilizatori activi (stele GitHub, descărcări)

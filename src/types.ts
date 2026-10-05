@@ -13,7 +13,7 @@ export interface Finding {
   remediation: string;
 }
 
-export type ConfigScope = "user" | "local" | "project" | "claude-desktop";
+export type ConfigScope = "user" | "local" | "project" | "plugin" | "claude-desktop";
 
 export interface ServerConfig {
   name: string;
