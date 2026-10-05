@@ -2,6 +2,7 @@
 
 ## 0.6.0
 
+- **Automatic fixes** (`apply_fixes`, `fix`): add recommended `permissions.ask` rules, pin npx/uvx packages to the current version, replace literal secrets with `${VAR}` references. Dry run by default; backups are kept outside the project (secret-bearing ones 0600) so they can never be committed
 - Scans and pins **server instructions, prompts, resources and resource templates**, not only tools
 - Discovers MCP servers from **plugins synced from the claude.ai account**, and lists **claude.ai connectors** (names only, policy-checkable)
 - Adversarial testing works on Windows (`cmd.exe` payload, `win.ini` traversal check) and defaults to the OS temp directory

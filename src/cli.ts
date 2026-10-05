@@ -8,6 +8,8 @@ import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { adversarialTest } from "./adversarial.js";
 import { auditConfig } from "./audit.js";
+import { recommendPermissions } from "./capabilities.js";
+import { applyPlan, describePlan, planEnvRefs, planPermissions, planPinVersions, type FixPlan } from "./fixes.js";
 import { discoverServers, toServers } from "./config.js";
 import { loadPolicy, policyFromServers } from "./policy.js";
 import { checkSupplyChain } from "./supply-chain.js";
@@ -26,6 +28,7 @@ Usage:
   mcp-security audit [--project DIR] [--project-only] [--supply-chain] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
   mcp-security analyze-tools FILE [--name NAME] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
   mcp-security adversarial FILE --server NAME --i-own-this-server --confirm-launch [--canary-dir DIR] [--host-canary-dir DIR] [--include-destructive]
+  mcp-security fix [--permissions --confirm-launch] [--pin-versions] [--env-refs] [--write] [--project DIR]
   mcp-security policy-init [--project DIR] [--force]
   mcp-security scan FILE --confirm-launch [--timeout SECONDS] [--format ...] [--output FILE] [--fail-on SEVERITY]
 
@@ -35,6 +38,8 @@ Usage:
   adversarial      CALLS the tools of a server you own with command-injection and path-traversal payloads
                    (payloads only create empty canary files). Run it against a test instance, ideally in a
                    container; destructive tools are skipped unless --include-destructive
+  fix              plans (and with --write applies) fixes to the project's .mcp.json and .claude/settings.json,
+                   backing up every file it changes under ~/.claude/mcp-security/backups/
   policy-init      writes .mcp-security.json approving the servers configured now (review it, then commit it)
   --supply-chain   (audit) also check npx/uvx packages on npm/PyPI and OSV (network)
   --project-only   only audit the project's .mcp.json (recommended in CI)
@@ -118,6 +123,10 @@ async function main(): Promise<number> {
       "include-destructive": { type: "boolean", default: false },
       "canary-dir": { type: "string" },
       "host-canary-dir": { type: "string" },
+      write: { type: "boolean", default: false },
+      permissions: { type: "boolean", default: false },
+      "pin-versions": { type: "boolean", default: false },
+      "env-refs": { type: "boolean", default: false },
     },
   });
   if (values.help || !command) {
@@ -165,6 +174,22 @@ async function main(): Promise<number> {
       r.skippedTools.length ? `**Skipped:**\n${r.skippedTools.map((t) => `- ${t.tool}: ${t.reason}`).join("\n")}` : "",
     ]);
     return exitCode(r.findings, values["fail-on"]!);
+  }
+
+  if (command === "fix") {
+    const { servers } = discoverServers(projectDir);
+    const plans: FixPlan[] = [];
+    if (values.permissions) {
+      if (!values["confirm-launch"]) throw new Error("--permissions starts the servers to classify their tools; add --confirm-launch");
+      plans.push(planPermissions(projectDir, recommendPermissions((await auditTools(servers, Number(values.timeout) || 20)).inventories).ask));
+    }
+    if (values["pin-versions"]) plans.push(await planPinVersions(projectDir, servers));
+    if (values["env-refs"]) plans.push(planEnvRefs(projectDir));
+    if (!plans.length) throw new Error("choose at least one of --permissions, --pin-versions, --env-refs");
+    const plan: FixPlan = { changes: plans.flatMap((p) => p.changes), notes: plans.flatMap((p) => p.notes) };
+    if (new Set(plan.changes.map((c) => c.path)).size !== plan.changes.length) throw new Error("--pin-versions and --env-refs both edit .mcp.json: run them one after the other");
+    process.stdout.write(describePlan(plan, values.write ? applyPlan(plan) : undefined) + "\n");
+    return 0;
   }
 
   if (command === "policy-init") {

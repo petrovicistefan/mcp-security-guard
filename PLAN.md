@@ -173,7 +173,7 @@ Rămân pentru planul Team: descoperire și audit la nivel de organizație, revi
 - [ ] **Scope-uri OAuth și durata token-urilor**: planul Team
 
 ### Experiența utilizatorului
-- [ ] **Corecturi automate, cu confirmare**: aplicarea regulilor de permisiuni, fixarea versiunilor (`npx pkg` → `pkg@x.y.z`), mutarea secretelor în `${VAR}`
+- [x] **Corecturi automate, cu confirmare** (`apply_fixes` / `fix`): reguli de permisiuni, fixarea versiunilor, secrete → `${VAR}`. Previzualizare implicită, backup în afara proiectului
 - [ ] **Raport HTML / MCP App** (board vizual)
 - [ ] **Prima rulare**: audit sau sugestie automată după instalare
 

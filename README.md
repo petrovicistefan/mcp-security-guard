@@ -61,6 +61,7 @@ Then run `/mcp-audit`, or ask Claude *"are my MCP servers safe?"*.
 | `pin_tools` | Yes (same as above). Writes `~/.claude/mcp-security/pins.json` |
 | `analyze_tool_definitions` | No. Offline analysis of a `tools/list` payload, for MCP server authors |
 | `check_supply_chain` | No. Sends package names and versions to npm, PyPI and OSV after `confirm_network: true` |
+| `apply_fixes` | Only for the `permissions` fix. Dry run by default; with `write: true` it edits the project's `.mcp.json` / `.claude/settings.json` after a backup to `~/.claude/mcp-security/backups/` |
 | `generate_policy` | No. Returns a `.mcp-security.json` approving the current servers |
 | `query_audit_log` | No. Summarises the runtime audit log |
 | `adversarial_test` | Yes, and **calls tools** with injection payloads. Only for servers you own; needs `i_own_this_server` and `confirm_launch`; skips destructive tools |
@@ -115,6 +116,14 @@ Test your own server for command injection and path traversal (it **calls** the 
 
 ```
 node dist/cli.mjs adversarial my-server.mcp.json --server my-server --i-own-this-server --confirm-launch
+```
+
+Fix what the audit found (dry run first, then `--write`):
+
+```
+node dist/cli.mjs fix --pin-versions            # npx pkg → pkg@x.y.z, uvx pkg → pkg==x.y.z (looks up npm/PyPI)
+node dist/cli.mjs fix --env-refs --write        # literal secrets in .mcp.json → ${VAR} references
+node dist/cli.mjs fix --permissions --confirm-launch --write   # permissions.ask rules for risky tools
 ```
 
 Start a team policy from the servers configured today:

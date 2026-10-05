@@ -16,7 +16,8 @@ Use the `mcp-security` tools. Each finding carries its OWASP MCP Top 10 id.
    - **`check_supply_chain`** (`confirm_network: true`) sends package names and versions to npm, PyPI and OSV. It covers known vulnerabilities, malicious versions, typosquats, new packages, install scripts and publisher changes.
 4. **Explain the results.** Start with critical and high findings: what an attacker could achieve, and the concrete fix. Offer to add the recommended permission rules to `.claude/settings.json`.
 5. **Offer pinning (`pin_tools`)** once the user trusts a server, so later changes are caught at every session start. Never pin a server that has unresolved critical or high tool findings unless the user explicitly asks.
-6. **For teams, offer `generate_policy`.** Committing `.mcp-security.json` makes CI and session checks flag any server not on the approved list.
+6. **Offer to fix, don't just report.** `apply_fixes` covers `permissions` (ask rules), `pin-versions` and `env-refs` (secrets → `${VAR}`). Always run it once without `write` and show the planned edits; write only after the user agrees. For `env-refs`, tell the user which variables to set and that the backup still holds the secret until they delete it.
+7. **For teams, offer `generate_policy`.** Committing `.mcp-security.json` makes CI and session checks flag any server not on the approved list.
 
 Other tools:
 - **`query_audit_log`** summarises MCP calls recorded by the runtime hooks: credentials sent, credentials returned, injected instructions in outputs. The log holds hashes, not content.

@@ -3843,7 +3843,7 @@ var require_fast_uri = __commonJS({
         normalizeString(uri, options);
       } else if (typeof uri === "object") {
         uri = /** @type {T} */
-        parse3(serialize(uri, options), options);
+        parse3(serialize2(uri, options), options);
       }
       return uri;
     }
@@ -3878,13 +3878,13 @@ var require_fast_uri = __commonJS({
         throw new Error(resolved.error);
       }
       schemelessOptions.skipEscape = true;
-      return serialize(resolved, schemelessOptions);
+      return serialize2(resolved, schemelessOptions);
     }
     function resolveComponent(base, relative2, options, skipNormalization) {
       const target = {};
       if (!skipNormalization) {
-        base = parse3(serialize(base, options), options);
-        relative2 = parse3(serialize(relative2, options), options);
+        base = parse3(serialize2(base, options), options);
+        relative2 = parse3(serialize2(relative2, options), options);
       }
       options = options || {};
       if (!options.tolerant && relative2.scheme) {
@@ -3938,7 +3938,7 @@ var require_fast_uri = __commonJS({
       const normalizedB = normalizeComparableURI(uriB, options);
       return normalizedA !== void 0 && normalizedB !== void 0 && normalizedA === normalizedB;
     }
-    function serialize(cmpts, opts) {
+    function serialize2(cmpts, opts) {
       const component = {
         host: cmpts.host,
         scheme: cmpts.scheme,
@@ -4192,7 +4192,7 @@ var require_fast_uri = __commonJS({
     function normalizeStringWithStatus(uri, opts) {
       const { parsed, malformedAuthorityOrPort, malformedPercentEncoding, malformedSchemeSpecific, malformedHost, malformedScheme } = parseWithStatus(uri, opts);
       return {
-        normalized: malformedAuthorityOrPort || malformedPercentEncoding || malformedSchemeSpecific || malformedHost || malformedScheme ? uri : serialize(parsed, opts),
+        normalized: malformedAuthorityOrPort || malformedPercentEncoding || malformedSchemeSpecific || malformedHost || malformedScheme ? uri : serialize2(parsed, opts),
         malformedAuthorityOrPort,
         malformedPercentEncoding,
         malformedSchemeSpecific,
@@ -4206,7 +4206,7 @@ var require_fast_uri = __commonJS({
       }
       let value;
       try {
-        value = typeof uri === "string" ? uri : serialize(uri, opts);
+        value = typeof uri === "string" ? uri : serialize2(uri, opts);
       } catch {
         return void 0;
       }
@@ -4219,7 +4219,7 @@ var require_fast_uri = __commonJS({
       resolve: resolve4,
       resolveComponent,
       equal,
-      serialize,
+      serialize: serialize2,
       parse: parse3
     };
     module.exports = fastUri;
@@ -7807,7 +7807,7 @@ var require_content_type = __commonJS({
 });
 
 // src/cli.ts
-import { existsSync as existsSync6, readFileSync as readFileSync5, writeFileSync as writeFileSync2 } from "node:fs";
+import { existsSync as existsSync7, readFileSync as readFileSync6, writeFileSync as writeFileSync3 } from "node:fs";
 import { resolve as resolve3 } from "node:path";
 import { parseArgs } from "node:util";
 
@@ -20831,6 +20831,12 @@ function auditConfig(projectDir, opts = {}) {
   return { ...discovered, servers, findings, policy };
 }
 
+// src/fixes.ts
+import { chmodSync, existsSync as existsSync4, mkdirSync, readFileSync as readFileSync3, renameSync, rmSync as rmSync2, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { homedir as homedir3 } from "node:os";
+import { basename, dirname, join as join4 } from "node:path";
+
 // src/supply-chain.ts
 var DAY = 864e5;
 var POPULAR_PACKAGES = {
@@ -21005,13 +21011,123 @@ async function checkSupplyChain(servers, fetcher = fetch, now = Date.now()) {
   return { findings, checked: pkgs, errors };
 }
 
+// src/fixes.ts
+function readJsonFile(path) {
+  return existsSync4(path) ? JSON.parse(readFileSync3(path, "utf8")) : {};
+}
+var serialize = (data) => JSON.stringify(data, null, 2) + "\n";
+function planPermissions(projectDir, ask) {
+  const path = join4(projectDir, ".claude", "settings.json");
+  const settings = readJsonFile(path);
+  const perms = settings.permissions ??= {};
+  const existing = /* @__PURE__ */ new Set([...perms.ask ?? [], ...perms.deny ?? []]);
+  const add = ask.filter((r) => !existing.has(r));
+  if (!add.length) return { changes: [], notes: ask.length ? ["All recommended permission rules are already present."] : ["No tools need an approval rule."] };
+  perms.ask = [...perms.ask ?? [], ...add];
+  return { changes: [{ path, edits: add.map((r) => `permissions.ask += "${r}"`), content: serialize(settings) }], notes: [] };
+}
+async function planPinVersions(projectDir, servers, fetcher = fetch) {
+  const path = join4(projectDir, ".mcp.json");
+  if (!existsSync4(path)) return { changes: [], notes: ["No project .mcp.json."] };
+  const data = readJsonFile(path);
+  const notes = [];
+  const edits = [];
+  for (const s of servers.filter((x) => x.source === path)) {
+    const [pkg] = packagesOf(s);
+    if (!pkg || pkg.version) continue;
+    const raw = data.mcpServers?.[s.name];
+    const args = raw?.args ?? [];
+    const idx = args.findIndex((a) => a === pkg.name || a.startsWith(`${pkg.name}@`) || a.startsWith(`${pkg.name}==`) || a.startsWith(`${pkg.name}[`));
+    if (idx < 0) continue;
+    let version2;
+    try {
+      const url2 = pkg.ecosystem === "npm" ? `https://registry.npmjs.org/${pkg.name.replace("/", "%2f")}` : `https://pypi.org/pypi/${encodeURIComponent(pkg.name)}/json`;
+      const r = await fetcher(url2);
+      const d = r.ok ? await r.json() : void 0;
+      version2 = pkg.ecosystem === "npm" ? d?.["dist-tags"]?.latest : d?.info?.version;
+    } catch {
+    }
+    if (!version2 || !/^[0-9][0-9A-Za-z.+-]*$/.test(version2)) {
+      notes.push(`Could not resolve the current version of ${pkg.ecosystem} ${excerpt(pkg.name, 60)} for server "${excerpt(s.name, 40)}"; pin it by hand.`);
+      continue;
+    }
+    const cmd = baseCommand(s.command ?? "");
+    const pinned = NODE_RUNNERS.has(cmd) || cmd === "npm" || cmd === "pnpm" ? `${pkg.name}@${version2}` : PY_RUNNERS.has(cmd) ? `${pkg.name}==${version2}` : void 0;
+    if (!pinned) continue;
+    edits.push(`server "${excerpt(s.name, 40)}": ${excerpt(args[idx], 60)} \u2192 ${pinned}`);
+    args[idx] = pinned;
+  }
+  return { changes: edits.length ? [{ path, edits, content: serialize(data) }] : [], notes: edits.length || notes.length ? notes : ["Every npx/uvx package in .mcp.json is already pinned."] };
+}
+function planEnvRefs(projectDir) {
+  const path = join4(projectDir, ".mcp.json");
+  if (!existsSync4(path)) return { changes: [], notes: ["No project .mcp.json."] };
+  const data = readJsonFile(path);
+  const edits = [];
+  const notes = [];
+  for (const [name, raw] of Object.entries(data.mcpServers ?? {})) {
+    for (const field of ["env", "headers"]) {
+      for (const [k, v] of Object.entries(raw?.[field] ?? {})) {
+        if (typeof v !== "string") continue;
+        const bare = field === "headers" ? v.replace(/^Bearer\s+/i, "") : v;
+        if (isEnvReference(bare) || !looksLikeSecretValue(k, bare)) continue;
+        const varName = `${name}_${k}`.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+        raw[field][k] = field === "headers" && /^Bearer\s+/i.test(v) ? `Bearer \${${varName}}` : `\${${varName}}`;
+        edits.push(`server "${excerpt(name, 40)}": ${field}.${k} (${maskSecret(bare)}) \u2192 \${${varName}}`);
+        notes.push(`Set ${varName} in your shell or secret manager before starting Claude Code, e.g. \`export ${varName}=\u2026\`, then rotate the old key if this file was ever committed or shared.`);
+      }
+    }
+  }
+  return { changes: edits.length ? [{ path, edits, content: serialize(data), backupHoldsSecrets: true }] : [], notes: edits.length ? notes : ["No literal secrets in .mcp.json."] };
+}
+function backupPath(file) {
+  const dir = join4(process.env.MCP_SECURITY_HOME ?? join4(homedir3(), ".claude", "mcp-security"), "backups");
+  mkdirSync(dir, { recursive: true, mode: 448 });
+  const id = createHash("sha256").update(file).digest("hex").slice(0, 8);
+  return join4(dir, `${basename(file)}-${id}-${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-")}`);
+}
+function applyPlan(plan) {
+  const written = [];
+  const backups = [];
+  const backupOf = {};
+  for (const c of plan.changes) {
+    mkdirSync(dirname(c.path), { recursive: true });
+    if (existsSync4(c.path)) {
+      const backup = backupPath(c.path);
+      rmSync2(backup, { force: true });
+      writeFileSync(backup, readFileSync3(c.path), { mode: c.backupHoldsSecrets ? 384 : 420, flag: "wx" });
+      if (c.backupHoldsSecrets) chmodSync(backup, 384);
+      backups.push(backup);
+      backupOf[c.path] = backup;
+    }
+    const tmp = `${c.path}.mcpsec-tmp`;
+    writeFileSync(tmp, c.content);
+    renameSync(tmp, c.path);
+    written.push(c.path);
+  }
+  return { written, backups, backupOf };
+}
+function describePlan(plan, applied) {
+  const lines = [];
+  for (const c of plan.changes) {
+    lines.push(`**${c.path}**`, ...c.edits.map((e) => `- ${e}`));
+    const backup = applied?.backupOf[c.path];
+    if (c.backupHoldsSecrets && backup) lines.push(`- \u26A0\uFE0F The backup \`${backup}\` still contains the secret (readable only by you): delete it once the variable is set.`);
+  }
+  if (plan.notes.length) lines.push("", ...plan.notes.map((n) => `- ${n}`));
+  if (!plan.changes.length && !plan.notes.length) lines.push("Nothing to fix.");
+  lines.unshift(applied ? `# Fixes applied (${applied.written.length} file(s))` : `# Proposed fixes (dry run, nothing written)`);
+  if (applied?.backups.length) lines.push("", `Backups: ${applied.backups.join(", ")}`);
+  return lines.join("\n");
+}
+
 // src/pins.ts
-import { createHash } from "node:crypto";
-import { existsSync as existsSync4, mkdirSync, readFileSync as readFileSync3, renameSync, writeFileSync } from "node:fs";
-import { homedir as homedir3 } from "node:os";
-import { dirname, join as join4 } from "node:path";
+import { createHash as createHash2 } from "node:crypto";
+import { existsSync as existsSync5, mkdirSync as mkdirSync2, readFileSync as readFileSync4, renameSync as renameSync2, writeFileSync as writeFileSync2 } from "node:fs";
+import { homedir as homedir4 } from "node:os";
+import { dirname as dirname2, join as join5 } from "node:path";
 function pinsPath() {
-  return join4(process.env.MCP_SECURITY_HOME ?? join4(homedir3(), ".claude", "mcp-security"), "pins.json");
+  return join5(process.env.MCP_SECURITY_HOME ?? join5(homedir4(), ".claude", "mcp-security"), "pins.json");
 }
 function stableStringify(v) {
   if (Array.isArray(v)) return `[${v.map(stableStringify).join(",")}]`;
@@ -21021,15 +21137,15 @@ function stableStringify(v) {
   return JSON.stringify(v ?? null);
 }
 function hashTool(t) {
-  return createHash("sha256").update(stableStringify({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })).digest("hex");
+  return createHash2("sha256").update(stableStringify({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })).digest("hex");
 }
 function hashConfig(s) {
-  return createHash("sha256").update(stableStringify({ type: s.type, command: s.command, args: s.args, url: s.url, env: Object.keys(s.env ?? {}).sort(), headers: Object.keys(s.headers ?? {}).sort() })).digest("hex");
+  return createHash2("sha256").update(stableStringify({ type: s.type, command: s.command, args: s.args, url: s.url, env: Object.keys(s.env ?? {}).sort(), headers: Object.keys(s.headers ?? {}).sort() })).digest("hex");
 }
 function loadPins(path = pinsPath()) {
-  if (!existsSync4(path)) return { version: 1, servers: {} };
+  if (!existsSync5(path)) return { version: 1, servers: {} };
   try {
-    const data = JSON.parse(readFileSync3(path, "utf8"));
+    const data = JSON.parse(readFileSync4(path, "utf8"));
     return data?.version === 1 && data.servers ? data : { version: 1, servers: {} };
   } catch {
     return { version: 1, servers: {} };
@@ -21441,14 +21557,14 @@ function report(title, findings, sections = []) {
 }
 
 // src/sarif.ts
-import { existsSync as existsSync5, readFileSync as readFileSync4 } from "node:fs";
+import { existsSync as existsSync6, readFileSync as readFileSync5 } from "node:fs";
 import { relative, resolve as resolve2, sep } from "node:path";
 var LEVEL = { critical: "error", high: "error", medium: "warning", low: "note", info: "note" };
 var SECURITY_SEVERITY = { critical: "9.5", high: "8.0", medium: "5.5", low: "3.0", info: "1.0" };
 function lineOf(file, server) {
-  if (!file || !server || !existsSync5(file)) return 1;
+  if (!file || !server || !existsSync6(file)) return 1;
   const key = server.split(":").pop();
-  const lines = readFileSync4(file, "utf8").split("\n");
+  const lines = readFileSync5(file, "utf8").split("\n");
   const idx = lines.findIndex((l) => l.includes(`"${key}"`) && /:\s*\{?\s*$/.test(l.split(`"${key}"`)[1] ?? ""));
   return idx >= 0 ? idx + 1 : 1;
 }
@@ -21522,6 +21638,7 @@ Usage:
   mcp-security audit [--project DIR] [--project-only] [--supply-chain] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
   mcp-security analyze-tools FILE [--name NAME] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
   mcp-security adversarial FILE --server NAME --i-own-this-server --confirm-launch [--canary-dir DIR] [--host-canary-dir DIR] [--include-destructive]
+  mcp-security fix [--permissions --confirm-launch] [--pin-versions] [--env-refs] [--write] [--project DIR]
   mcp-security policy-init [--project DIR] [--force]
   mcp-security scan FILE --confirm-launch [--timeout SECONDS] [--format ...] [--output FILE] [--fail-on SEVERITY]
 
@@ -21531,6 +21648,8 @@ Usage:
   adversarial      CALLS the tools of a server you own with command-injection and path-traversal payloads
                    (payloads only create empty canary files). Run it against a test instance, ideally in a
                    container; destructive tools are skipped unless --include-destructive
+  fix              plans (and with --write applies) fixes to the project's .mcp.json and .claude/settings.json,
+                   backing up every file it changes under ~/.claude/mcp-security/backups/
   policy-init      writes .mcp-security.json approving the servers configured now (review it, then commit it)
   --supply-chain   (audit) also check npx/uvx packages on npm/PyPI and OSV (network)
   --project-only   only audit the project's .mcp.json (recommended in CI)
@@ -21568,7 +21687,7 @@ Before calling tools from these servers, tell the user and suggest running /mcp-
 }
 function emit(title, findings, projectDir, format, output, sections = []) {
   const body = format === "sarif" ? JSON.stringify(toSarif(findings, projectDir, VERSION), null, 2) : format === "json" ? JSON.stringify({ tool: "mcp-security", version: VERSION, findings }, null, 2) : report(title, findings, sections);
-  if (output) writeFileSync2(output, body + "\n");
+  if (output) writeFileSync3(output, body + "\n");
   else process.stdout.write(body + "\n");
 }
 function exitCode(findings, failOn) {
@@ -21603,7 +21722,11 @@ async function main() {
       "i-own-this-server": { type: "boolean", default: false },
       "include-destructive": { type: "boolean", default: false },
       "canary-dir": { type: "string" },
-      "host-canary-dir": { type: "string" }
+      "host-canary-dir": { type: "string" },
+      write: { type: "boolean", default: false },
+      permissions: { type: "boolean", default: false },
+      "pin-versions": { type: "boolean", default: false },
+      "env-refs": { type: "boolean", default: false }
     }
   });
   if (values.help || !command) {
@@ -21626,7 +21749,7 @@ async function main() {
   if (command === "analyze-tools") {
     const file = positionals[0];
     if (!file) throw new Error("analyze-tools needs a JSON file (a tools/list result or an array of tools)");
-    const data = JSON.parse(readFileSync5(file, "utf8"));
+    const data = JSON.parse(readFileSync6(file, "utf8"));
     const tools = Array.isArray(data) ? data : data.tools ?? data.result?.tools ?? [];
     if (!tools.length) throw new Error(`no tools found in ${file}`);
     const name = values.name ?? file;
@@ -21639,7 +21762,7 @@ async function main() {
     if (!file || !values.server) throw new Error("adversarial needs a JSON file with mcpServers and --server NAME");
     if (!values["i-own-this-server"] || !values["confirm-launch"]) throw new Error("adversarial calls the server's tools with attack payloads; it needs --i-own-this-server and --confirm-launch");
     const source = resolve3(file);
-    const data = JSON.parse(readFileSync5(source, "utf8"));
+    const data = JSON.parse(readFileSync6(source, "utf8"));
     const target = toServers(data.mcpServers ?? data, "project", source).find((s) => s.name === values.server);
     if (!target) throw new Error(`server "${values.server}" not found in ${file}`);
     const r = await adversarialTest(target, { canaryDir: values["canary-dir"], hostCanaryDir: values["host-canary-dir"], includeDestructive: values["include-destructive"] });
@@ -21650,10 +21773,25 @@ ${r.skippedTools.map((t) => `- ${t.tool}: ${t.reason}`).join("\n")}` : ""
     ]);
     return exitCode(r.findings, values["fail-on"]);
   }
+  if (command === "fix") {
+    const { servers } = discoverServers(projectDir);
+    const plans = [];
+    if (values.permissions) {
+      if (!values["confirm-launch"]) throw new Error("--permissions starts the servers to classify their tools; add --confirm-launch");
+      plans.push(planPermissions(projectDir, recommendPermissions((await auditTools(servers, Number(values.timeout) || 20)).inventories).ask));
+    }
+    if (values["pin-versions"]) plans.push(await planPinVersions(projectDir, servers));
+    if (values["env-refs"]) plans.push(planEnvRefs(projectDir));
+    if (!plans.length) throw new Error("choose at least one of --permissions, --pin-versions, --env-refs");
+    const plan = { changes: plans.flatMap((p) => p.changes), notes: plans.flatMap((p) => p.notes) };
+    if (new Set(plan.changes.map((c) => c.path)).size !== plan.changes.length) throw new Error("--pin-versions and --env-refs both edit .mcp.json: run them one after the other");
+    process.stdout.write(describePlan(plan, values.write ? applyPlan(plan) : void 0) + "\n");
+    return 0;
+  }
   if (command === "policy-init") {
     const target = resolve3(projectDir, ".mcp-security.json");
-    if (existsSync6(target) && !values.force) throw new Error(`${target} already exists (use --force to overwrite)`);
-    writeFileSync2(target, JSON.stringify(policyFromServers(discoverServers(projectDir).servers), null, 2) + "\n");
+    if (existsSync7(target) && !values.force) throw new Error(`${target} already exists (use --force to overwrite)`);
+    writeFileSync3(target, JSON.stringify(policyFromServers(discoverServers(projectDir).servers), null, 2) + "\n");
     process.stdout.write(`Wrote ${target}. Review allowedServers, then commit it.
 `);
     return 0;
@@ -21663,7 +21801,7 @@ ${r.skippedTools.map((t) => `- ${t.tool}: ${t.reason}`).join("\n")}` : ""
     if (!file) throw new Error("scan needs a JSON file with an mcpServers object");
     if (!values["confirm-launch"]) throw new Error("scan launches the servers in the file; re-run with --confirm-launch once you are OK with that");
     const source = resolve3(file);
-    const data = JSON.parse(readFileSync5(source, "utf8"));
+    const data = JSON.parse(readFileSync6(source, "utf8"));
     const servers = toServers(data.mcpServers ?? data, "project", source);
     if (!servers.length) throw new Error(`no servers found in ${file}`);
     const audit = await auditTools(servers, Number(values.timeout) || 20, void 0, loadPolicy(projectDir));

@@ -3,6 +3,8 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { adversarialTest } from "./adversarial.js";
 import { auditConfig } from "./audit.js";
+import { recommendPermissions } from "./capabilities.js";
+import { applyPlan, describePlan, planEnvRefs, planPermissions, planPinVersions, type FixPlan } from "./fixes.js";
 import { discoverServers, transportOf } from "./config.js";
 import { loadPins, pinEntry, pinKey, pinsPath, savePins } from "./pins.js";
 import { loadPolicy, policyFromServers, policyPaths } from "./policy.js";
@@ -201,6 +203,48 @@ server.registerTool(
         r.skippedTools.length ? `**Skipped:**\n${r.skippedTools.map((t) => `- ${excerpt(t.tool, 50)}: ${t.reason}`).join("\n")}` : "",
       ]),
     );
+  },
+);
+
+server.registerTool(
+  "apply_fixes",
+  {
+    title: "Apply recommended fixes",
+    description:
+      "Fixes findings in the project's own files. permissions: adds the recommended permissions.ask rules for tools that execute code, delete data or write files to .claude/settings.json (needs confirm_launch, because the servers are listed to classify their tools). pin-versions: pins unpinned npx/uvx packages in .mcp.json to the registry's current version (needs confirm_network). env-refs: replaces literal secrets in .mcp.json env/headers with ${VAR} references. Without write=true it only shows the planned edits. Every written file is backed up under ~/.claude/mcp-security/backups/ first; ~/.claude.json is never modified.",
+    inputSchema: {
+      fixes: z.array(z.enum(["permissions", "pin-versions", "env-refs"])).min(1),
+      write: z.boolean().default(false).describe("false = dry run. Show the plan to the user first, then call again with write=true after they agree."),
+      servers: z.array(z.string()).default(["*"]).describe("Servers considered for the permissions fix."),
+      confirm_launch: z.boolean().default(false),
+      confirm_network: z.boolean().default(false),
+      project_dir: z.string().optional(),
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+  },
+  async ({ fixes, write, servers: names, confirm_launch, confirm_network, project_dir }) => {
+    const dir = project_dir ?? projectDir();
+    const { servers } = discoverServers(dir);
+    const plans: FixPlan[] = [];
+    const blocked: string[] = [];
+    if (fixes.includes("permissions")) {
+      if (!confirm_launch) blocked.push("permissions: needs confirm_launch=true (the selected servers are started to list and classify their tools).");
+      else {
+        const audit = await auditTools(selectServers(servers, names).picked, 20);
+        plans.push(planPermissions(dir, recommendPermissions(audit.inventories).ask));
+      }
+    }
+    if (fixes.includes("pin-versions")) {
+      if (!confirm_network) blocked.push("pin-versions: needs confirm_network=true (package names are looked up on npm/PyPI).");
+      else plans.push(await planPinVersions(dir, servers));
+    }
+    if (fixes.includes("env-refs")) plans.push(planEnvRefs(dir));
+    const plan: FixPlan = { changes: plans.flatMap((p) => p.changes), notes: [...blocked, ...plans.flatMap((p) => p.notes)] };
+    // Two fixes may target the same file (.mcp.json): plan them separately, write the last content only once.
+    if (new Set(plan.changes.map((c) => c.path)).size !== plan.changes.length) {
+      return text("pin-versions and env-refs both edit .mcp.json: run them one after the other, not in the same call.");
+    }
+    return text(write ? describePlan(plan, applyPlan(plan)) : describePlan(plan));
   },
 );
 
