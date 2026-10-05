@@ -1,4 +1,4 @@
-// Dashboard UI, bundled into dist/dashboard.html. Every string from a scanned server reaches the DOM
+// Dashboard UI, bundled into plugin/dist/dashboard.html. Every string from a scanned server reaches the DOM
 // through textContent only, never innerHTML, so a malicious description cannot inject markup or script.
 import { App, applyDocumentTheme, applyHostStyleVariables } from "@modelcontextprotocol/ext-apps/app-with-deps";
 import type { DashboardData, DashboardFinding, DashboardServer } from "../dashboard.js";

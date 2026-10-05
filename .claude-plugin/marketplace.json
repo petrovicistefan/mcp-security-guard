@@ -6,9 +6,10 @@
   "plugins": [
     {
       "name": "mcp-security-guard",
-      "source": "./",
+      "source": "./plugin",
       "description": "OWASP MCP Top 10 security for the MCP servers you use: poisoning, rug pulls, supply chain, runtime guards, policy.",
       "version": "0.6.0"
     }
-  ]
+  ],
+  "description": "Security for the MCP servers you use in Claude Code: tool poisoning, rug pulls, supply chain, runtime guards and policy, mapped to the OWASP MCP Top 10."
 }

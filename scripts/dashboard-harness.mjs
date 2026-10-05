@@ -1,5 +1,5 @@
 // Local MCP Apps host for developing the dashboard: `npm run dashboard:dev [-- <project dir>]`.
-// Starts the real mcp-security-guard server over stdio, renders dist/dashboard.html in a sandboxed iframe
+// Starts the real mcp-security-guard server over stdio, renders plugin/dist/dashboard.html in a sandboxed iframe
 // through the official AppBridge, and proxies the app's tool calls to the server.
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
@@ -15,7 +15,7 @@ const port = Number(process.env.PORT ?? 8792);
 
 const client = new Client({ name: "dashboard-harness", version: "0" });
 await client.connect(
-  new StdioClientTransport({ command: process.execPath, args: [join(root, "dist/index.mjs")], env: { ...getDefaultEnvironment(), ...process.env, CLAUDE_PROJECT_DIR: projectDir }, stderr: "inherit" }),
+  new StdioClientTransport({ command: process.execPath, args: [join(root, "plugin/dist/index.mjs")], env: { ...getDefaultEnvironment(), ...process.env, CLAUDE_PROJECT_DIR: projectDir }, stderr: "inherit" }),
 );
 const dashboardUri = (await client.listTools()).tools.find((t) => t.name === "security_dashboard")?._meta?.ui?.resourceUri;
 if (!dashboardUri) throw new Error("security_dashboard has no _meta.ui.resourceUri");

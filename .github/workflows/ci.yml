@@ -25,6 +25,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
+      # Keep LF on Windows so the committed bundle compares byte for byte (no .gitattributes eol rule:
+      # the plugin directory rejects attributes that rewrite file contents).
+      - run: git config --global core.autocrlf false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -34,8 +37,8 @@ jobs:
       - run: npm audit --omit=dev --audit-level=moderate
       - run: npm run typecheck
       - run: npm run build
-      - name: Committed dist/ matches the source
-        run: git diff --exit-code -- dist/
+      - name: Committed plugin/dist/ matches the source
+        run: git diff --exit-code -- plugin/dist/
       - run: npm test
 
   dogfood:

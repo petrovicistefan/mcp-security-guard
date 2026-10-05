@@ -18,7 +18,7 @@ else {
 
 let failed = false;
 for (const set of sets) {
-  const out = execFileSync(process.execPath, [join(root, "dist/cli.mjs"), "scan", join(root, `bench/${set}.json`), "--confirm-launch", "--timeout", "60", "--fail-on", "none", "--format", "json"], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  const out = execFileSync(process.execPath, [join(root, "plugin/dist/cli.mjs"), "scan", join(root, `bench/${set}.json`), "--confirm-launch", "--timeout", "60", "--fail-on", "none", "--format", "json"], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   const bad = JSON.parse(out).findings.filter((f) => !f.rule.startsWith("config/") && ["critical", "high", "medium"].includes(f.severity));
   console.log(`${set}: ${bad.length ? `${bad.length} unexpected finding(s)` : "clean"}`);
   for (const f of bad) console.log(`  ${f.severity} ${f.rule} ${f.location}`);

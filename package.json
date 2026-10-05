@@ -2,9 +2,9 @@
   "name": "mcp-security-guard",
   "version": "0.6.0",
   "description": "Security scanner for MCP servers in Claude Code: tool poisoning, shadowing, rug pulls and risky configuration.",
-  "main": "dist/index.mjs",
+  "main": "plugin/dist/index.mjs",
   "scripts": {
-    "build": "esbuild src/index.ts src/cli.ts src/hook.ts --bundle --platform=node --format=esm --target=node20 --outdir=dist --out-extension:.js=.mjs --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\" && node scripts/build-app.mjs",
+    "build": "esbuild src/index.ts src/cli.ts src/hook.ts --bundle --platform=node --format=esm --target=node20 --outdir=plugin/dist --out-extension:.js=.mjs --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\" && node scripts/build-app.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "bench": "npm run build && node bench/check.mjs",

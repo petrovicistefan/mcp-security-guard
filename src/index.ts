@@ -214,7 +214,7 @@ server.registerTool(
   },
 );
 
-// Interactive dashboard (MCP App). Hosts that support MCP Apps render dist/dashboard.html in a
+// Interactive dashboard (MCP App). Hosts that support MCP Apps render plugin/dist/dashboard.html in a
 // sandboxed iframe; others show the text summary.
 server.registerTool(
   "security_dashboard",

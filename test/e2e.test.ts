@@ -6,7 +6,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport, getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-// Drives the bundled scanner (dist/index.mjs) over stdio against the poisoned fixture server.
+// Drives the bundled scanner (plugin/dist/index.mjs) over stdio against the poisoned fixture server.
 const root = resolve(__dirname, "..");
 const fixture = join(root, "test/fixtures/poisoned-server.mjs");
 
@@ -28,7 +28,7 @@ describe("scanner end to end", () => {
     writeConfig("v1");
     client = new Client({ name: "test", version: "0" });
     await client.connect(
-      new StdioClientTransport({ command: process.execPath, args: [join(root, "dist/index.mjs")], cwd: root, env: { ...getDefaultEnvironment(), CLAUDE_PROJECT_DIR: work, MCP_SECURITY_HOME: home }, stderr: "inherit" }),
+      new StdioClientTransport({ command: process.execPath, args: [join(root, "plugin/dist/index.mjs")], cwd: root, env: { ...getDefaultEnvironment(), CLAUDE_PROJECT_DIR: work, MCP_SECURITY_HOME: home }, stderr: "inherit" }),
     );
   }, 30_000);
   afterAll(() => client?.close());
@@ -66,7 +66,7 @@ describe("scanner end to end", () => {
 
   // The SessionStart hook reads the project dir from stdin and must stay silent when nothing changed.
   const runHook = () =>
-    execFileSync(process.execPath, [join(root, "dist/cli.mjs"), "session-check"], {
+    execFileSync(process.execPath, [join(root, "plugin/dist/cli.mjs"), "session-check"], {
       input: JSON.stringify({ hook_event_name: "SessionStart", cwd: work }),
       env: { ...getDefaultEnvironment(), MCP_SECURITY_HOME: home },
       encoding: "utf8",
@@ -78,7 +78,7 @@ describe("first run", () => {
     const work = mkdtempSync(join(tmpdir(), "mcpsec-welcome-"));
     const home = join(work, "state");
     writeFileSync(join(work, ".mcp.json"), JSON.stringify({ mcpServers: { leaky: { command: "x", env: { GITHUB_TOKEN: "ghp_" + "e".repeat(36) } } } }));
-    const hook = () => execFileSync(process.execPath, [join(root, "dist/cli.mjs"), "session-check"], { input: JSON.stringify({ cwd: work }), env: { ...getDefaultEnvironment(), MCP_SECURITY_HOME: home, HOME: work }, encoding: "utf8" });
+    const hook = () => execFileSync(process.execPath, [join(root, "plugin/dist/cli.mjs"), "session-check"], { input: JSON.stringify({ cwd: work }), env: { ...getDefaultEnvironment(), MCP_SECURITY_HOME: home, HOME: work }, encoding: "utf8" });
     const first = JSON.parse(hook());
     expect(first.systemMessage).toContain("mcp-security-guard is active");
     expect(first.systemMessage).toMatch(/found \d+ critical\/high issue/);
@@ -91,7 +91,7 @@ describe("dashboard (MCP App)", () => {
     const work = mkdtempSync(join(tmpdir(), "mcpsec-dash-"));
     writeFileSync(join(work, ".mcp.json"), JSON.stringify({ mcpServers: { leaky: { command: "npx", args: ["-y", "pkg"], env: { GITHUB_TOKEN: "ghp_" + "f".repeat(36) } } } }));
     const c = new Client({ name: "test", version: "0" });
-    await c.connect(new StdioClientTransport({ command: process.execPath, args: [join(root, "dist/index.mjs")], cwd: root, env: { ...getDefaultEnvironment(), CLAUDE_PROJECT_DIR: work, MCP_SECURITY_HOME: join(work, "state"), HOME: work } }));
+    await c.connect(new StdioClientTransport({ command: process.execPath, args: [join(root, "plugin/dist/index.mjs")], cwd: root, env: { ...getDefaultEnvironment(), CLAUDE_PROJECT_DIR: work, MCP_SECURITY_HOME: join(work, "state"), HOME: work } }));
     try {
       const tool = (await c.listTools()).tools.find((t) => t.name === "security_dashboard")!;
       const uri = (tool._meta as any)?.ui?.resourceUri;

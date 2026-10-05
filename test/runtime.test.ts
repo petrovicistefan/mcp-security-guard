@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { injectionsIn, parseToolName, readAudit, secretsIn, summarizeAudit } from "../src/runtime.js";
 
-const hook = resolve(__dirname, "../dist/hook.mjs");
+const hook = resolve(__dirname, "../plugin/dist/hook.mjs");
 const KEY = "ghp_" + "c".repeat(36);
 
 function runHook(input: object, home: string) {

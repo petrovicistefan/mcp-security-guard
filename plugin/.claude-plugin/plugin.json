@@ -16,5 +16,7 @@
     "security",
     "supply-chain",
     "tool-poisoning"
-  ]
+  ],
+  "homepage": "https://github.com/petrovicistefan/mcp-security-guard",
+  "repository": "https://github.com/petrovicistefan/mcp-security-guard"
 }

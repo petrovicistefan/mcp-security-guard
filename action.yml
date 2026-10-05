@@ -38,6 +38,6 @@ runs:
         status=0
         extra=()
         [ "$SUPPLY_CHAIN" = "true" ] && extra+=(--supply-chain)
-        node "$GITHUB_ACTION_PATH/dist/cli.mjs" audit --project "$PROJECT_DIR" --project-only "${extra[@]}" --format sarif --output "$SARIF_FILE" --fail-on none
-        node "$GITHUB_ACTION_PATH/dist/cli.mjs" audit --project "$PROJECT_DIR" --project-only "${extra[@]}" --fail-on "$FAIL_ON" >> "$GITHUB_STEP_SUMMARY" || status=$?
+        node "$GITHUB_ACTION_PATH/plugin/dist/cli.mjs" audit --project "$PROJECT_DIR" --project-only "${extra[@]}" --format sarif --output "$SARIF_FILE" --fail-on none
+        node "$GITHUB_ACTION_PATH/plugin/dist/cli.mjs" audit --project "$PROJECT_DIR" --project-only "${extra[@]}" --fail-on "$FAIL_ON" >> "$GITHUB_STEP_SUMMARY" || status=$?
         exit $status

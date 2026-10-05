@@ -15,7 +15,7 @@ function files(dir: string): string[] {
 }
 
 describe("source hygiene", () => {
-  for (const f of [...files(join(root, "src")), ...files(join(root, "test")), ...files(join(root, "skills")), ...files(join(root, "commands"))]) {
+  for (const f of [...files(join(root, "src")), ...files(join(root, "test")), ...files(join(root, "plugin", "skills")), ...files(join(root, "plugin", "commands"))]) {
     it(`${f.slice(root.length + 1)} has no literal invisible or control characters`, () => {
       // U+FE0F after an emoji (warning sign + U+FE0F) is a normal variation selector.
       const text = readFileSync(f, "utf8").replace(/(\p{Extended_Pictographic})\uFE0F/gu, "$1");

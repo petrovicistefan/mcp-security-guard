@@ -103,34 +103,34 @@ jobs:
 The same checks run locally without Claude:
 
 ```
-node dist/cli.mjs audit --project-only --format sarif --output mcp.sarif
-node dist/cli.mjs analyze-tools tools.json --name my-server   # for MCP server authors: a saved tools/list result
+node plugin/dist/cli.mjs audit --project-only --format sarif --output mcp.sarif
+node plugin/dist/cli.mjs analyze-tools tools.json --name my-server   # for MCP server authors: a saved tools/list result
 ```
 
 Check a server **before installing it** (launches it, sends only `initialize` and `tools/list`):
 
 ```
-node dist/cli.mjs scan some-server.mcp.json --confirm-launch
+node plugin/dist/cli.mjs scan some-server.mcp.json --confirm-launch
 ```
 
 Test your own server for command injection and path traversal (it **calls** the tools; run a test instance, ideally in a container):
 
 ```
-node dist/cli.mjs adversarial my-server.mcp.json --server my-server --i-own-this-server --confirm-launch
+node plugin/dist/cli.mjs adversarial my-server.mcp.json --server my-server --i-own-this-server --confirm-launch
 ```
 
 Fix what the audit found (dry run first, then `--write`):
 
 ```
-node dist/cli.mjs fix --pin-versions            # npx pkg → pkg@x.y.z, uvx pkg → pkg==x.y.z (looks up npm/PyPI)
-node dist/cli.mjs fix --env-refs --write        # literal secrets in .mcp.json → ${VAR} references
-node dist/cli.mjs fix --permissions --confirm-launch --write   # permissions.ask rules for risky tools
+node plugin/dist/cli.mjs fix --pin-versions            # npx pkg → pkg@x.y.z, uvx pkg → pkg==x.y.z (looks up npm/PyPI)
+node plugin/dist/cli.mjs fix --env-refs --write        # literal secrets in .mcp.json → ${VAR} references
+node plugin/dist/cli.mjs fix --permissions --confirm-launch --write   # permissions.ask rules for risky tools
 ```
 
 Start a team policy from the servers configured today:
 
 ```
-node dist/cli.mjs policy-init && git add .mcp-security.json
+node plugin/dist/cli.mjs policy-init && git add .mcp-security.json
 ```
 
 Any command takes `--format markdown|json|sarif|html`. The HTML report is a single self-contained file you can open in a browser or attach to a ticket.
@@ -148,7 +148,7 @@ Remote servers that require OAuth (most hosted MCP servers) cannot be scanned at
 To use it in Claude Desktop, add the server to `claude_desktop_config.json` and ask Claude to *"open the MCP security dashboard"*:
 
 ```json
-{ "mcpServers": { "mcp-security-guard": { "command": "node", "args": ["/path/to/mcp-security/dist/index.mjs"] } } }
+{ "mcpServers": { "mcp-security-guard": { "command": "node", "args": ["/path/to/mcp-security-guard/plugin/dist/index.mjs"] } } }
 ```
 
 The UI is a single self-contained HTML file. Server-supplied text reaches the page only as text (never as HTML), and the host's sandbox applies. Develop it with a local host that drives the real server: `npm run dashboard:dev -- /path/to/project`.
@@ -175,7 +175,7 @@ The hooks add about 40 ms per MCP call.
 
 ```
 npm install
-npm run build      # bundles to dist/index.mjs (committed, so the plugin runs without npm install)
+npm run build      # bundles to plugin/dist/ (committed, so the plugin runs without npm install)
 npm test
 npm run bench      # false-positive gate on real servers (network; Docker images optional, see bench/RESULTS.md)
 ```

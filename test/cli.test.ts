@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const cli = resolve(__dirname, "../dist/cli.mjs");
+const cli = resolve(__dirname, "../plugin/dist/cli.mjs");
 const run = (args: string[], cwd: string) => spawnSync(process.execPath, [cli, ...args], { cwd, encoding: "utf8", env: { ...process.env, HOME: cwd } });
 
 function project(mcp: object): string {

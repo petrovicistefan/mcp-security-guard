@@ -4,13 +4,13 @@ Used to calibrate rules and catch false positives before release. Re-run with:
 
 ```
 npm run build
-node dist/cli.mjs scan bench/remote-public.json --confirm-launch --fail-on none
-node dist/cli.mjs audit --project bench/marketplace --project-only --fail-on none
+node plugin/dist/cli.mjs scan bench/remote-public.json --confirm-launch --fail-on none
+node plugin/dist/cli.mjs audit --project bench/marketplace --project-only --fail-on none
 
 # stdio servers, isolated (images built once with network, run with --network none)
 docker build -t mcpsec-bench-node -f bench/sandbox/Dockerfile.node bench/sandbox
 docker build -t mcpsec-bench-python -f bench/sandbox/Dockerfile.python bench/sandbox
-node dist/cli.mjs scan bench/stdio-sandbox.json --confirm-launch --timeout 60 --fail-on none
+node plugin/dist/cli.mjs scan bench/stdio-sandbox.json --confirm-launch --timeout 60 --fail-on none
 ```
 
 ## 1. Public remote servers: live `tools/list` (15 servers)

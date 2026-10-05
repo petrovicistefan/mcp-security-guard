@@ -18,6 +18,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
+      - run: git config --global core.autocrlf false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -25,7 +26,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run build
-      - run: git diff --exit-code -- dist/
+      - run: git diff --exit-code -- plugin/dist/
       - run: npm test
 
   release:
@@ -41,11 +42,11 @@ jobs:
       - run: npm ci --ignore-scripts
       - name: Version tag matches the plugin manifest
         run: |
-          v=$(node -p 'require("./.claude-plugin/plugin.json").version')
+          v=$(node -p 'require("./plugin/.claude-plugin/plugin.json").version')
           test "v$v" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME != plugin.json $v"; exit 1; }
       - name: Package plugin and SBOM
         run: |
-          git archive --format=zip --prefix=mcp-security-guard/ -o mcp-security-guard-$GITHUB_REF_NAME.zip HEAD
+          git archive --format=zip --prefix=mcp-security-guard/ -o mcp-security-guard-$GITHUB_REF_NAME.zip HEAD:plugin
           npm run --silent sbom
           sha256sum mcp-security-guard-$GITHUB_REF_NAME.zip sbom.cdx.json > SHA256SUMS
       - name: Signed build provenance
