@@ -144,6 +144,37 @@ Rămân pentru planul Team: descoperire și audit la nivel de organizație, revi
 ## Limitări cunoscute
 - Serverele remote cu OAuth (Vercel, Cloudflare API, Runpod) nu pot fi scanate la nivel de tool-uri, pentru că scannerul nu are acces la token-urile Claude Code. Configurația lor se auditează totuși. Idee: un flux OAuth propriu, opțional, sau citirea definițiilor tool-urilor direct din sesiunea Claude (prin skill).
 
+## Ce mai rămâne de acoperit (după v0.5.0)
+
+### Obligatorii înainte de lansare
+- [ ] **Test real în Claude Code**: instalare din repo; verificat serverul MCP, `/mcp-audit` și cele 3 hook-uri (formatul `tool_response`, numele de permisiuni `mcp__plugin_...`, afișarea mesajelor)
+- [ ] **CI pe Linux, macOS și Windows** (căi, `/tmp` la testul adversarial, shell-uri)
+- [ ] **Securizarea propriului proiect**: versiuni exacte pentru dependențe, SBOM, release-uri semnate, fuzzing pe hook (intrări malformate sau uriașe)
+- [ ] **Documente de publicare**: `LICENSE`, `SECURITY.md`, politică de confidențialitate, `CHANGELOG`, release GitHub
+- [ ] **Valoarea implicită a verificării la pornire**: probabil `config` în loc de `full` (cu multe servere pinuite, `full` e lent)
+
+### Goluri de detecție
+- [ ] **`instructions`, prompts și resources**: și ele ajung în contextul lui Claude, dar azi scanăm doar tool-urile (efort mic)
+- [ ] **Alți clienți MCP**: Cursor, VS Code, Windsurf, extensiile `.mcpb` din Claude Desktop, `managed-mcp.json` (efort mic–mediu)
+- [ ] **Hash pentru serverele locale** (`node ./server.js`), ca drift-ul să prindă și schimbările de fișier (efort mic)
+- [ ] **Prompt injection în alte limbi**: câteva limbi prin regex; acoperirea completă prin LLM, în planul plătit
+- [ ] **Vulnerabilități în imaginile Docker**, prin Trivy sau Grype dacă sunt instalate
+- [ ] **Capabilitățile `sampling` și `elicitation`** cerute de servere: măcar semnalate
+- [ ] **Scope-uri OAuth și durata token-urilor**: planul Team
+
+### Experiența utilizatorului
+- [ ] **Corecturi automate, cu confirmare**: aplicarea regulilor de permisiuni, fixarea versiunilor (`npx pkg` → `pkg@x.y.z`), mutarea secretelor în `${VAR}`
+- [ ] **Raport HTML / MCP App** (board vizual)
+- [ ] **Prima rulare**: audit sau sugestie automată după instalare
+
+### Business (după lansare)
+- [ ] Waitlist pentru Pro și Team
+- [ ] Raport public „Am scanat N servere MCP”
+- [ ] Backend pentru planurile plătite, începând cu feed-ul de threat intelligence
+- [ ] Verificarea numelui „mcp-security” (pachete sau mărci existente)
+
+**Ordinea propusă:** test real → instructions/prompts/resources → CI pe mai multe platforme + securizarea proiectului → documente + release → corecturi automate.
+
 ## Metrici de urmărit
 - Instalări și utilizatori activi (stele GitHub, descărcări)
 - Numărul de constatări critice găsite: povești reale pentru marketing, anonimizate
