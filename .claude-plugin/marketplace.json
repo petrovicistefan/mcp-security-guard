@@ -8,7 +8,7 @@
       "name": "mcp-security",
       "source": "./",
       "description": "Audits installed MCP servers for tool poisoning, shadowing, rug pulls and risky configuration.",
-      "version": "0.3.0"
+      "version": "0.4.0"
     }
   ]
 }

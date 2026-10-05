@@ -3,10 +3,13 @@
 
 /** Zero-width, bidi-control, tag and other invisible code points. */
 export const INVISIBLE_RE =
-  /[­͏؜ᅟᅠ឴឵᠋-᠏​-‏‪-‮⁠-⁯ㅤ︀-️﻿ﾠ\u{E0000}-\u{E007F}\u{E0100}-\u{E01EF}]/gu;
+  /[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\u3164\uFE00-\uFE0F\uFEFF\uFFA0\u{E0000}-\u{E007F}\u{E0100}-\u{E01EF}]/gu;
+
+/** C0/C1 controls except tab/newline/CR, including ESC: never echo these raw, they can drive the terminal. */
+const CONTROL_CHARS_RE = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/g;
 
 export function revealInvisible(text: string): string {
-  return text.replace(INVISIBLE_RE, (ch) => `<U+${ch.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")}>`);
+  return text.replace(CONTROL_CHARS_RE, (ch) => `<U+${ch.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0")}>`).replace(INVISIBLE_RE, (ch) => `<U+${ch.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")}>`);
 }
 
 export function truncate(text: string, max = 160): string {

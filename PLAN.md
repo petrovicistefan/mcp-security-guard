@@ -114,7 +114,7 @@ Prețurile trebuie validate cu utilizatori reali înainte de lansare. Mai jos, l
 7. [ ] **Trimitere în Anthropic Directory**
 8. [ ] **Waitlist pentru Pro/Team** în README, ca să validezi cererea
 9. [ ] Hook `PostToolUse` pentru scanarea răspunsurilor tool-urilor (protecție la runtime)
-5b. [ ] **Rata de detecție**: colecție de PoC-uri publice de tool poisoning, ca să măsurăm cât prindem, nu doar alarmele false
+5b. [x] **Rata de detecție**: corpus cu 27 de atacuri + 13 cazuri benigne; detecție 70% → **96%**, alarme false high 4 → **0** (vezi bench/RESULTS.md)
 10. [ ] Primul raport de cercetare: „Am scanat N servere MCP populare”
 
 ## Interfață vizuală (board)

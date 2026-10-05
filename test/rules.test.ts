@@ -98,7 +98,7 @@ describe("tool rules", () => {
   });
 
   it("detects invisible characters and reveals them in evidence", () => {
-    const fs = analyzeTools("evil", [{ name: "t", description: "ok​hidden\u{E0041}" }]);
+    const fs = analyzeTools("evil", [{ name: "t", description: "ok\u200Bhidden\u{E0041}" }]);
     const f = fs.find((x) => x.rule === "tool/invisible-characters")!;
     expect(f.severity).toBe("critical");
     expect(f.evidence).toContain("<U+200B>");

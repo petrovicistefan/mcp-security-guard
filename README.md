@@ -4,15 +4,18 @@ A Claude Code plugin that audits the **MCP servers you have installed**. Your co
 
 | Check | What it catches |
 |---|---|
-| Tool poisoning | Instruction overrides, "don't tell the user", `<IMPORTANT>` tags, sensitive paths (`~/.ssh`, `.env`), exfiltration wording, encoded payloads, in descriptions *and* schema strings |
-| Invisible Unicode | Zero-width, bidi-control and tag characters that hide text from human reviewers |
-| Tool shadowing | A server whose descriptions reference another server's tools |
+| Tool poisoning | Instruction overrides, "don't tell the user", `<IMPORTANT>` tags, directives to read secrets (`~/.ssh`, `.env`), conversation harvesting, exfiltration via URLs, parameters and Markdown images, HTML comments, encoded payloads |
+| Full-schema poisoning | The same checks on parameter names, descriptions, defaults, enums, `required`, plus non-schema text in `type` |
+| Hidden text | Zero-width, bidi-control and Unicode-tag characters, ANSI terminal escapes, homoglyph tool names |
+| Tool shadowing | A server whose descriptions reference another server's tools, and tool-name collisions between servers |
 | Rug pulls | Tool definitions or launch commands that changed after you pinned them (SHA-256 per tool). Re-checked automatically at every session start |
 | Configuration | Plaintext secrets in env/headers/args/URLs, plain-HTTP remotes, unpinned `npx`/`uvx` packages, privileged or unpinned Docker images, pipe-to-shell launches, duplicate names across scopes |
 
 It discovers servers from every place Claude Code and Claude Desktop load them: user, local and project scope, **servers shipped inside installed plugins** (named `plugin:<plugin>:<server>`), and `claude_desktop_config.json`.
 
 Everything runs locally. Nothing is sent anywhere.
+
+**Measured:** detects 26/27 attacks from a corpus of publicly documented techniques, with 0 false positives on 13 hard benign samples and on 17 real servers (83 tools). See [bench/RESULTS.md](bench/RESULTS.md).
 
 ## Install
 

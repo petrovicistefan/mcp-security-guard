@@ -1,4 +1,4 @@
-# Benchmark results (2026-10-05, v0.3.0)
+# Benchmark results (2026-10-05, v0.4.0)
 
 Used to calibrate rules and catch false positives before release. Re-run with:
 
@@ -47,6 +47,30 @@ filesystem, memory, everything, sequential-thinking (npm 2026.8.31) and git, fet
 | `config/docker-unpinned-image` ×7 | ✅ expected | Local benchmark tags have no digest |
 
 After the fix: **0 critical/high findings across 17 legitimate servers (83 tools)**, and 2 false positives found and fixed in total.
+
+## 4. Detection rate: attack corpus (`test/corpus.ts`, runs in CI)
+
+27 attack samples re-creating publicly documented techniques, plus 13 benign hard negatives modelled on how real servers describe themselves (kubeconfig paths, AWS credential chains, `.env.example`, legit `upload`/`bcc` tools, API sequencing).
+
+Techniques covered: tool poisoning and `<IMPORTANT>` tags (Invariant Labs), line jumping and ANSI escape deception (Trail of Bits), full-schema poisoning in parameter names, defaults, enums, `type` and `required` (CyberArk), tool shadowing (identifier and plain-word names), tool-name collision, zero-width / Unicode-tag / bidi smuggling, homoglyph names, base64 payloads, HTML comments, whitespace padding, exfiltration via URLs, parameters and Markdown images.
+
+| | Before (v0.3.0) | After (v0.4.0) |
+|---|---|---|
+| Attacks detected (medium or above) | 19/27 (70%) | **26/27 (96%)** |
+| Benign samples flagged high or above | 4/13 | **0/13** |
+| Benign samples flagged medium | 1/13 | **0/13** |
+| Real servers (17 legit, 83 tools): critical/high/medium | 0 | **0** |
+
+What changed:
+- **New rules:** `ansi-escape`, `control-characters`, `name-collision`, `schema-anomaly` (non-schema text in `type`), `context-harvesting` (conversation history, system prompt), `markdown-exfiltration`, `hidden-comment`.
+- **`sensitive-path` is now context-aware:** high only when the sentence also tells the model to act (read, include, pass, send, paste…). A bare mention such as "uses ~/.kube/config" is low. This removed all 4 high false positives.
+- **`precondition-chain`** ignores sequencing between a server's own tools ("first call list_projects").
+- **Parameter names** are read as words (`content_from_reading_ssh_id_rsa`), and `type`/`format` fields are analysed.
+- **Report output** now escapes ANSI and control characters, so a malicious description cannot drive the terminal that shows the report.
+
+**Known miss:** `multilingual-override` (a Romanian "ignore previous instructions"). The regex rules are English-only. That is the case for the planned LLM-based semantic analysis.
+
+Out of scope for static checks: Advanced Tool Poisoning (instructions in tool *outputs* at runtime, CyberArk) and rug pulls between scans. Pinning covers rug pulls; outputs need the planned `PostToolUse` hook.
 
 ## Not yet covered
 - OAuth-protected remote servers (GitHub, Linear, Semgrep, Vercel…).
