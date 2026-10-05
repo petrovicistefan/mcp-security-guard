@@ -46,7 +46,7 @@ describe("threat feed wiring", () => {
       expect(requests[0].auth).toBe("Bearer test-key");
       expect(requests[0].body.toolHashes.every((h: string) => /^[0-9a-f]{64}$/.test(h))).toBe(true);
       expect(JSON.stringify(requests[0].body)).not.toContain("Adds two numbers");
-      const feed = a.findings.filter((f) => f.rule === "cloud-feed-tool");
+      const feed = a.findings.filter((f) => f.rule === "feed/tool");
       expect(feed).toHaveLength(1);
       expect(feed[0]).toMatchObject({ severity: "critical", server: "poisoned" });
       expect(a.cloudNote).toContain("Threat feed checked");

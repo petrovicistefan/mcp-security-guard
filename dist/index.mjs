@@ -41325,8 +41325,8 @@ var BY_RULE = [
   [/^capability\/network-egress$/, ["MCP10"]],
   [/^config\/(unpinned-package|docker-unpinned-image|pipe-to-shell|shell-wrapper)$/, ["MCP04"]],
   [/^supply-chain\//, ["MCP04"]],
-  [/^cloud-feed-package$/, ["MCP04"]],
-  [/^cloud-feed-tool$/, ["MCP03", "MCP04"]],
+  [/^feed\/package$/, ["MCP04"]],
+  [/^feed\/tool$/, ["MCP03", "MCP04"]],
   [/^drift\/config-changed$/, ["MCP04"]],
   [/^drift\/tool-/, ["MCP03", "MCP04"]],
   [/^config\/(insecure-transport|invalid-url)$/, ["MCP07"]],
@@ -41784,14 +41784,14 @@ function toFindings(entries, packages, servers) {
       const m = e.match;
       for (const p of packages) {
         if (p.ecosystem !== m.ecosystem || p.name.toLowerCase() !== m.name.toLowerCase() || m.version && p.version !== m.version) continue;
-        out.push({ severity: e.severity, rule: "cloud-feed-package", title: e.title, location: `server "${p.server.name}" (${p.server.scope}) \u203A ${p.ecosystem} ${p.name}${p.version ? `@${p.version}` : ""}`, remediation, file: p.server.source, server: p.server.name });
+        out.push({ severity: e.severity, rule: "feed/package", title: e.title, location: `server "${p.server.name}" (${p.server.scope}) \u203A ${p.ecosystem} ${p.name}${p.version ? `@${p.version}` : ""}`, remediation, file: p.server.source, server: p.server.name });
       }
     } else {
       const hash2 = e.match.hash;
       for (const s of servers)
         for (const t of s.tools)
           if (hashTool(t) === hash2)
-            out.push({ severity: e.severity, rule: "cloud-feed-tool", title: e.title, location: `server "${s.server.name}" (${s.server.scope}) \u203A tool "${excerpt(t.name, 60)}"`, remediation, file: s.server.source, server: s.server.name });
+            out.push({ severity: e.severity, rule: "feed/tool", title: e.title, location: `server "${s.server.name}" (${s.server.scope}) \u203A tool "${excerpt(t.name, 60)}"`, remediation, file: s.server.source, server: s.server.name });
     }
   }
   return out;

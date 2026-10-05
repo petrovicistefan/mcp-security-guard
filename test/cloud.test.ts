@@ -69,8 +69,8 @@ describe("cloud response", () => {
     expect(r.status).toBe("ok");
     expect(r.note).toContain("2026-10-06");
     expect(r.findings.map((f) => [f.rule, f.server, f.severity])).toEqual([
-      ["cloud-feed-package", "internal-billing-db", "critical"],
-      ["cloud-feed-tool", "internal-billing-db", "high"],
+      ["feed/package", "internal-billing-db", "critical"],
+      ["feed/tool", "internal-billing-db", "high"],
     ]);
     expect(r.findings[0].remediation).toContain("https://example.test/advisory/1");
   });

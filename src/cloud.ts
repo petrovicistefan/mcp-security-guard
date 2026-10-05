@@ -129,14 +129,14 @@ export function toFindings(entries: CloudFeedEntry[], packages: PackageRef[], se
       const m = e.match;
       for (const p of packages) {
         if (p.ecosystem !== m.ecosystem || p.name.toLowerCase() !== m.name.toLowerCase() || (m.version && p.version !== m.version)) continue;
-        out.push({ severity: e.severity, rule: "cloud-feed-package", title: e.title, location: `server "${p.server.name}" (${p.server.scope}) › ${p.ecosystem} ${p.name}${p.version ? `@${p.version}` : ""}`, remediation, file: p.server.source, server: p.server.name });
+        out.push({ severity: e.severity, rule: "feed/package", title: e.title, location: `server "${p.server.name}" (${p.server.scope}) › ${p.ecosystem} ${p.name}${p.version ? `@${p.version}` : ""}`, remediation, file: p.server.source, server: p.server.name });
       }
     } else {
       const hash = e.match.hash;
       for (const s of servers)
         for (const t of s.tools)
           if (hashTool(t) === hash)
-            out.push({ severity: e.severity, rule: "cloud-feed-tool", title: e.title, location: `server "${s.server.name}" (${s.server.scope}) › tool "${excerpt(t.name, 60)}"`, remediation, file: s.server.source, server: s.server.name });
+            out.push({ severity: e.severity, rule: "feed/tool", title: e.title, location: `server "${s.server.name}" (${s.server.scope}) › tool "${excerpt(t.name, 60)}"`, remediation, file: s.server.source, server: s.server.name });
     }
   }
   return out;
