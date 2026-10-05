@@ -1,0 +1,12 @@
+{
+  "name": "mcp-security",
+  "owner": { "name": "Stefan Petrovici" },
+  "plugins": [
+    {
+      "name": "mcp-security",
+      "source": "./",
+      "description": "Audits installed MCP servers for tool poisoning, shadowing, rug pulls and risky configuration.",
+      "version": "0.1.0"
+    }
+  ]
+}
