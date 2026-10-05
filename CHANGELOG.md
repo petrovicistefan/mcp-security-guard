@@ -2,6 +2,7 @@
 
 ## 0.6.0
 
+- **HTML report** (`--format html`): self-contained page with severity counts, scores, OWASP MCP Top 10 breakdown and finding cards, light and dark; no scripts, strict CSP, every server-supplied string escaped
 - **Container image vulnerabilities** for Docker-based servers via Trivy or Grype when installed (`scan_images`, `audit --scan-images`)
 - Discovers MCP servers of **other clients** (Cursor, VS Code incl. JSON-with-comments settings, Windsurf), **Claude Desktop extensions** (.mcpb) and the organisation-managed **managed-mcp.json**
 - **Non-English prompt injection**: instruction-override and concealment patterns in Romanian, Spanish, French, German, Portuguese, Italian, Chinese and Russian, kept within one sentence. Corpus: 32/32 attacks detected, 0/14 benign flagged

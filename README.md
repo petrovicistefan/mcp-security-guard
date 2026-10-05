@@ -132,6 +132,8 @@ Start a team policy from the servers configured today:
 node dist/cli.mjs policy-init && git add .mcp-security.json
 ```
 
+Any command takes `--format markdown|json|sarif|html`. The HTML report is a single self-contained file you can open in a browser or attach to a ticket.
+
 Exit codes: `0` clean, `1` findings at or above `--fail-on`, `2` usage error.
 
 ## Limitations

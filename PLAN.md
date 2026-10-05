@@ -177,7 +177,8 @@ Rămân pentru planul Team: descoperire și audit la nivel de organizație, revi
 
 ### Experiența utilizatorului
 - [x] **Corecturi automate, cu confirmare** (`apply_fixes` / `fix`): reguli de permisiuni, fixarea versiunilor, secrete → `${VAR}`. Previzualizare implicită, backup în afara proiectului
-- [ ] **Raport HTML / MCP App** (board vizual)
+- [x] **Raport HTML** (`--format html`, v0.6.0)
+- [ ] **MCP App** (board interactiv afișat direct în Claude)
 - [ ] **Prima rulare**: audit sau sugestie automată după instalare
 
 ### Business (după lansare)

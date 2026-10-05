@@ -4,7 +4,7 @@
 //   analyze-tools <file> [options]   Tool-poisoning checks on a saved tools/list payload.
 //   scan <mcp.json> --confirm-launch Full audit (config + live tools/list) of servers you have not installed yet.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { basename, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { adversarialTest } from "./adversarial.js";
 import { auditConfig } from "./audit.js";
@@ -15,6 +15,7 @@ import { loadPolicy, policyFromServers } from "./policy.js";
 import { scanImages } from "./image-scan.js";
 import { checkSupplyChain } from "./supply-chain.js";
 import { auditTools, toolAuditSections } from "./tool-audit.js";
+import { toHtml } from "./html-report.js";
 import { report } from "./report.js";
 import { scoreServer, scoreTable } from "./score.js";
 import { analyzeTools } from "./rules/tool-rules.js";
@@ -26,8 +27,8 @@ import { VERSION } from "./version.js";
 const USAGE = `mcp-security ${VERSION}
 
 Usage:
-  mcp-security audit [--project DIR] [--project-only] [--supply-chain] [--scan-images] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
-  mcp-security analyze-tools FILE [--name NAME] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
+  mcp-security audit [--project DIR] [--project-only] [--supply-chain] [--scan-images] [--format markdown|json|sarif|html] [--output FILE] [--fail-on SEVERITY]
+  mcp-security analyze-tools FILE [--name NAME] [--format markdown|json|sarif|html] [--output FILE] [--fail-on SEVERITY]
   mcp-security adversarial FILE --server NAME --i-own-this-server --confirm-launch [--canary-dir DIR] [--host-canary-dir DIR] [--include-destructive]
   mcp-security fix [--permissions --confirm-launch] [--pin-versions] [--env-refs] [--write] [--project DIR]
   mcp-security policy-init [--project DIR] [--force]
@@ -84,6 +85,8 @@ function emit(title: string, findings: Finding[], projectDir: string, format: st
   const body =
     format === "sarif"
       ? JSON.stringify(toSarif(findings, projectDir, VERSION), null, 2)
+      : format === "html"
+        ? toHtml(title, findings, sections, VERSION)
       : format === "json"
         ? JSON.stringify({ tool: "mcp-security", version: VERSION, findings }, null, 2)
         : report(title, findings, sections);
@@ -136,7 +139,7 @@ async function main(): Promise<number> {
     process.stdout.write(USAGE);
     return 0;
   }
-  if (!["markdown", "json", "sarif"].includes(values.format!)) throw new Error(`invalid --format: ${values.format}`);
+  if (!["markdown", "json", "sarif", "html"].includes(values.format!)) throw new Error(`invalid --format: ${values.format}`);
   const projectDir = resolve(values.project!);
 
   if (command === "audit") {
@@ -161,7 +164,7 @@ async function main(): Promise<number> {
     const data = JSON.parse(readFileSync(file, "utf8"));
     const tools: ToolDefinition[] = Array.isArray(data) ? data : (data.tools ?? data.result?.tools ?? []);
     if (!tools.length) throw new Error(`no tools found in ${file}`);
-    const name = values.name ?? file;
+    const name = values.name ?? basename(file);
     const findings = analyzeTools(name, tools).map((f) => ({ ...f, file: resolve(file) }));
     emit(`Tool definition analysis: ${name}`, findings, projectDir, values.format!, values.output, [`Analyzed **${tools.length}** tool(s).`]);
     return exitCode(findings, values["fail-on"]!);
@@ -217,7 +220,7 @@ async function main(): Promise<number> {
     if (!servers.length) throw new Error(`no servers found in ${file}`);
     const audit = await auditTools(servers, Number(values.timeout) || 20, undefined, loadPolicy(projectDir));
     const findings = audit.findings;
-    emit(`MCP server scan: ${file}`, findings, projectDir, values.format!, values.output, toolAuditSections(audit));
+    emit(`MCP server scan: ${basename(file)}`, findings, projectDir, values.format!, values.output, toolAuditSections(audit));
     return exitCode(findings, values["fail-on"]!);
   }
 
