@@ -195,6 +195,10 @@ Rămân pentru planul Team: descoperire și audit la nivel de organizație, revi
 
 **Ordinea propusă:** test real → instructions/prompts/resources → CI pe mai multe platforme + securizarea proiectului → documente + release → corecturi automate.
 
+## Înainte de următorul release (v0.7.0)
+- [ ] **Deploy backend înainte de plugin:** `npx wrangler deploy` în `mcp-security-cloud` (acceptă ambele nume de client). Până atunci, feed-ul răspunde 400 la noul nume, iar plugin-ul îl sare fără eroare.
+- [ ] Regulile de permisiuni scrise pentru vechile nume (`mcp__plugin_mcp-security_…`) trebuie actualizate de utilizatori (notat în CHANGELOG).
+
 ## Metrici de urmărit
 - Instalări și utilizatori activi (stele GitHub, descărcări)
 - Numărul de constatări critice găsite: povești reale pentru marketing, anonimizate

@@ -45,7 +45,7 @@ What a local tool cannot do (planned for a hosted Team plan): org-wide discovery
 ## Install
 
 ```
-/plugin marketplace add petrovicistefan/mcp-security
+/plugin marketplace add petrovicistefan/mcp-security-guard
 /plugin install mcp-security-guard@mcp-security-guard
 ```
 
@@ -90,7 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: petrovicistefan/mcp-security@main
+      - uses: petrovicistefan/mcp-security-guard@main
         id: mcp
         with:
           fail-on: high          # critical | high | medium | low | info | none
