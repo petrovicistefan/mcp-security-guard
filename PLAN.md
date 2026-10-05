@@ -171,7 +171,7 @@ Rămân pentru planul Team: descoperire și audit la nivel de organizație, revi
 - [x] **Alți clienți MCP**: Cursor, VS Code, Windsurf, extensiile `.mcpb` din Claude Desktop, `managed-mcp.json` (v0.6.0)
 - [x] **Hash pentru serverele locale** (`node ./server.js`): conținutul fișierului intră în hash-ul configurației pinuite
 - [x] **Prompt injection în alte limbi**: 8 limbi prin regex (ro, es, fr, de, pt, it, zh, ru), 32/32 detecție; restul limbilor: LLM, în planul plătit
-- [ ] **Vulnerabilități în imaginile Docker**, prin Trivy sau Grype dacă sunt instalate
+- [x] **Vulnerabilități în imaginile Docker**, prin Trivy sau Grype dacă sunt instalate (v0.6.0, opțional, nu instalează nimic)
 - [x] **Capabilitățile `sampling` și `elicitation`**: nu se pot detecta static. Sunt capabilități ale *clientului*: un server le folosește doar la runtime, iar Claude Code cere confirmare pentru ele. Scannerul nostru nu le declară, așa că serverele scanate nu le pot folosi în timpul auditului
 - [ ] **Scope-uri OAuth și durata token-urilor**: planul Team
 

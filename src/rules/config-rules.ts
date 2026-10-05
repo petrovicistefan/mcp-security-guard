@@ -79,22 +79,28 @@ function checkDocker(s: ServerConfig, loc: string): Finding[] {
   if (/--network[ =]host|--net[ =]host/.test(joined)) {
     out.push({ severity: "medium", rule: "config/docker-host-network", title: "Container uses host networking", location: loc, evidence: excerpt(joined), remediation: "Use the default bridge network unless host networking is required." });
   }
-  const runIdx = args.indexOf("run");
-  if (runIdx >= 0) {
-    // The image is the first positional after `run` whose previous token is not a flag expecting a value.
-    for (let i = runIdx + 1; i < args.length; i++) {
-      const a = args[i];
-      if (a.startsWith("-")) {
-        if (!a.includes("=") && /^(-e|--env|-v|--volume|--name|--network|--net|-p|--publish|--mount|-w|--workdir|-u|--user|--entrypoint)$/.test(a)) i++;
-        continue;
-      }
-      if (!a.includes("@sha256:") && (!/:[^/]+$/.test(a) || a.endsWith(":latest"))) {
-        out.push({ severity: "medium", rule: "config/docker-unpinned-image", title: `Image "${excerpt(a, 80)}" has no fixed tag or digest`, location: loc, evidence: excerpt(joined), remediation: "Reference the image by digest (image@sha256:…) or at least an immutable version tag." });
-      }
-      break;
-    }
+  const image = dockerImageOf(s);
+  if (image && !image.includes("@sha256:") && (!/:[^/]+$/.test(image) || image.endsWith(":latest"))) {
+    out.push({ severity: "medium", rule: "config/docker-unpinned-image", title: `Image "${excerpt(image, 80)}" has no fixed tag or digest`, location: loc, evidence: excerpt(joined), remediation: "Reference the image by digest (image@sha256:…) or at least an immutable version tag." });
   }
   return out;
+}
+
+/** The image of a `docker|podman run …` launch: the first positional after `run`, skipping flags that take a value. */
+export function dockerImageOf(s: ServerConfig): string | undefined {
+  if (!s.command || !["docker", "podman"].includes(baseCommand(s.command))) return undefined;
+  const args = s.args ?? [];
+  const runIdx = args.indexOf("run");
+  if (runIdx < 0) return undefined;
+  for (let i = runIdx + 1; i < args.length; i++) {
+    const a = args[i];
+    if (a.startsWith("-")) {
+      if (!a.includes("=") && /^(-e|--env|-v|--volume|--name|--network|--net|-p|--publish|--mount|-w|--workdir|-u|--user|--entrypoint|--env-file|--platform)$/.test(a)) i++;
+      continue;
+    }
+    return a;
+  }
+  return undefined;
 }
 
 function checkShell(s: ServerConfig, loc: string): Finding[] {

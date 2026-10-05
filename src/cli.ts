@@ -12,6 +12,7 @@ import { recommendPermissions } from "./capabilities.js";
 import { applyPlan, describePlan, planEnvRefs, planPermissions, planPinVersions, type FixPlan } from "./fixes.js";
 import { discoverServers, toServers } from "./config.js";
 import { loadPolicy, policyFromServers } from "./policy.js";
+import { scanImages } from "./image-scan.js";
 import { checkSupplyChain } from "./supply-chain.js";
 import { auditTools, toolAuditSections } from "./tool-audit.js";
 import { report } from "./report.js";
@@ -25,7 +26,7 @@ import { VERSION } from "./version.js";
 const USAGE = `mcp-security ${VERSION}
 
 Usage:
-  mcp-security audit [--project DIR] [--project-only] [--supply-chain] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
+  mcp-security audit [--project DIR] [--project-only] [--supply-chain] [--scan-images] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
   mcp-security analyze-tools FILE [--name NAME] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
   mcp-security adversarial FILE --server NAME --i-own-this-server --confirm-launch [--canary-dir DIR] [--host-canary-dir DIR] [--include-destructive]
   mcp-security fix [--permissions --confirm-launch] [--pin-versions] [--env-refs] [--write] [--project DIR]
@@ -41,6 +42,7 @@ Usage:
   fix              plans (and with --write applies) fixes to the project's .mcp.json and .claude/settings.json,
                    backing up every file it changes under ~/.claude/mcp-security/backups/
   policy-init      writes .mcp-security.json approving the servers configured now (review it, then commit it)
+  --scan-images    (audit) scan container images with Trivy or Grype, if installed
   --supply-chain   (audit) also check npx/uvx packages on npm/PyPI and OSV (network)
   --project-only   only audit the project's .mcp.json (recommended in CI)
   --fail-on        critical | high | medium | low | info | none   (default: high)
@@ -118,6 +120,7 @@ async function main(): Promise<number> {
       help: { type: "boolean", short: "h" },
       force: { type: "boolean", default: false },
       "supply-chain": { type: "boolean", default: false },
+      "scan-images": { type: "boolean", default: false },
       server: { type: "string" },
       "i-own-this-server": { type: "boolean", default: false },
       "include-destructive": { type: "boolean", default: false },
@@ -140,9 +143,13 @@ async function main(): Promise<number> {
     const { findings, servers, sources } = auditConfig(projectDir, { projectOnly: values["project-only"] });
     const supply = values["supply-chain"] ? await checkSupplyChain(servers) : undefined;
     if (supply) findings.push(...supply.findings);
+    const images = values["scan-images"] ? await scanImages(servers) : undefined;
+    if (images) findings.push(...images.findings);
     emit("MCP configuration audit", findings, projectDir, values.format!, values.output, [
       `Scanned **${servers.length}** server(s) from ${sources.filter((s) => s.status === "ok").length} config file(s).`,
       scoreTable(servers.map((sv) => scoreServer(sv, findings, "config"))),
+      ...(images?.notes ?? []),
+      images?.scanner ? `Images: scanned ${images.scanned.length} with ${images.scanner}.` : "",
       supply ? `Supply chain: checked ${supply.checked.length} package(s) against npm/PyPI and OSV.${supply.errors.length ? ` Failed lookups: ${supply.errors.join("; ")}` : ""}` : "",
     ]);
     return exitCode(findings, values["fail-on"]!);

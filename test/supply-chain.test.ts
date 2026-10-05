@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { scanImages, type Runner } from "../src/image-scan.js";
 import { checkSupplyChain, packagesOf, typosquatOf, type Fetcher } from "../src/supply-chain.js";
 import type { ServerConfig } from "../src/types.js";
 
@@ -74,5 +75,30 @@ describe("registry and OSV checks", () => {
     const r = await checkSupplyChain([srv("ghost", "npx", ["ghost-mcp-zzz"]), srv("py", "uvx", ["mcp-server-time"])], failing, NOW);
     expect(r.findings.map((f) => f.rule)).toEqual(["supply-chain/package-not-found"]);
     expect(r.errors.join()).toContain("offline");
+  });
+});
+
+describe("container image scanning", () => {
+  const docker = (name: string, image: string): ServerConfig => ({ name, scope: "project", source: "/p/.mcp.json", command: "docker", args: ["run", "-i", "--rm", "-e", "X=1", image] });
+
+  it("reports vulnerabilities found by Trivy, once per image", async () => {
+    const calls: string[][] = [];
+    const run: Runner = async (cmd, args) => {
+      calls.push([cmd, ...args]);
+      if (args[0] === "--version") return { stdout: "Version: 0.60.0" };
+      return { stdout: JSON.stringify({ Results: [{ Vulnerabilities: [{ Severity: "CRITICAL" }, { Severity: "HIGH" }, { Severity: "LOW" }] }] }) };
+    };
+    const r = await scanImages([docker("a", "acme/mcp:1.0"), docker("b", "acme/mcp:1.0")], run);
+    expect(r.scanner).toBe("trivy");
+    expect(calls.filter((c) => c[1] === "image")).toHaveLength(1);
+    expect(r.findings.map((f) => [f.server, f.severity, f.rule])).toEqual([["a", "high", "supply-chain/image-vulnerabilities"], ["b", "high", "supply-chain/image-vulnerabilities"]]);
+    expect(r.findings[0].title).toContain("1 critical, 1 high, 0 medium, 1 low");
+  });
+
+  it("explains instead of installing anything when no scanner is present", async () => {
+    const run: Runner = async () => Promise.reject(new Error("ENOENT"));
+    const r = await scanImages([docker("a", "acme/mcp:1.0")], run);
+    expect(r.findings).toEqual([]);
+    expect(r.notes[0]).toContain("neither Trivy nor Grype is installed");
   });
 });

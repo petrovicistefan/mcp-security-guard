@@ -9,6 +9,7 @@ import { discoverServers, transportOf } from "./config.js";
 import { loadPins, pinEntry, pinKey, pinsPath, savePins } from "./pins.js";
 import { loadPolicy, policyFromServers, policyPaths } from "./policy.js";
 import { report } from "./report.js";
+import { scanImages } from "./image-scan.js";
 import { checkSupplyChain } from "./supply-chain.js";
 import { auditLogPath, readAudit, summarizeAudit } from "./runtime.js";
 import { scoreServer, scoreTable } from "./score.js";
@@ -155,17 +156,22 @@ server.registerTool(
     inputSchema: {
       servers: z.array(z.string()).min(1).default(["*"]).describe('Server names, or ["*"] for all.'),
       confirm_network: z.boolean().describe("Must be true: package names and versions are sent to the registries and OSV."),
+      scan_images: z.boolean().default(false).describe("Also scan container images of Docker-based servers with Trivy or Grype if installed (may pull images and the scanner database)."),
       project_dir: z.string().optional(),
     },
     annotations: { readOnlyHint: true, openWorldHint: true },
   },
-  async ({ servers: names, confirm_network, project_dir }) => {
+  async ({ servers: names, confirm_network, scan_images, project_dir }) => {
     if (!confirm_network) return text("Not started: this check sends package names and versions to npm, PyPI and OSV. Ask the user, then call again with confirm_network=true.");
     const { servers } = discoverServers(project_dir ?? projectDir());
     const { picked, unknown } = selectServers(servers, names);
     const r = await checkSupplyChain(picked);
+    const img = scan_images ? await scanImages(picked) : undefined;
+    if (img) r.findings.push(...img.findings);
     return text(
       report("MCP supply-chain check", r.findings, [
+        img ? (img.scanner ? `Scanned ${img.scanned.length} image(s) with ${img.scanner}.` : "") : "",
+        ...(img?.notes ?? []),
         `Checked **${r.checked.length}** package(s): ${r.checked.map((p) => `${p.ecosystem}:${excerpt(p.name, 60)}${p.version ? `@${excerpt(p.version, 20)}` : " (latest)"}`).join(", ") || "none (no npx/uvx servers)"}.`,
         unknown.length ? `**Unknown server names:** ${unknown.map((u) => excerpt(u, 50)).join(", ")}` : "",
         r.errors.length ? `**Lookups that failed:**\n${r.errors.map((e) => `- ${e}`).join("\n")}` : "",

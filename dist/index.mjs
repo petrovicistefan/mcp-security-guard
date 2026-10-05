@@ -40834,21 +40834,26 @@ function checkDocker(s, loc) {
   if (/--network[ =]host|--net[ =]host/.test(joined)) {
     out.push({ severity: "medium", rule: "config/docker-host-network", title: "Container uses host networking", location: loc, evidence: excerpt(joined), remediation: "Use the default bridge network unless host networking is required." });
   }
-  const runIdx = args.indexOf("run");
-  if (runIdx >= 0) {
-    for (let i = runIdx + 1; i < args.length; i++) {
-      const a = args[i];
-      if (a.startsWith("-")) {
-        if (!a.includes("=") && /^(-e|--env|-v|--volume|--name|--network|--net|-p|--publish|--mount|-w|--workdir|-u|--user|--entrypoint)$/.test(a)) i++;
-        continue;
-      }
-      if (!a.includes("@sha256:") && (!/:[^/]+$/.test(a) || a.endsWith(":latest"))) {
-        out.push({ severity: "medium", rule: "config/docker-unpinned-image", title: `Image "${excerpt(a, 80)}" has no fixed tag or digest`, location: loc, evidence: excerpt(joined), remediation: "Reference the image by digest (image@sha256:\u2026) or at least an immutable version tag." });
-      }
-      break;
-    }
+  const image = dockerImageOf(s);
+  if (image && !image.includes("@sha256:") && (!/:[^/]+$/.test(image) || image.endsWith(":latest"))) {
+    out.push({ severity: "medium", rule: "config/docker-unpinned-image", title: `Image "${excerpt(image, 80)}" has no fixed tag or digest`, location: loc, evidence: excerpt(joined), remediation: "Reference the image by digest (image@sha256:\u2026) or at least an immutable version tag." });
   }
   return out;
+}
+function dockerImageOf(s) {
+  if (!s.command || !["docker", "podman"].includes(baseCommand(s.command))) return void 0;
+  const args = s.args ?? [];
+  const runIdx = args.indexOf("run");
+  if (runIdx < 0) return void 0;
+  for (let i = runIdx + 1; i < args.length; i++) {
+    const a = args[i];
+    if (a.startsWith("-")) {
+      if (!a.includes("=") && /^(-e|--env|-v|--volume|--name|--network|--net|-p|--publish|--mount|-w|--workdir|-u|--user|--entrypoint|--env-file|--platform)$/.test(a)) i++;
+      continue;
+    }
+    return a;
+  }
+  return void 0;
 }
 function checkShell(s, loc) {
   if (!s.command) return [];
@@ -41365,6 +41370,70 @@ function report(title, findings, sections = []) {
   return [`# ${title}`, `**Summary:** ${summarize(findings)}`, ...sections, findings.length ? UNTRUSTED_NOTICE : void 0, formatFindings(findings)].filter(Boolean).join("\n\n");
 }
 
+// src/image-scan.ts
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+var defaultRunner = (cmd, args, timeoutMs) => promisify(execFile)(cmd, args, { timeout: timeoutMs, maxBuffer: 256 * 1024 * 1024 });
+async function detectScanner(run = defaultRunner) {
+  for (const s of ["trivy", "grype"]) {
+    try {
+      await run(s, ["--version"], 1e4);
+      return s;
+    } catch {
+    }
+  }
+  return void 0;
+}
+function countTrivy(json2) {
+  const c = { critical: 0, high: 0, medium: 0, low: 0 };
+  for (const r of json2?.Results ?? []) for (const v of r?.Vulnerabilities ?? []) {
+    const s = String(v?.Severity ?? "").toLowerCase();
+    if (s in c) c[s]++;
+  }
+  return c;
+}
+function countGrype(json2) {
+  const c = { critical: 0, high: 0, medium: 0, low: 0 };
+  for (const m of json2?.matches ?? []) {
+    const s = String(m?.vulnerability?.severity ?? "").toLowerCase();
+    if (s in c) c[s]++;
+  }
+  return c;
+}
+async function scanImages(servers, run = defaultRunner) {
+  const targets = servers.map((s) => ({ s, image: dockerImageOf(s) })).filter((x) => !!x.image);
+  if (!targets.length) return { findings: [], scanned: [], notes: [] };
+  const scanner = await detectScanner(run);
+  if (!scanner) return { findings: [], scanned: [], notes: [`${targets.length} server(s) run in containers, but neither Trivy nor Grype is installed, so their images were not checked for known vulnerabilities.`] };
+  const findings = [];
+  const scanned = [];
+  const notes = [];
+  for (const image of [...new Set(targets.map((t) => t.image))]) {
+    try {
+      const args = scanner === "trivy" ? ["image", "--quiet", "--format", "json", "--scanners", "vuln", image] : [image, "-o", "json", "-q"];
+      const { stdout } = await run(scanner, args, 10 * 6e4);
+      const counts = scanner === "trivy" ? countTrivy(JSON.parse(stdout)) : countGrype(JSON.parse(stdout));
+      scanned.push(image);
+      const severity = counts.critical ? "high" : counts.high ? "medium" : counts.medium || counts.low ? "low" : void 0;
+      if (!severity) continue;
+      for (const { s } of targets.filter((t) => t.image === image)) {
+        findings.push({
+          severity,
+          rule: "supply-chain/image-vulnerabilities",
+          title: `Image "${excerpt(image, 80)}" has known vulnerabilities: ${counts.critical} critical, ${counts.high} high, ${counts.medium} medium, ${counts.low} low`,
+          location: `server "${s.name}" (${s.scope}) \u203A image`,
+          remediation: `Update to a patched image tag or digest, then re-pin. Details: ${scanner} image ${image}`,
+          file: s.source,
+          server: s.name
+        });
+      }
+    } catch (e) {
+      notes.push(`${scanner} could not scan ${excerpt(image, 80)}: ${excerpt(e instanceof Error ? e.message : String(e), 120)}`);
+    }
+  }
+  return { findings, scanned, scanner, notes };
+}
+
 // src/runtime.ts
 import { appendFileSync, existsSync as existsSync6, mkdirSync as mkdirSync3, readFileSync as readFileSync5, renameSync as renameSync3, statSync as statSync2 } from "node:fs";
 import { homedir as homedir5 } from "node:os";
@@ -41874,17 +41943,22 @@ server.registerTool(
     inputSchema: {
       servers: external_exports.array(external_exports.string()).min(1).default(["*"]).describe('Server names, or ["*"] for all.'),
       confirm_network: external_exports.boolean().describe("Must be true: package names and versions are sent to the registries and OSV."),
+      scan_images: external_exports.boolean().default(false).describe("Also scan container images of Docker-based servers with Trivy or Grype if installed (may pull images and the scanner database)."),
       project_dir: external_exports.string().optional()
     },
     annotations: { readOnlyHint: true, openWorldHint: true }
   },
-  async ({ servers: names, confirm_network, project_dir }) => {
+  async ({ servers: names, confirm_network, scan_images, project_dir }) => {
     if (!confirm_network) return text("Not started: this check sends package names and versions to npm, PyPI and OSV. Ask the user, then call again with confirm_network=true.");
     const { servers } = discoverServers(project_dir ?? projectDir());
     const { picked, unknown: unknown2 } = selectServers(servers, names);
     const r = await checkSupplyChain(picked);
+    const img = scan_images ? await scanImages(picked) : void 0;
+    if (img) r.findings.push(...img.findings);
     return text(
       report("MCP supply-chain check", r.findings, [
+        img ? img.scanner ? `Scanned ${img.scanned.length} image(s) with ${img.scanner}.` : "" : "",
+        ...img?.notes ?? [],
         `Checked **${r.checked.length}** package(s): ${r.checked.map((p) => `${p.ecosystem}:${excerpt(p.name, 60)}${p.version ? `@${excerpt(p.version, 20)}` : " (latest)"}`).join(", ") || "none (no npx/uvx servers)"}.`,
         unknown2.length ? `**Unknown server names:** ${unknown2.map((u) => excerpt(u, 50)).join(", ")}` : "",
         r.errors.length ? `**Lookups that failed:**

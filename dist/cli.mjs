@@ -20812,21 +20812,26 @@ function checkDocker(s, loc) {
   if (/--network[ =]host|--net[ =]host/.test(joined)) {
     out.push({ severity: "medium", rule: "config/docker-host-network", title: "Container uses host networking", location: loc, evidence: excerpt(joined), remediation: "Use the default bridge network unless host networking is required." });
   }
-  const runIdx = args.indexOf("run");
-  if (runIdx >= 0) {
-    for (let i = runIdx + 1; i < args.length; i++) {
-      const a = args[i];
-      if (a.startsWith("-")) {
-        if (!a.includes("=") && /^(-e|--env|-v|--volume|--name|--network|--net|-p|--publish|--mount|-w|--workdir|-u|--user|--entrypoint)$/.test(a)) i++;
-        continue;
-      }
-      if (!a.includes("@sha256:") && (!/:[^/]+$/.test(a) || a.endsWith(":latest"))) {
-        out.push({ severity: "medium", rule: "config/docker-unpinned-image", title: `Image "${excerpt(a, 80)}" has no fixed tag or digest`, location: loc, evidence: excerpt(joined), remediation: "Reference the image by digest (image@sha256:\u2026) or at least an immutable version tag." });
-      }
-      break;
-    }
+  const image = dockerImageOf(s);
+  if (image && !image.includes("@sha256:") && (!/:[^/]+$/.test(image) || image.endsWith(":latest"))) {
+    out.push({ severity: "medium", rule: "config/docker-unpinned-image", title: `Image "${excerpt(image, 80)}" has no fixed tag or digest`, location: loc, evidence: excerpt(joined), remediation: "Reference the image by digest (image@sha256:\u2026) or at least an immutable version tag." });
   }
   return out;
+}
+function dockerImageOf(s) {
+  if (!s.command || !["docker", "podman"].includes(baseCommand(s.command))) return void 0;
+  const args = s.args ?? [];
+  const runIdx = args.indexOf("run");
+  if (runIdx < 0) return void 0;
+  for (let i = runIdx + 1; i < args.length; i++) {
+    const a = args[i];
+    if (a.startsWith("-")) {
+      if (!a.includes("=") && /^(-e|--env|-v|--volume|--name|--network|--net|-p|--publish|--mount|-w|--workdir|-u|--user|--entrypoint|--env-file|--platform)$/.test(a)) i++;
+      continue;
+    }
+    return a;
+  }
+  return void 0;
 }
 function checkShell(s, loc) {
   if (!s.command) return [];
@@ -21202,6 +21207,70 @@ function describePlan(plan, applied) {
   lines.unshift(applied ? `# Fixes applied (${applied.written.length} file(s))` : `# Proposed fixes (dry run, nothing written)`);
   if (applied?.backups.length) lines.push("", `Backups: ${applied.backups.join(", ")}`);
   return lines.join("\n");
+}
+
+// src/image-scan.ts
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+var defaultRunner = (cmd, args, timeoutMs) => promisify(execFile)(cmd, args, { timeout: timeoutMs, maxBuffer: 256 * 1024 * 1024 });
+async function detectScanner(run = defaultRunner) {
+  for (const s of ["trivy", "grype"]) {
+    try {
+      await run(s, ["--version"], 1e4);
+      return s;
+    } catch {
+    }
+  }
+  return void 0;
+}
+function countTrivy(json) {
+  const c = { critical: 0, high: 0, medium: 0, low: 0 };
+  for (const r of json?.Results ?? []) for (const v of r?.Vulnerabilities ?? []) {
+    const s = String(v?.Severity ?? "").toLowerCase();
+    if (s in c) c[s]++;
+  }
+  return c;
+}
+function countGrype(json) {
+  const c = { critical: 0, high: 0, medium: 0, low: 0 };
+  for (const m of json?.matches ?? []) {
+    const s = String(m?.vulnerability?.severity ?? "").toLowerCase();
+    if (s in c) c[s]++;
+  }
+  return c;
+}
+async function scanImages(servers, run = defaultRunner) {
+  const targets = servers.map((s) => ({ s, image: dockerImageOf(s) })).filter((x) => !!x.image);
+  if (!targets.length) return { findings: [], scanned: [], notes: [] };
+  const scanner = await detectScanner(run);
+  if (!scanner) return { findings: [], scanned: [], notes: [`${targets.length} server(s) run in containers, but neither Trivy nor Grype is installed, so their images were not checked for known vulnerabilities.`] };
+  const findings = [];
+  const scanned = [];
+  const notes = [];
+  for (const image of [...new Set(targets.map((t) => t.image))]) {
+    try {
+      const args = scanner === "trivy" ? ["image", "--quiet", "--format", "json", "--scanners", "vuln", image] : [image, "-o", "json", "-q"];
+      const { stdout } = await run(scanner, args, 10 * 6e4);
+      const counts = scanner === "trivy" ? countTrivy(JSON.parse(stdout)) : countGrype(JSON.parse(stdout));
+      scanned.push(image);
+      const severity = counts.critical ? "high" : counts.high ? "medium" : counts.medium || counts.low ? "low" : void 0;
+      if (!severity) continue;
+      for (const { s } of targets.filter((t) => t.image === image)) {
+        findings.push({
+          severity,
+          rule: "supply-chain/image-vulnerabilities",
+          title: `Image "${excerpt(image, 80)}" has known vulnerabilities: ${counts.critical} critical, ${counts.high} high, ${counts.medium} medium, ${counts.low} low`,
+          location: `server "${s.name}" (${s.scope}) \u203A image`,
+          remediation: `Update to a patched image tag or digest, then re-pin. Details: ${scanner} image ${image}`,
+          file: s.source,
+          server: s.name
+        });
+      }
+    } catch (e) {
+      notes.push(`${scanner} could not scan ${excerpt(image, 80)}: ${excerpt(e instanceof Error ? e.message : String(e), 120)}`);
+    }
+  }
+  return { findings, scanned, scanner, notes };
 }
 
 // src/pins.ts
@@ -21746,7 +21815,7 @@ async function sessionCheck(projectDir, mode, timeoutMs = 1e4) {
 var USAGE = `mcp-security ${VERSION}
 
 Usage:
-  mcp-security audit [--project DIR] [--project-only] [--supply-chain] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
+  mcp-security audit [--project DIR] [--project-only] [--supply-chain] [--scan-images] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
   mcp-security analyze-tools FILE [--name NAME] [--format markdown|json|sarif] [--output FILE] [--fail-on SEVERITY]
   mcp-security adversarial FILE --server NAME --i-own-this-server --confirm-launch [--canary-dir DIR] [--host-canary-dir DIR] [--include-destructive]
   mcp-security fix [--permissions --confirm-launch] [--pin-versions] [--env-refs] [--write] [--project DIR]
@@ -21762,6 +21831,7 @@ Usage:
   fix              plans (and with --write applies) fixes to the project's .mcp.json and .claude/settings.json,
                    backing up every file it changes under ~/.claude/mcp-security/backups/
   policy-init      writes .mcp-security.json approving the servers configured now (review it, then commit it)
+  --scan-images    (audit) scan container images with Trivy or Grype, if installed
   --supply-chain   (audit) also check npx/uvx packages on npm/PyPI and OSV (network)
   --project-only   only audit the project's .mcp.json (recommended in CI)
   --fail-on        critical | high | medium | low | info | none   (default: high)
@@ -21829,6 +21899,7 @@ async function main() {
       help: { type: "boolean", short: "h" },
       force: { type: "boolean", default: false },
       "supply-chain": { type: "boolean", default: false },
+      "scan-images": { type: "boolean", default: false },
       server: { type: "string" },
       "i-own-this-server": { type: "boolean", default: false },
       "include-destructive": { type: "boolean", default: false },
@@ -21850,9 +21921,13 @@ async function main() {
     const { findings, servers, sources } = auditConfig(projectDir, { projectOnly: values["project-only"] });
     const supply = values["supply-chain"] ? await checkSupplyChain(servers) : void 0;
     if (supply) findings.push(...supply.findings);
+    const images = values["scan-images"] ? await scanImages(servers) : void 0;
+    if (images) findings.push(...images.findings);
     emit("MCP configuration audit", findings, projectDir, values.format, values.output, [
       `Scanned **${servers.length}** server(s) from ${sources.filter((s) => s.status === "ok").length} config file(s).`,
       scoreTable(servers.map((sv) => scoreServer(sv, findings, "config"))),
+      ...images?.notes ?? [],
+      images?.scanner ? `Images: scanned ${images.scanned.length} with ${images.scanner}.` : "",
       supply ? `Supply chain: checked ${supply.checked.length} package(s) against npm/PyPI and OSV.${supply.errors.length ? ` Failed lookups: ${supply.errors.join("; ")}` : ""}` : ""
     ]);
     return exitCode(findings, values["fail-on"]);
