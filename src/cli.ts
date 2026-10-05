@@ -3,8 +3,9 @@
 //   audit [options]                  Static config audit for CI. Exits 1 at or above --fail-on.
 //   analyze-tools <file> [options]   Tool-poisoning checks on a saved tools/list payload.
 //   scan <mcp.json> --confirm-launch Full audit (config + live tools/list) of servers you have not installed yet.
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { basename, resolve } from "node:path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { basename, dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { adversarialTest } from "./adversarial.js";
 import { auditConfig } from "./audit.js";
@@ -56,6 +57,27 @@ async function readStdin(): Promise<string> {
   return data;
 }
 
+/**
+ * Shown once, at the first session after install: a read-only config summary and how to go further.
+ * A marker file in the state directory keeps it from repeating.
+ */
+function firstRunMessage(projectDir: string): string | undefined {
+  const marker = join(process.env.MCP_SECURITY_HOME ?? join(homedir(), ".claude", "mcp-security"), "welcomed");
+  if (existsSync(marker)) return undefined;
+  try {
+    mkdirSync(dirname(marker), { recursive: true, mode: 0o700 });
+    writeFileSync(marker, new Date().toISOString() + "\n");
+  } catch {
+    return undefined; // Cannot remember that we said hello: better silent than repeating every session.
+  }
+  const { servers, findings } = auditConfig(projectDir);
+  const serious = findings.filter((f) => f.severity === "critical" || f.severity === "high").length;
+  const first = serious
+    ? `found ${serious} critical/high issue(s) in the configuration of your ${servers.length} MCP server(s).`
+    : `checked the configuration of your ${servers.length} MCP server(s): no critical or high issues.`;
+  return `🛡️ mcp-security is active: ${first} Run /mcp-audit for the full audit (tool poisoning, supply chain, scores), then pin the servers you trust so changes are caught at every start.`;
+}
+
 async function runSessionCheck(): Promise<void> {
   let cwd: string | undefined;
   try {
@@ -64,8 +86,13 @@ async function runSessionCheck(): Promise<void> {
   const raw = (process.env.MCP_SECURITY_SESSION_CHECK ?? "full").toLowerCase();
   const mode: CheckMode = raw === "off" || raw === "config" ? raw : "full";
 
-  const { problems } = await sessionCheck(process.env.CLAUDE_PROJECT_DIR ?? cwd ?? process.cwd(), mode);
-  if (!problems.length) return;
+  const projectDir = process.env.CLAUDE_PROJECT_DIR ?? cwd ?? process.cwd();
+  const welcome = mode === "off" ? undefined : firstRunMessage(projectDir);
+  const { problems } = await sessionCheck(projectDir, mode);
+  if (!problems.length) {
+    if (welcome) process.stdout.write(JSON.stringify({ systemMessage: welcome }));
+    return;
+  }
 
   const list = problems.map((p) => `- ${p}`).join("\n");
   process.stdout.write(

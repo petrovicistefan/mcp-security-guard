@@ -179,7 +179,7 @@ Rămân pentru planul Team: descoperire și audit la nivel de organizație, revi
 - [x] **Corecturi automate, cu confirmare** (`apply_fixes` / `fix`): reguli de permisiuni, fixarea versiunilor, secrete → `${VAR}`. Previzualizare implicită, backup în afara proiectului
 - [x] **Raport HTML** (`--format html`, v0.6.0)
 - [ ] **MCP App** (board interactiv afișat direct în Claude)
-- [ ] **Prima rulare**: audit sau sugestie automată după instalare
+- [x] **Prima rulare**: rezumat automat al configurației și sugestia `/mcp-audit`, o singură dată (v0.6.0)
 
 ### Business (după lansare)
 - [ ] Waitlist pentru Pro și Team

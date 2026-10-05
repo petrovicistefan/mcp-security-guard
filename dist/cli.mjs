@@ -7807,8 +7807,9 @@ var require_content_type = __commonJS({
 });
 
 // src/cli.ts
-import { existsSync as existsSync7, readFileSync as readFileSync6, writeFileSync as writeFileSync3 } from "node:fs";
-import { basename as basename2, resolve as resolve4 } from "node:path";
+import { existsSync as existsSync7, mkdirSync as mkdirSync3, readFileSync as readFileSync6, writeFileSync as writeFileSync3 } from "node:fs";
+import { homedir as homedir5 } from "node:os";
+import { basename as basename2, dirname as dirname4, join as join6, resolve as resolve4 } from "node:path";
 import { parseArgs } from "node:util";
 
 // src/adversarial.ts
@@ -22051,6 +22052,20 @@ async function readStdin() {
   for await (const chunk of process.stdin) data += chunk;
   return data;
 }
+function firstRunMessage(projectDir) {
+  const marker = join6(process.env.MCP_SECURITY_HOME ?? join6(homedir5(), ".claude", "mcp-security"), "welcomed");
+  if (existsSync7(marker)) return void 0;
+  try {
+    mkdirSync3(dirname4(marker), { recursive: true, mode: 448 });
+    writeFileSync3(marker, (/* @__PURE__ */ new Date()).toISOString() + "\n");
+  } catch {
+    return void 0;
+  }
+  const { servers, findings } = auditConfig(projectDir);
+  const serious = findings.filter((f) => f.severity === "critical" || f.severity === "high").length;
+  const first = serious ? `found ${serious} critical/high issue(s) in the configuration of your ${servers.length} MCP server(s).` : `checked the configuration of your ${servers.length} MCP server(s): no critical or high issues.`;
+  return `\u{1F6E1}\uFE0F mcp-security is active: ${first} Run /mcp-audit for the full audit (tool poisoning, supply chain, scores), then pin the servers you trust so changes are caught at every start.`;
+}
 async function runSessionCheck() {
   let cwd;
   try {
@@ -22059,8 +22074,13 @@ async function runSessionCheck() {
   }
   const raw = (process.env.MCP_SECURITY_SESSION_CHECK ?? "full").toLowerCase();
   const mode = raw === "off" || raw === "config" ? raw : "full";
-  const { problems } = await sessionCheck(process.env.CLAUDE_PROJECT_DIR ?? cwd ?? process.cwd(), mode);
-  if (!problems.length) return;
+  const projectDir = process.env.CLAUDE_PROJECT_DIR ?? cwd ?? process.cwd();
+  const welcome = mode === "off" ? void 0 : firstRunMessage(projectDir);
+  const { problems } = await sessionCheck(projectDir, mode);
+  if (!problems.length) {
+    if (welcome) process.stdout.write(JSON.stringify({ systemMessage: welcome }));
+    return;
+  }
   const list2 = problems.map((p) => `- ${p}`).join("\n");
   process.stdout.write(
     JSON.stringify({

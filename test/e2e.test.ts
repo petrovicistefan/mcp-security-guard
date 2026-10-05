@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -23,6 +23,8 @@ describe("scanner end to end", () => {
     writeFileSync(join(work, ".mcp.json"), JSON.stringify({ mcpServers: { poisoned: { command: process.execPath, args: [fixture], env: { POISON_VARIANT: variant } } } }));
 
   beforeAll(async () => {
+    mkdirSync(home, { recursive: true });
+    writeFileSync(join(home, "welcomed"), "test\n");
     writeConfig("v1");
     client = new Client({ name: "test", version: "0" });
     await client.connect(
@@ -69,4 +71,17 @@ describe("scanner end to end", () => {
       env: { ...getDefaultEnvironment(), MCP_SECURITY_HOME: home },
       encoding: "utf8",
     });
+});
+
+describe("first run", () => {
+  it("greets once with a config summary, then stays silent", () => {
+    const work = mkdtempSync(join(tmpdir(), "mcpsec-welcome-"));
+    const home = join(work, "state");
+    writeFileSync(join(work, ".mcp.json"), JSON.stringify({ mcpServers: { leaky: { command: "x", env: { GITHUB_TOKEN: "ghp_" + "e".repeat(36) } } } }));
+    const hook = () => execFileSync(process.execPath, [join(root, "dist/cli.mjs"), "session-check"], { input: JSON.stringify({ cwd: work }), env: { ...getDefaultEnvironment(), MCP_SECURITY_HOME: home, HOME: work }, encoding: "utf8" });
+    const first = JSON.parse(hook());
+    expect(first.systemMessage).toContain("mcp-security is active");
+    expect(first.systemMessage).toMatch(/found \d+ critical\/high issue/);
+    expect(hook()).toBe("");
+  });
 });
