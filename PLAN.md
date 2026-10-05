@@ -147,11 +147,17 @@ Rămân pentru planul Team: descoperire și audit la nivel de organizație, revi
 ## Ce mai rămâne de acoperit (după v0.5.0)
 
 ### Obligatorii înainte de lansare
-- [~] **Test real în Claude Code** (2026-10-06, sesiune izolată cu `--plugin-dir`, configurația utilizatorului verificată identică prin sha256 după test)
-  - ✅ plugin-ul se încarcă (`mcp-security@inline`, 0.5.0) și hook-ul `SessionStart` rulează fără eroare
-  - ⚠️ `--strict-mcp-config` oprește și serverul MCP al plugin-ului; testul complet trebuie rulat fără el
-  - ⏳ blocat: CLI-ul `claude` nu e autentificat (aplicația desktop are alt login). După `claude /login`, de rulat cu `test/fixtures/runtime-server.mjs` pentru PreToolUse/PostToolUse, `tool_response` și numele de permisiuni
-  - Notă: orice sesiune Claude Code actualizează `pluginUsage` în `~/.claude.json` (contoare de utilizare); după test au fost readuse la valorile inițiale
+- [x] **Test real în Claude Code** (2026-10-06, Claude Code 2.1.289, sesiune izolată cu `--plugin-dir`; configurația utilizatorului verificată după test)
+  - ✅ plugin-ul se încarcă, serverul MCP pornește (`plugin:mcp-security:mcp-security`, cu 10 tool-uri), iar hook-ul `SessionStart` rulează fără eroare
+  - ✅ numele reale ale tool-urilor sunt `mcp__plugin_mcp-security_mcp-security__*`, deci se confirmă formatul folosit la regulile de permisiuni și la excluderea propriilor tool-uri
+  - ✅ **PostToolUse**: injecția din răspunsul `get_issue` a fost semnalată, iar Claude a ignorat instrucțiunea și i-a spus utilizatorului
+  - ✅ **PreToolUse**: apelul cu token în argumente a fost oprit („ask”, refuzat în modul headless), cu tokenul mascat în mesaj
+  - ✅ formatul `tool_response` pentru MCP e lista de content (`$[0].text`), deci se confirmă
+  - ✅ jurnalul de audit are 5 intrări corecte și niciun secret sau conținut
+  - Notă: `--strict-mcp-config` oprește și serverul MCP al plugin-ului
+- [ ] **Goluri de descoperire găsite în testul real**:
+  - conectorii claude.ai (Claude Docs, Canva, Supermetrics, Google Drive) ajung în sesiune, dar nu apar în `list_mcp_servers`
+  - plugin-urile sincronizate din cont (`instagram@synced`, `makebox-etsy@synced`) aduc servere MCP pe care nu le citim
 - [ ] **CI pe Linux, macOS și Windows** (căi, `/tmp` la testul adversarial, shell-uri)
 - [ ] **Securizarea propriului proiect**: versiuni exacte pentru dependențe, SBOM, release-uri semnate, fuzzing pe hook (intrări malformate sau uriașe)
 - [ ] **Documente de publicare**: `LICENSE`, `SECURITY.md`, politică de confidențialitate, `CHANGELOG`, release GitHub
