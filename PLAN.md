@@ -95,6 +95,9 @@ Prețurile trebuie validate cu utilizatori reali înainte de lansare. Mai jos, l
 - **Backend separat** (API + dashboard), de exemplu pe Vercel sau Cloudflare, cu baze de date pentru feed, organizații și politici.
 - **Confidențialitate:** se trimit doar hash-uri de tool-uri, nume și versiuni de pachete. Niciodată cod, secrete sau căi de fișiere. Documentat clar în README și în politica de confidențialitate.
 - **Fără blocare când serviciul e indisponibil:** dacă API-ul nu răspunde, auditul local continuă normal.
+- **Nu mutăm funcții existente în planul plătit.** Codul e MIT, deci o funcție locală pusă după o cheie se poate debloca într-un fork. Pe bani sunt doar date și servicii care rulează pe server: feed, monitorizare upstream, analiză LLM, istoric, echipe.
+- **Repo privat separat:** [mcp-security-cloud](https://github.com/petrovicistefan/mcp-security-cloud) (Cloudflare Workers + D1/KV, plăți prin Lemon Squeezy). Planul detaliat al backend-ului e în `PLAN.md` de acolo.
+- **Contractul API e public**, în `src/cloud.ts` din acest repo: `POST /v1/check` primește doar hash-uri SHA-256 de tool-uri și nume și versiuni de pachete; fără nume de servere, căi sau descrieri. Timeout de 3 s.
 
 ### Pași pentru monetizare
 1. Lansează versiunea gratuită și strânge utilizatori (Directory, GitHub, Reddit, Hacker News, comunitățile MCP).
