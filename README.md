@@ -53,6 +53,16 @@ What a local tool cannot do (planned for a hosted Team plan): org-wide discovery
 
 Then run `/mcp-audit`, or ask Claude *"are my MCP servers safe?"*.
 
+### Other MCP clients (Cursor, VS Code, Windsurf, Claude Desktop, Cline, ...)
+
+The same server is published on npm and runs with no install step:
+
+```json
+{ "mcpServers": { "mcp-security-guard": { "command": "npx", "args": ["-y", "mcp-security-guard"] } } }
+```
+
+The command line tool is the same package: `npx mcp-security-guard audit --project-only`. It is also listed in the official MCP Registry as `io.github.petrovicistefan/mcp-security-guard`.
+
 ## Tools
 
 | Tool | Launches servers? |

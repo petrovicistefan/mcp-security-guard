@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.petrovicistefan/mcp-security-guard",
+  "title": "MCP Security Guard",
+  "description": "Audits the MCP servers you use: tool poisoning, rug pulls, shadowing, secrets, supply chain, runtime guards and policy, mapped to the OWASP MCP Top 10. Runs locally.",
+  "websiteUrl": "https://github.com/petrovicistefan/mcp-security-guard#readme",
+  "repository": {
+    "url": "https://github.com/petrovicistefan/mcp-security-guard",
+    "source": "github"
+  },
+  "version": "0.7.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "mcp-security-guard",
+      "version": "0.7.0",
+      "transport": { "type": "stdio" }
+    }
+  ]
+}

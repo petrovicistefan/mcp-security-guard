@@ -2,7 +2,20 @@
   "name": "mcp-security-guard",
   "version": "0.7.0",
   "description": "Security scanner for MCP servers in Claude Code: tool poisoning, shadowing, rug pulls and risky configuration.",
+  "mcpName": "io.github.petrovicistefan/mcp-security-guard",
   "main": "plugin/dist/index.mjs",
+  "bin": {
+    "mcp-security-guard": "bin/mcp-security-guard.mjs"
+  },
+  "files": [
+    "bin/",
+    "plugin/dist/",
+    "plugin/assets/logo.png",
+    "LICENSE",
+    "PRIVACY.md",
+    "SECURITY.md",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "build": "esbuild src/index.ts src/cli.ts src/hook.ts --bundle --platform=node --format=esm --target=node20 --outdir=plugin/dist --out-extension:.js=.mjs --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\" && node scripts/build-app.mjs",
     "typecheck": "tsc --noEmit",
@@ -33,8 +46,23 @@
     "typescript": "7.0.2",
     "vitest": "5.0.3"
   },
-  "private": true,
   "engines": {
     "node": ">=20"
-  }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "security",
+    "owasp",
+    "tool-poisoning",
+    "rug-pull",
+    "prompt-injection",
+    "supply-chain",
+    "audit",
+    "claude-code"
+  ]
 }

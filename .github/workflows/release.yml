@@ -63,3 +63,36 @@ jobs:
         run: |
           notes=$(awk -v v="${GITHUB_REF_NAME#v}" '$0 ~ "^## "v {f=1; next} /^## / {f=0} f' CHANGELOG.md)
           gh release create "$GITHUB_REF_NAME" mcp-security-guard-$GITHUB_REF_NAME.zip sbom.cdx.json SHA256SUMS --title "$GITHUB_REF_NAME" --notes "${notes:-See CHANGELOG.md}"
+
+  npm:
+    # Needs the NPM_TOKEN repository secret (an npm automation token). Skipped until it exists.
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - name: Versions agree
+        run: |
+          p=$(node -p 'require("./package.json").version')
+          s=$(node -p 'require("./server.json").version')
+          q=$(node -p 'require("./server.json").packages[0].version')
+          test "v$p" = "$GITHUB_REF_NAME" && test "$s" = "$p" && test "$q" = "$p" || { echo "version mismatch: tag $GITHUB_REF_NAME package $p server.json $s/$q"; exit 1; }
+      - name: Publish to npm (with provenance)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then echo "NPM_TOKEN not set, skipping"; exit 0; fi
+          npm publish --provenance --access public
+      - name: Publish to the official MCP Registry
+        run: |
+          if [ -z "${{ secrets.NPM_TOKEN }}" ]; then echo "npm not published, skipping registry"; exit 0; fi
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
