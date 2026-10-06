@@ -1,5 +1,6 @@
 {
   "name": "mcp-security-guard",
+  "displayName": "MCP Security Guard: Tool Poisoning and Rug Pull Scanner",
   "version": "0.7.0",
   "description": "Security for the MCP servers you use, mapped to the OWASP MCP Top 10: tool poisoning, rug pulls, shadowing, secrets, supply chain (OSV), capability scores and permission rules, runtime guards on every MCP call, approved-server policy, and adversarial testing for server authors. Runs locally.",
   "author": {
@@ -18,5 +19,8 @@
     "tool-poisoning"
   ],
   "homepage": "https://github.com/petrovicistefan/mcp-security-guard",
-  "repository": "https://github.com/petrovicistefan/mcp-security-guard"
+  "repository": "https://github.com/petrovicistefan/mcp-security-guard",
+  "privacyPolicyUrl": "https://github.com/petrovicistefan/mcp-security-guard/blob/main/PRIVACY.md",
+  "supportUrl": "https://github.com/petrovicistefan/mcp-security-guard/issues",
+  "documentationUrl": "https://github.com/petrovicistefan/mcp-security-guard#readme"
 }
