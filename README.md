@@ -1,5 +1,7 @@
 # mcp-security-guard
 
+<p align="center"><img src="plugin/assets/logo-wide.png" alt="mcp-security-guard logo" width="520"></p>
+
 A Claude Code plugin that audits the **MCP servers you have installed**. Your code is covered by other tools. This one checks the servers that inject text into Claude's context.
 
 | Check | What it catches |

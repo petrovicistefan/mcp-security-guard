@@ -1,5 +1,7 @@
 # mcp-security-guard
 
+![mcp-security-guard logo](assets/logo-wide.png)
+
 Security for the MCP servers you use in Claude Code. mcp-security-guard audits every MCP server Claude can reach: servers you configured, servers that plugins bring, and servers from Claude Desktop and other clients on your machine. It finds what can turn a server against you: tool poisoning and hidden instructions, rug pulls (definitions that change after you approved them), shadowing between servers, plaintext secrets, unpinned or vulnerable packages, and tools that can execute code or delete data. Every finding maps to the OWASP MCP Top 10.
 
 It runs locally, needs no account and has no telemetry.
