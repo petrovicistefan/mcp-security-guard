@@ -27,4 +27,6 @@ Only when you opt in:
 
 - **Threat feed (paid plan)**, only when you set `MCP_SECURITY_API_KEY`: package names and versions, plus SHA-256 hashes of tool definitions (never the definitions themselves), are sent to the mcp-security-guard service (`mcp-security-cloud.petrovicistefan.workers.dev`, or the URL in `MCP_SECURITY_API_URL`), deduplicated and without saying which server uses what. The key is only sent over https. If the service is unreachable the audit continues without it.
 
+**What the threat-feed service keeps:** nothing from your requests. It looks up the SHA-256 hash of your API key and reads the feed; package names, versions and tool hashes are processed in memory and dropped, and there is no request log. Cloudflare, which hosts the service (Workers, D1 in Western Europe), uses your IP address and the hash of your key as 60-second rate-limit counters and keeps its own aggregate request analytics (counts, status codes). No other processor is involved.
+
 Nothing else is sent. Secrets found in configs or tool traffic are masked in every output and never logged.
