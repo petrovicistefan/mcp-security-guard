@@ -71,8 +71,15 @@ export interface ServerTools {
   tools: ToolDefinition[];
 }
 
+/** A key from the plugin's userConfig (secure storage), passed by .mcp.json; ignored if Claude Code left the placeholder unresolved. */
+function pluginConfigKey(env: NodeJS.ProcessEnv): string | undefined {
+  const v = env.MCP_SECURITY_GUARD_FEED_KEY?.trim();
+  return v && !v.startsWith("${") ? v : undefined;
+}
+
+/** The plugin's userConfig key wins; MCP_SECURITY_API_KEY stays for the CLI and CI. */
 export function cloudOptionsFromEnv(env: NodeJS.ProcessEnv = process.env): CloudOptions {
-  return { apiKey: env.MCP_SECURITY_API_KEY?.trim() || undefined, endpoint: env.MCP_SECURITY_API_URL?.trim() || DEFAULT_ENDPOINT };
+  return { apiKey: pluginConfigKey(env) ?? (env.MCP_SECURITY_API_KEY?.trim() || undefined), endpoint: env.MCP_SECURITY_API_URL?.trim() || DEFAULT_ENDPOINT };
 }
 
 /** The key is only ever sent over https; plain http is accepted for a local backend during development. */

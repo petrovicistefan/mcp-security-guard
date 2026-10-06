@@ -22,5 +22,15 @@
   "repository": "https://github.com/petrovicistefan/mcp-security-guard",
   "privacyPolicyUrl": "https://github.com/petrovicistefan/mcp-security-guard/blob/main/PRIVACY.md",
   "supportUrl": "https://github.com/petrovicistefan/mcp-security-guard/issues",
-  "documentationUrl": "https://github.com/petrovicistefan/mcp-security-guard#readme"
+  "documentationUrl": "https://github.com/petrovicistefan/mcp-security-guard#readme",
+  "icon": "./assets/logo.png",
+  "userConfig": {
+    "threat_feed_api_key": {
+      "type": "string",
+      "title": "Threat feed API key (optional)",
+      "description": "Only for the paid threat feed. Leave empty to keep everything local. Stored in your system's secure storage.",
+      "sensitive": true,
+      "required": false
+    }
+  }
 }

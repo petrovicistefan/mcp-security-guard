@@ -41089,8 +41089,12 @@ var MAX_PACKAGES = 500;
 var MAX_TOOL_HASHES = 5e3;
 var MAX_FINDINGS = 1e3;
 var DEFAULT_TIMEOUT_MS = 3e3;
+function pluginConfigKey(env) {
+  const v = env.MCP_SECURITY_GUARD_FEED_KEY?.trim();
+  return v && !v.startsWith("${") ? v : void 0;
+}
 function cloudOptionsFromEnv(env = process.env) {
-  return { apiKey: env.MCP_SECURITY_API_KEY?.trim() || void 0, endpoint: env.MCP_SECURITY_API_URL?.trim() || DEFAULT_ENDPOINT };
+  return { apiKey: pluginConfigKey(env) ?? (env.MCP_SECURITY_API_KEY?.trim() || void 0), endpoint: env.MCP_SECURITY_API_URL?.trim() || DEFAULT_ENDPOINT };
 }
 function endpointAllowed(endpoint) {
   try {

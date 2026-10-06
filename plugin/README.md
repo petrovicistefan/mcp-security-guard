@@ -43,7 +43,7 @@ Nothing without your consent:
 Only when you opt in:
 
 - **Supply-chain check**: package names and versions go to `registry.npmjs.org`, `pypi.org` and `api.osv.dev`.
-- **Threat feed (paid plan)**: only if you set `MCP_SECURITY_API_KEY`. Package names and versions, plus SHA-256 hashes of tool definitions (never the definitions themselves), go to `mcp-security-cloud.petrovicistefan.workers.dev` over https. If the service is unreachable, the audit continues without it. The service stores no request data: it reads your key's hash and the feed, and Cloudflare, its host, uses your IP only for rate limiting.
+- **Threat feed (paid plan)**: only if you enter an API key in the plugin's settings (it is stored in your system's secure storage). Package names and versions, plus SHA-256 hashes of tool definitions (never the definitions themselves), go to `mcp-security-cloud.petrovicistefan.workers.dev` over https. If the service is unreachable, the audit continues without it. The service stores no request data: it reads your key's hash and the feed, and Cloudflare, its host, uses your IP only for rate limiting.
 
 Nothing else leaves your machine. Secrets found in configs or traffic are masked in every output and never logged.
 
@@ -55,6 +55,5 @@ Nothing else leaves your machine. Secrets found in configs or traffic are masked
 | `MCP_SECURITY_SECRET_GUARD` | `ask` (default), `deny` or `off` |
 | `MCP_SECURITY_AUDIT_LOG` | `off` disables the audit log |
 | `MCP_SECURITY_HOME` | Where its files are kept |
-| `MCP_SECURITY_API_KEY` | Enables the paid threat feed |
 
 Source, tests, benchmarks, privacy and security policy: [github.com/petrovicistefan/mcp-security-guard](https://github.com/petrovicistefan/mcp-security-guard). MIT licensed.

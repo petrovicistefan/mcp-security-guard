@@ -56,3 +56,12 @@ describe("threat feed wiring", () => {
     }
   }, 30_000);
 });
+
+describe("threat feed key source", () => {
+  it("prefers the plugin userConfig key and ignores an unresolved placeholder", async () => {
+    const { cloudOptionsFromEnv } = await import("../src/cloud.js");
+    expect(cloudOptionsFromEnv({ MCP_SECURITY_GUARD_FEED_KEY: "cfg", MCP_SECURITY_API_KEY: "env" }).apiKey).toBe("cfg");
+    expect(cloudOptionsFromEnv({ MCP_SECURITY_GUARD_FEED_KEY: "${user_config.threat_feed_api_key}", MCP_SECURITY_API_KEY: "env" }).apiKey).toBe("env");
+    expect(cloudOptionsFromEnv({ MCP_SECURITY_GUARD_FEED_KEY: "" }).apiKey).toBeUndefined();
+  });
+});

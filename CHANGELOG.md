@@ -2,6 +2,7 @@
 
 ## 0.7.0
 
+- **Threat feed key via plugin settings**: the API key is a sensitive `userConfig` option kept in the system's secure storage and passed to the MCP server by Claude Code; `MCP_SECURITY_API_KEY` remains for the CLI and CI. Listing icon added
 - **Plugin moved to `plugin/`** for the Claude directory: users install only the runtime (manifest, MCP server, hooks, skill, command, bundles, README, license). Source, tests, attack corpus and benchmarks stay in the repository. The dashboard bundle is no longer minified, so reviewers can read it
 - **Renamed to mcp-security-guard** (plugin, marketplace, MCP server, CLI, Action, release files), because `mcp-security` is taken on npm and by google/mcp-security. Unchanged for compatibility: the state directory `~/.claude/mcp-security/` (pins, audit log, backups), the `MCP_SECURITY_*` variables and the `.mcp-security.json` policy file. Tool names are now `mcp__plugin_mcp-security-guard_mcp-security-guard__*`; permission rules written for the old names need updating
 - **Interactive dashboard (MCP App)** `security_dashboard`: servers with scores, filterable findings, OWASP breakdown, recommended permissions, Full scan and Pin buttons; tells Claude which server the user selected. Rendered in Claude Desktop, claude.ai and other MCP Apps hosts; text summary elsewhere. `npm run dashboard:dev` runs it in a local host against the real server
