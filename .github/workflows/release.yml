@@ -101,7 +101,22 @@ jobs:
           q=$(node -p 'require("./server.json").packages[0].version')
           test "v$p" = "$TAG" && test "$s" = "$p" && test "$q" = "$p" || { echo "version mismatch: tag $TAG package $p server.json $s/$q"; exit 1; }
       - name: Publish to npm (OIDC, with provenance)
-        run: npm publish --provenance --access public
+        run: |
+          v=$(node -p 'require("./package.json").version')
+          if npm view "mcp-security-guard@$v" version --prefer-online >/dev/null 2>&1; then
+            echo "mcp-security-guard@$v is already on npm, not publishing it again"
+          else
+            npm publish --provenance --access public
+          fi
+      # npm needs a few minutes to serve a new version, and the MCP Registry checks npm when it validates.
+      - name: Wait until npm serves this version
+        run: |
+          v=$(node -p 'require("./package.json").version')
+          for i in $(seq 1 40); do
+            npm view "mcp-security-guard@$v" version --prefer-online >/dev/null 2>&1 && { echo "npm serves $v"; exit 0; }
+            sleep 15
+          done
+          echo "npm does not serve $v after 10 minutes"; exit 1
       - name: Publish to the official MCP Registry
         run: |
           curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
