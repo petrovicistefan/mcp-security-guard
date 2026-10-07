@@ -65,6 +65,26 @@ The same server is published on npm and runs with no install step:
 
 The command line tool is the same package: `npx mcp-security-guard audit --project-only`. It is also listed in the official MCP Registry as `io.github.petrovicistefan/mcp-security-guard`.
 
+## Team plan (paid, opt-in)
+
+With a team API key (`MCP_SECURITY_API_KEY`, or the key setting of the plugin) the plugin can also work with your organisation. Everything below is off without a key, and the free plugin stays fully functional.
+
+- **Central policy.** An admin pushes one policy (allowed and blocked servers, remote hosts, plugins, pinned versions). Every member's plugin fetches it at session start (at most hourly, cached, enforced even when offline) and enforces it **next to** their own and the project's policy: a repository's `.mcp-security.json` cannot loosen it.
+- **Approved plugins.** `allowedPlugins` and `blockedPlugins` in a policy are enforced in audits, CI and at session start; a blocked plugin is `critical`, an unlisted one `high`.
+- **Fleet inventory, only with consent.** `team report` sends which servers and plugins you run: names, scopes, transport, package names and versions or remote hostnames, pinned or not. Never paths, arguments, environment, headers, query strings or secrets. Reports are refused until an admin turns fleet visibility on, `team report --dry-run` shows exactly what would be sent, and sending at session start needs `MCP_SECURITY_TEAM_REPORT=on`.
+- **Approval flow.** `team request server project:linear` asks the admin; `team approve` adds it to the policy's allow list for everyone. Alerts (new request, new violation, policy change) go to a Slack-compatible webhook.
+- **Admin actions are CLI only** (`team approve`, `reject`, `policy-push`, `settings`, `inventory`), not MCP tools, so injected text cannot trigger them. The MCP tools `team_status`, `request_approval` and `team_report` ask for confirmation and cannot approve anything.
+
+```
+mcp-security-guard team status
+mcp-security-guard team report --dry-run
+mcp-security-guard team request plugin some-plugin --note "for the docs site"
+mcp-security-guard team approvals --status pending      # admin
+mcp-security-guard team approve apr_… --note ok          # admin
+mcp-security-guard team policy-push policy.json          # admin
+mcp-security-guard team settings --fleet on --webhook https://hooks.slack.com/…   # admin
+```
+
 ## Tools
 
 | Tool | Launches servers? |
@@ -74,6 +94,7 @@ The command line tool is the same package: `npx mcp-security-guard audit --proje
 | `audit_server_tools` | Yes, after explicit `confirm_launch: true`. Sends only `initialize` and list requests (tools, prompts, resources); never calls a tool, renders a prompt or reads a resource |
 | `pin_tools` | Yes (same as above). Writes `~/.claude/mcp-security/pins.json` |
 | `audit_agent_context` | No. Reads skills, commands, subagents, rules, `CLAUDE.md` and plugin hooks (user, project and installed plugins); `project_only` limits it to the repository |
+| `team_status`, `request_approval`, `team_report` | Network, after confirmation. Team plan: sync the organisation's policy, ask the admin to approve a server or plugin, preview and send a fleet report (see above) |
 | `pin_context` | No. Writes `~/.claude/mcp-security/context-pins.json` (SHA-256 per skill, command, subagent, rule, CLAUDE.md, hook config and script, per origin). Skips origins with critical or high findings unless `force` |
 | `analyze_tool_definitions` | No. Offline analysis of a `tools/list` payload, for MCP server authors |
 | `check_supply_chain` | No. Sends package names and versions to npm, PyPI and OSV after `confirm_network: true` |

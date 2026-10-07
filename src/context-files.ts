@@ -27,6 +27,8 @@ export interface ContextDiscovery {
   files: ContextFile[];
   /** Installed version of each plugin origin (`plugin:<name>`), when Claude Code recorded one. */
   versions: Record<string, string>;
+  /** Every enabled plugin, including those with no skills or commands (MCP-only plugins). */
+  plugins: { name: string; version?: string }[];
   /** Files skipped because they were too large, unreadable or past the limit. */
   skipped: string[];
 }
@@ -95,6 +97,7 @@ export function discoverContext(projectDir: string, opts: { home?: string; proje
   const files: ContextFile[] = [];
   const skipped: string[] = [];
   const versions: Record<string, string> = {};
+  const plugins: { name: string; version?: string }[] = [];
   const seen = new Set<string>();
 
   const add = (origin: string) => (file: string, kind: ContextKind, name: string, root: string) => {
@@ -130,8 +133,9 @@ export function discoverContext(projectDir: string, opts: { home?: string; proje
     const sources: DiscoveryResult["sources"] = [];
     for (const { name, root, version } of pluginRoots(project, home, sources)) {
       if (version && !versions[`plugin:${name}`]) versions[`plugin:${name}`] = version;
+      if (!plugins.some((p) => p.name === name)) plugins.push({ name, ...(version ? { version } : {}) });
       collectRoot(root, add(`plugin:${name}`), { pluginLayout: true });
     }
   }
-  return { files, versions, skipped };
+  return { files, versions, plugins, skipped };
 }

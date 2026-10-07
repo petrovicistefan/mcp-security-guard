@@ -26,6 +26,8 @@ import { scoreServer, scoreTable } from "./score.js";
 import { analyzeTools } from "./rules/tool-rules.js";
 import { toSarif } from "./sarif.js";
 import { sessionCheck, type CheckMode } from "./session-check.js";
+import { runTeam, TEAM_USAGE } from "./team-cli.js";
+import { teamSessionStart } from "./team.js";
 import { SEVERITY_ORDER, type Finding, type Severity, type ToolDefinition } from "./types.js";
 import { VERSION } from "./version.js";
 
@@ -39,6 +41,7 @@ Usage:
   mcp-security-guard adversarial FILE --server NAME --i-own-this-server --confirm-launch [--canary-dir DIR] [--host-canary-dir DIR] [--include-destructive]
   mcp-security-guard fix [--permissions --confirm-launch] [--pin-versions] [--env-refs] [--write] [--project DIR]
   mcp-security-guard policy-init [--project DIR] [--force]
+  mcp-security-guard team <status|sync|report|request|approvals|approve|reject|inventory|policy-push|settings> [...]   (Team plan; see \`team help\`)
   mcp-security-guard scan FILE --confirm-launch [--timeout SECONDS] [--format ...] [--output FILE] [--fail-on SEVERITY]
 
   audit-context    scans skills, slash commands, subagents, rules, CLAUDE.md, plugin hooks and skill scripts
@@ -101,9 +104,12 @@ async function runSessionCheck(): Promise<void> {
 
   const projectDir = process.env.CLAUDE_PROJECT_DIR ?? cwd ?? process.cwd();
   const welcome = mode === "off" ? undefined : firstRunMessage(projectDir);
+  // The organisation's policy first, so the check below already enforces it. Fails open; never waits long.
+  const teamNotes = mode === "off" ? [] : await teamSessionStart(projectDir);
   const { problems } = await sessionCheck(projectDir, mode);
   if (!problems.length) {
-    if (welcome) process.stdout.write(JSON.stringify({ systemMessage: welcome }));
+    const msg = [welcome, ...teamNotes].filter(Boolean).join("\n");
+    if (msg) process.stdout.write(JSON.stringify({ systemMessage: msg }));
     return;
   }
 
@@ -163,6 +169,11 @@ async function main(): Promise<number> {
       help: { type: "boolean", short: "h" },
       force: { type: "boolean", default: false },
       origin: { type: "string", multiple: true },
+      status: { type: "string" },
+      note: { type: "string" },
+      "dry-run": { type: "boolean", default: false },
+      fleet: { type: "string" },
+      webhook: { type: "string" },
       "supply-chain": { type: "boolean", default: false },
       "scan-images": { type: "boolean", default: false },
       server: { type: "string" },
@@ -205,6 +216,12 @@ async function main(): Promise<number> {
     a.findings.push(...feed.findings);
     emit("Agent context audit (skills, commands, agents, CLAUDE.md, hooks)", a.findings, projectDir, values.format!, values.output, [...contextSummary(a), feed.note ?? ""]);
     return exitCode(a.findings, values["fail-on"]!);
+  }
+
+  if (command === "team") {
+    const r = await runTeam({ sub: positionals[0], rest: positionals.slice(1), project: projectDir, status: values.status, note: values.note, dryRun: values["dry-run"], fleet: values.fleet, webhook: values.webhook });
+    (r.code === 0 ? process.stdout : process.stderr).write(r.text.endsWith("\n") ? r.text : `${r.text}\n`);
+    return r.code;
   }
 
   if (command === "pin-context") {

@@ -1,6 +1,7 @@
 import { discoverContext, type ContextDiscovery, type ContextFile } from "./context-files.js";
 import { cloudCheck, cloudOptionsFromEnv, type CloudOptions } from "./cloud.js";
 import { contextDrift, contextPinsPath, loadContextPins } from "./context-pins.js";
+import { auditPluginPolicy, loadPolicy } from "./policy.js";
 import { analyzeContext } from "./rules/context-rules.js";
 import type { Finding } from "./types.js";
 
@@ -16,7 +17,9 @@ export function auditContext(projectDir: string, opts: { projectOnly?: boolean; 
   const pins = loadContextPins();
   // Pin status is only reported once something was pinned, so a first scan is not buried in "not pinned" lines.
   const drift = Object.keys(pins.origins).length ? contextDrift(discovered, projectDir, pins) : { lines: [], findings: [] };
-  return { ...discovered, findings: [...analyzeContext(discovered.files), ...drift.findings], driftLines: drift.lines };
+  // Plugins the policy (yours, the project's or the team's) blocks or does not list. A repository's policy file applies in CI too.
+  const policyFindings = auditPluginPolicy(discovered.plugins, loadPolicy(projectDir));
+  return { ...discovered, findings: [...analyzeContext(discovered.files), ...drift.findings, ...policyFindings], driftLines: drift.lines };
 }
 
 /**
@@ -25,7 +28,7 @@ export function auditContext(projectDir: string, opts: { projectOnly?: boolean; 
  */
 export async function feedCheckContext(a: ContextAudit, opts: CloudOptions = cloudOptionsFromEnv()): Promise<{ findings: Finding[]; note?: string }> {
   if (!a.files.length) return { findings: [] };
-  const r = await cloudCheck([], [], opts, { files: a.files, versions: a.versions });
+  const r = await cloudCheck([], [], opts, { files: a.files, versions: a.versions, plugins: a.plugins });
   return { findings: r.findings, note: r.note };
 }
 

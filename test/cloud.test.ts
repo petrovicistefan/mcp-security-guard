@@ -159,7 +159,7 @@ describe("cloud request for skills and plugins", () => {
   });
 
   it("is a no-op without a key", async () => {
-    const a = { files: [file({})], versions: {}, findings: [], driftLines: [], skipped: [] };
+    const a = { files: [file({})], versions: {}, plugins: [], findings: [], driftLines: [], skipped: [] };
     expect(await feedCheckContext(a, {})).toEqual({ findings: [], note: undefined });
   });
 });

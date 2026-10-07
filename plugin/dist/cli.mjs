@@ -2990,7 +2990,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve7.call(this, root, ref);
+      let _sch = resolve10.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a3 = root.localRefs) === null || _a3 === void 0 ? void 0 : _a3[ref];
         const { schemaId } = this.opts;
@@ -3017,7 +3017,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve7(root, ref) {
+    function resolve10(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -3847,7 +3847,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve7(baseURI, relativeURI, options) {
+    function resolve10(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const {
         parsed: baseParsed,
@@ -4216,7 +4216,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve7,
+      resolve: resolve10,
       resolveComponent,
       equal,
       serialize: serialize2,
@@ -7299,12 +7299,12 @@ var require_isexe = __commonJS({
         if (typeof Promise !== "function") {
           throw new TypeError("callback not provided");
         }
-        return new Promise(function(resolve7, reject) {
+        return new Promise(function(resolve10, reject) {
           isexe(path, options || {}, function(er, is) {
             if (er) {
               reject(er);
             } else {
-              resolve7(is);
+              resolve10(is);
             }
           });
         });
@@ -7370,27 +7370,27 @@ var require_which = __commonJS({
         opt = {};
       const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt);
       const found = [];
-      const step = (i) => new Promise((resolve7, reject) => {
+      const step = (i) => new Promise((resolve10, reject) => {
         if (i === pathEnv.length)
-          return opt.all && found.length ? resolve7(found) : reject(getNotFoundError(cmd));
+          return opt.all && found.length ? resolve10(found) : reject(getNotFoundError(cmd));
         const ppRaw = pathEnv[i];
         const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw;
         const pCmd = path.join(pathPart, cmd);
         const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd : pCmd;
-        resolve7(subStep(p, i, 0));
+        resolve10(subStep(p, i, 0));
       });
-      const subStep = (p, i, ii) => new Promise((resolve7, reject) => {
+      const subStep = (p, i, ii) => new Promise((resolve10, reject) => {
         if (ii === pathExt.length)
-          return resolve7(step(i + 1));
+          return resolve10(step(i + 1));
         const ext = pathExt[ii];
         isexe(p + ext, { pathExt: pathExtExe }, (er, is) => {
           if (!er && is) {
             if (opt.all)
               found.push(p + ext);
             else
-              return resolve7(p + ext);
+              return resolve10(p + ext);
           }
-          return resolve7(subStep(p, i, ii + 1));
+          return resolve10(subStep(p, i, ii + 1));
         });
       });
       return cb ? step(0).then((res) => cb(null, res), cb) : step(0);
@@ -7807,9 +7807,9 @@ var require_content_type = __commonJS({
 });
 
 // src/cli.ts
-import { existsSync as existsSync8, mkdirSync as mkdirSync4, readFileSync as readFileSync8, writeFileSync as writeFileSync4 } from "node:fs";
-import { homedir as homedir7 } from "node:os";
-import { basename as basename3, dirname as dirname5, join as join8, resolve as resolve6 } from "node:path";
+import { existsSync as existsSync9, mkdirSync as mkdirSync5, readFileSync as readFileSync10, writeFileSync as writeFileSync5 } from "node:fs";
+import { homedir as homedir10 } from "node:os";
+import { basename as basename3, dirname as dirname6, join as join9, resolve as resolve9 } from "node:path";
 import { parseArgs } from "node:util";
 
 // src/adversarial.ts
@@ -7893,17 +7893,17 @@ function capabilityFindings(inv) {
   const destructive = withCap("destructive");
   const fsWrite = withCap("filesystem-write");
   const egress = withCap("network-egress");
-  const out = [];
-  if (exec.length) out.push({ severity: "medium", rule: "capability/command-execution", title: `${exec.length} tool(s) can execute commands or code: ${list(exec)}`, location: where, remediation: "Require approval for these tools (see the recommended permission rules) and run the server in a sandbox. Any prompt injection that reaches them becomes code execution." });
-  if (destructive.length) out.push({ severity: "low", rule: "capability/destructive", title: `${destructive.length} tool(s) can delete or irreversibly change data: ${list(destructive)}`, location: where, remediation: 'Set these to "ask" so a human confirms every call.' });
-  if (fsWrite.length) out.push({ severity: "low", rule: "capability/filesystem-write", title: `${fsWrite.length} tool(s) write to the file system: ${list(fsWrite)}`, location: where, remediation: "Limit the directories the server can reach, and require approval for writes outside the project." });
-  if (egress.length) out.push({ severity: "info", rule: "capability/network-egress", title: `${egress.length} tool(s) can reach arbitrary URLs: ${list(egress)}`, location: where, remediation: "Arbitrary egress is an exfiltration channel. Prefer servers that restrict destinations." });
+  const out2 = [];
+  if (exec.length) out2.push({ severity: "medium", rule: "capability/command-execution", title: `${exec.length} tool(s) can execute commands or code: ${list(exec)}`, location: where, remediation: "Require approval for these tools (see the recommended permission rules) and run the server in a sandbox. Any prompt injection that reaches them becomes code execution." });
+  if (destructive.length) out2.push({ severity: "low", rule: "capability/destructive", title: `${destructive.length} tool(s) can delete or irreversibly change data: ${list(destructive)}`, location: where, remediation: 'Set these to "ask" so a human confirms every call.' });
+  if (fsWrite.length) out2.push({ severity: "low", rule: "capability/filesystem-write", title: `${fsWrite.length} tool(s) write to the file system: ${list(fsWrite)}`, location: where, remediation: "Limit the directories the server can reach, and require approval for writes outside the project." });
+  if (egress.length) out2.push({ severity: "info", rule: "capability/network-egress", title: `${egress.length} tool(s) can reach arbitrary URLs: ${list(egress)}`, location: where, remediation: "Arbitrary egress is an exfiltration channel. Prefer servers that restrict destinations." });
   if (inv.unauthenticatedRemote && (exec.length || destructive.length || fsWrite.length)) {
-    out.push({ severity: "high", rule: "auth/unauthenticated-write-access", title: "Remote server exposes write or execution tools without any authentication", location: where, remediation: "Anyone who can reach this URL can call these tools. Put the server behind OAuth or a token, or remove it." });
+    out2.push({ severity: "high", rule: "auth/unauthenticated-write-access", title: "Remote server exposes write or execution tools without any authentication", location: where, remediation: "Anyone who can reach this URL can call these tools. Put the server behind OAuth or a token, or remove it." });
   } else if (inv.unauthenticatedRemote) {
-    out.push({ severity: "info", rule: "auth/unauthenticated-remote", title: "Remote server accepts connections without authentication (read-only tools)", location: where, remediation: "Fine for public documentation servers. Make sure it is not meant to expose private data." });
+    out2.push({ severity: "info", rule: "auth/unauthenticated-remote", title: "Remote server accepts connections without authentication (read-only tools)", location: where, remediation: "Fine for public documentation servers. Make sure it is not meant to expose private data." });
   }
-  return out.map((f) => ({ ...f, file: s.source, server: s.name }));
+  return out2.map((f) => ({ ...f, file: s.source, server: s.name }));
 }
 function permissionName(s, tool) {
   if (!CLAUDE_CODE_SCOPES.includes(s.scope)) return void 0;
@@ -11283,7 +11283,7 @@ var recursive = /* @__PURE__ */ new WeakMap();
 var NONE = 0;
 var ASSUMED = 1;
 var PROVEN = 2;
-function isRecursive(inst, stack, resolve7) {
+function isRecursive(inst, stack, resolve10) {
   const cached2 = recursive.get(inst);
   if (cached2 !== void 0)
     return cached2 ? PROVEN : NONE;
@@ -11293,7 +11293,7 @@ function isRecursive(inst, stack, resolve7) {
   let result = NONE;
   const check = (child) => {
     if (result !== PROVEN && child?._zod) {
-      const answer = isRecursive(child, stack, resolve7);
+      const answer = isRecursive(child, stack, resolve10);
       if (answer > result)
         result = answer;
     }
@@ -11304,7 +11304,7 @@ function isRecursive(inst, stack, resolve7) {
       const desc = Object.getOwnPropertyDescriptor(sh, key);
       if (spread && !desc.enumerable)
         continue;
-      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve7) : NONE;
+      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve10) : NONE;
       if (child > answer)
         answer = child;
     }
@@ -11368,7 +11368,7 @@ function isRecursive(inst, stack, resolve7) {
       break;
     // `$ZodLazy` caches its inner on the def, so a resolved edge is followed exactly
     case "lazy": {
-      const inner = def._cachedInner ?? (resolve7 ? inst._zod.innerType : void 0);
+      const inner = def._cachedInner ?? (resolve10 ? inst._zod.innerType : void 0);
       merge2(inner ? isRecursive(inner, stack, false) : ASSUMED);
       break;
     }
@@ -14450,11 +14450,11 @@ var ZodPipe = /* @__PURE__ */ $constructor("ZodPipe", (inst, def) => {
   inst.in = def.in;
   inst.out = def.out;
 });
-function pipe(in_, out) {
+function pipe(in_, out2) {
   return new ZodPipe({
     type: "pipe",
     in: in_,
-    out
+    out: out2
     // ...util.normalizeParams(params),
   });
 }
@@ -16635,7 +16635,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve7) => setTimeout(resolve7, pollInterval));
+        await new Promise((resolve10) => setTimeout(resolve10, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error2) {
@@ -16652,7 +16652,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve7, reject) => {
+    return new Promise((resolve10, reject) => {
       const earlyReject = (error2) => {
         reject(error2);
       };
@@ -16730,7 +16730,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve7(parseResult.data);
+            resolve10(parseResult.data);
           }
         } catch (error2) {
           reject(error2);
@@ -16992,12 +16992,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve7, reject) => {
+    return new Promise((resolve10, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve7, interval);
+      const timeoutId = setTimeout(resolve10, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -19395,7 +19395,7 @@ var SSEClientTransport = class {
     const baseFetch = this?._eventSourceInit?.fetch ?? this._fetch ?? fetch;
     const fetchImpl = this._followRedirects ? baseFetch : fetchWithinOrigin(baseFetch);
     let redirect;
-    return new Promise((resolve7, reject) => {
+    return new Promise((resolve10, reject) => {
       this._eventSource = new EventSource(this._url.href, {
         ...this._eventSourceInit,
         fetch: async (url2, init) => {
@@ -19417,7 +19417,7 @@ var SSEClientTransport = class {
       this._abortController = new AbortController();
       this._eventSource.onerror = (event) => {
         if (event.code === 401 && this._authProvider) {
-          this._authThenStart().then(resolve7, reject);
+          this._authThenStart().then(resolve10, reject);
           return;
         }
         const error2 = new SseError(event.code, redirect ?? event.message, event);
@@ -19439,7 +19439,7 @@ var SSEClientTransport = class {
           void this.close();
           return;
         }
-        resolve7();
+        resolve10();
       });
       this._eventSource.onmessage = (event) => {
         const messageEvent = event;
@@ -19618,7 +19618,7 @@ var StdioClientTransport = class {
     if (this._process) {
       throw new Error("StdioClientTransport already started! If using Client class, note that connect() calls start() automatically.");
     }
-    return new Promise((resolve7, reject) => {
+    return new Promise((resolve10, reject) => {
       this._process = (0, import_cross_spawn.default)(this._serverParams.command, this._serverParams.args ?? [], {
         // merge default env with server env because mcp server needs some env vars
         env: {
@@ -19635,7 +19635,7 @@ var StdioClientTransport = class {
         this.onerror?.(error2);
       });
       this._process.on("spawn", () => {
-        resolve7();
+        resolve10();
       });
       this._process.on("close", (_code) => {
         this._process = void 0;
@@ -19700,22 +19700,22 @@ var StdioClientTransport = class {
     if (this._process) {
       const processToClose = this._process;
       this._process = void 0;
-      const closePromise = new Promise((resolve7) => {
+      const closePromise = new Promise((resolve10) => {
         processToClose.once("close", () => {
-          resolve7();
+          resolve10();
         });
       });
       try {
         processToClose.stdin?.end();
       } catch {
       }
-      await Promise.race([closePromise, new Promise((resolve7) => setTimeout(resolve7, 2e3).unref())]);
+      await Promise.race([closePromise, new Promise((resolve10) => setTimeout(resolve10, 2e3).unref())]);
       if (processToClose.exitCode === null) {
         try {
           processToClose.kill("SIGTERM");
         } catch {
         }
-        await Promise.race([closePromise, new Promise((resolve7) => setTimeout(resolve7, 2e3).unref())]);
+        await Promise.race([closePromise, new Promise((resolve10) => setTimeout(resolve10, 2e3).unref())]);
       }
       if (processToClose.exitCode === null) {
         try {
@@ -19727,15 +19727,15 @@ var StdioClientTransport = class {
     this._readBuffer.clear();
   }
   send(message) {
-    return new Promise((resolve7) => {
+    return new Promise((resolve10) => {
       if (!this._process?.stdin) {
         throw new Error("Not connected");
       }
       const json = serializeMessage(message);
       if (this._process.stdin.write(json)) {
-        resolve7();
+        resolve10();
       } else {
-        this._process.stdin.once("drain", resolve7);
+        this._process.stdin.once("drain", resolve10);
       }
     });
   }
@@ -20207,29 +20207,29 @@ function claudeDesktopConfigPath(home) {
   }
 }
 function stripJsonComments(text) {
-  let out = "";
+  let out2 = "";
   let inString = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (inString) {
-      out += c;
-      if (c === "\\") out += text[++i] ?? "";
+      out2 += c;
+      if (c === "\\") out2 += text[++i] ?? "";
       else if (c === '"') inString = false;
     } else if (c === '"') {
       inString = true;
-      out += c;
+      out2 += c;
     } else if (c === "/" && text[i + 1] === "/") {
       while (i < text.length && text[i] !== "\n") i++;
-      out += "\n";
+      out2 += "\n";
     } else if (c === "/" && text[i + 1] === "*") {
       i += 2;
       while (i < text.length && !(text[i] === "*" && text[i + 1] === "/")) i++;
       i++;
     } else {
-      out += c;
+      out2 += c;
     }
   }
-  return out.replace(/,(\s*[}\]])/g, "$1");
+  return out2.replace(/,(\s*[}\]])/g, "$1");
 }
 function readJson(path, sources, jsonc = false) {
   if (!existsSync(path)) {
@@ -20290,11 +20290,11 @@ function managedMcpPath() {
   return platform() === "darwin" ? "/Library/Application Support/ClaudeCode/managed-mcp.json" : platform() === "win32" ? join(process.env.ProgramData ?? "C:\\ProgramData", "ClaudeCode", "managed-mcp.json") : "/etc/claude-code/managed-mcp.json";
 }
 function discoverOtherClients(project, home, sources) {
-  const out = [];
+  const out2 = [];
   const add = (path, scope, key, jsonc = false) => {
     if (!existsSync(path)) return;
     const data = readJson(path, sources, jsonc);
-    out.push(...toServers(key === "servers" ? data?.servers ?? data?.mcp?.servers : data?.mcpServers, scope, path));
+    out2.push(...toServers(key === "servers" ? data?.servers ?? data?.mcp?.servers : data?.mcpServers, scope, path));
   };
   add(managedMcpPath(), "managed", "mcpServers");
   add(join(home, ".cursor", "mcp.json"), "cursor", "mcpServers");
@@ -20308,7 +20308,7 @@ function discoverOtherClients(project, home, sources) {
       const mcp = JSON.parse(stripJsonComments(readFileSync(vsSettings, "utf8")))?.mcp;
       if (mcp?.servers) {
         sources.push({ path: vsSettings, status: "ok" });
-        out.push(...toServers(mcp.servers, "vscode", vsSettings));
+        out2.push(...toServers(mcp.servers, "vscode", vsSettings));
       }
     } catch {
       sources.push({ path: vsSettings, status: "unreadable" });
@@ -20323,7 +20323,7 @@ function discoverOtherClients(project, home, sources) {
     if (!cfg) continue;
     const root = join(extDir, id);
     const sub = (v) => String(v).replaceAll("${__dirname}", root);
-    out.push({
+    out2.push({
       name: typeof m.name === "string" ? m.name : id,
       scope: "claude-desktop-extension",
       source: manifestPath,
@@ -20332,7 +20332,7 @@ function discoverOtherClients(project, home, sources) {
       env: cfg.env && typeof cfg.env === "object" ? Object.fromEntries(Object.entries(cfg.env).map(([k, v]) => [k, sub(v)])) : void 0
     });
   }
-  return out;
+  return out2;
 }
 function enabledPlugins(project, home, sources) {
   const merged = {};
@@ -20368,17 +20368,17 @@ function pluginDirServers(root, pluginName, sources) {
   return blocks.flatMap(({ block, source }) => toServers(block, "plugin", source).map((sv) => substitutePluginRoot({ ...sv, name: `${pluginName}:${sv.name}` }, root)));
 }
 function discoverPluginServers(project, home, sources) {
-  const out = [];
+  const out2 = [];
   for (const { name, root, synced } of pluginRoots(project, home, sources)) {
     for (const sv of pluginDirServers(root, name, sources)) {
-      if (!synced || !out.some((o) => o.name === sv.name)) out.push(sv);
+      if (!synced || !out2.some((o) => o.name === sv.name)) out2.push(sv);
     }
   }
-  return out;
+  return out2;
 }
 function pluginRoots(project, home, sources) {
   const enabled = enabledPlugins(project, home, sources);
-  const out = [];
+  const out2 = [];
   const installedPath = join(home, ".claude", "plugins", "installed_plugins.json");
   const installed = existsSync(installedPath) ? readJson(installedPath, sources)?.plugins : void 0;
   if (installed && typeof installed === "object") {
@@ -20388,7 +20388,7 @@ function pluginRoots(project, home, sources) {
       for (const e of entries) {
         if (typeof e?.installPath !== "string") continue;
         if (e.scope && e.scope !== "user" && e.projectPath && resolve(e.projectPath) !== project) continue;
-        out.push({ name, root: e.installPath, synced: false, ...typeof e.version === "string" ? { version: e.version } : {} });
+        out2.push({ name, root: e.installPath, synced: false, ...typeof e.version === "string" ? { version: e.version } : {} });
       }
     }
   }
@@ -20401,10 +20401,10 @@ function pluginRoots(project, home, sources) {
       const meta2 = readJson(manifest, sources);
       const name = typeof meta2?.name === "string" && meta2.name ? meta2.name : dir;
       if (enabled[`${name}@synced`] === false) continue;
-      out.push({ name, root, synced: true, ...typeof meta2?.version === "string" ? { version: meta2.version } : {} });
+      out2.push({ name, root, synced: true, ...typeof meta2?.version === "string" ? { version: meta2.version } : {} });
     }
   }
-  return out;
+  return out2;
 }
 function listDirs(dir) {
   try {
@@ -20470,14 +20470,14 @@ async function listAllTools(client) {
   return tools;
 }
 async function paginate(fetchPage, max = 2e3) {
-  const out = [];
+  const out2 = [];
   let cursor;
   do {
     const page = await fetchPage(cursor);
-    out.push(...page.items);
+    out2.push(...page.items);
     cursor = page.nextCursor;
-  } while (cursor && out.length < max);
-  return out;
+  } while (cursor && out2.length < max);
+  return out2;
 }
 async function fetchSurface(s, timeoutMs = 2e4) {
   return withClient(s, timeoutMs, async (client) => {
@@ -20625,25 +20625,63 @@ async function adversarialTest(s, opts = {}) {
 }
 
 // src/policy.ts
-import { existsSync as existsSync3, readFileSync as readFileSync2 } from "node:fs";
+import { existsSync as existsSync4, readFileSync as readFileSync3 } from "node:fs";
+import { homedir as homedir3 } from "node:os";
+import { join as join4 } from "node:path";
+
+// src/team-cache.ts
+import { existsSync as existsSync3, mkdirSync, readFileSync as readFileSync2, renameSync, writeFileSync } from "node:fs";
 import { homedir as homedir2 } from "node:os";
-import { join as join3 } from "node:path";
+import { dirname as dirname2, join as join3 } from "node:path";
+function teamCachePath() {
+  return join3(process.env.MCP_SECURITY_HOME ?? join3(homedir2(), ".claude", "mcp-security"), "team-policy.json");
+}
+function readTeamCache(path = teamCachePath()) {
+  if (!existsSync3(path)) return void 0;
+  try {
+    const data = JSON.parse(readFileSync2(path, "utf8"));
+    return data?.version === 1 && typeof data.fetchedAt === "string" ? data : void 0;
+  } catch {
+    return void 0;
+  }
+}
+function writeTeamCache(cache, path = teamCachePath()) {
+  mkdirSync(dirname2(path), { recursive: true, mode: 448 });
+  const tmp = `${path}.tmp`;
+  writeFileSync(tmp, JSON.stringify(cache, null, 2), { mode: 384 });
+  renameSync(tmp, path);
+}
+var STRING_LISTS = ["allowedServers", "blockedServers", "allowedRemoteHosts", "allowedPlugins", "blockedPlugins"];
+function loadTeamPolicy(path = teamCachePath()) {
+  const c = readTeamCache(path);
+  if (!c?.policy || typeof c.policy !== "object" || c.notTeam) return void 0;
+  const policy = {};
+  for (const f of STRING_LISTS) {
+    const v = c.policy[f];
+    if (Array.isArray(v) && v.every((x) => typeof x === "string")) policy[f] = v;
+  }
+  if (typeof c.policy.requirePinnedVersions === "boolean") policy.requirePinnedVersions = c.policy.requirePinnedVersions;
+  return { policy, version: typeof c.policyVersion === "number" ? c.policyVersion : 0, org: typeof c.org === "string" ? c.org : "your organisation" };
+}
+
+// src/policy.ts
 function policyPaths(projectDir) {
-  return [join3(process.env.MCP_SECURITY_HOME ?? join3(homedir2(), ".claude", "mcp-security"), "policy.json"), join3(projectDir, ".mcp-security.json")];
+  return [join4(process.env.MCP_SECURITY_HOME ?? join4(homedir3(), ".claude", "mcp-security"), "policy.json"), join4(projectDir, ".mcp-security.json")];
 }
 function loadPolicy(projectDir) {
   const merged = {};
   const sources = [];
   for (const p of policyPaths(projectDir)) {
-    if (!existsSync3(p)) continue;
+    if (!existsSync4(p)) continue;
     try {
-      Object.assign(merged, JSON.parse(readFileSync2(p, "utf8")));
+      Object.assign(merged, JSON.parse(readFileSync3(p, "utf8")));
       sources.push(p);
     } catch {
       sources.push(`${p} (unreadable)`);
     }
   }
-  return sources.length ? { policy: merged, sources } : void 0;
+  const team = loadTeamPolicy();
+  return sources.length || team ? { policy: merged, sources, ...team ? { team: { policy: team.policy, version: team.version, org: team.org } } : {} } : void 0;
 }
 function globToRegExp(pattern) {
   return new RegExp(`^${pattern.split("*").map((p) => p.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join(".*")}$`, "i");
@@ -20661,30 +20699,63 @@ function matchesHost(url2, patterns) {
   }
   return patterns.some((p) => globToRegExp(p).test(host));
 }
-function auditPolicy(servers, loaded) {
-  if (!loaded) return [];
-  const { policy, sources } = loaded;
-  const out = sources.filter((s) => s.endsWith("(unreadable)")).map((s) => ({ severity: "high", rule: "policy/unreadable", title: "Policy file could not be parsed", location: s, remediation: "Fix the JSON. Until then the policy is not enforced." }));
-  const ref = `policy (${sources.join(", ")})`;
+function checkServers(servers, policy, ref) {
+  const out2 = [];
   for (const s of servers) {
     const where = `server "${s.name}" (${s.scope})`;
     const tag = { file: s.source, server: s.name };
     const blocked = policy.blockedServers?.find((p) => matchesServer(s, p));
     if (blocked) {
-      out.push({ severity: "critical", rule: "policy/blocked-server", title: `Server is on the block list ("${excerpt(blocked, 60)}")`, location: where, remediation: `Remove it. Blocked by ${ref}.`, ...tag });
+      out2.push({ severity: "critical", rule: "policy/blocked-server", title: `Server is on the block list ("${excerpt(blocked, 60)}")`, location: where, remediation: `Remove it. Blocked by ${ref}.`, ...tag });
       continue;
     }
     if (policy.allowedServers && !policy.allowedServers.some((p) => matchesServer(s, p))) {
-      out.push({ severity: "high", rule: "policy/unapproved-server", title: "Server is not on the approved list (shadow MCP server)", location: where, remediation: `Get it reviewed and add "${s.scope}:${s.name}" to allowedServers, or remove it. Enforced by ${ref}.`, ...tag });
+      out2.push({ severity: "high", rule: "policy/unapproved-server", title: "Server is not on the approved list (shadow MCP server)", location: where, remediation: `Get it reviewed and add "${s.scope}:${s.name}" to allowedServers, or remove it. Enforced by ${ref}.`, ...tag });
     }
     if (s.url && policy.allowedRemoteHosts && !matchesHost(s.url, policy.allowedRemoteHosts)) {
-      out.push({ severity: "high", rule: "policy/remote-host-not-allowed", title: "Remote server host is not on the allowed hosts list", location: `${where} \u203A url`, evidence: excerpt(s.url.replace(/\?.*$/, ""), 100), remediation: `Use an approved host or extend allowedRemoteHosts in ${ref}.`, ...tag });
+      out2.push({ severity: "high", rule: "policy/remote-host-not-allowed", title: "Remote server host is not on the allowed hosts list", location: `${where} \u203A url`, evidence: excerpt(s.url.replace(/\?.*$/, ""), 100), remediation: `Use an approved host or extend allowedRemoteHosts in ${ref}.`, ...tag });
     }
   }
-  return out;
+  return out2;
+}
+function auditPolicy(servers, loaded) {
+  if (!loaded) return [];
+  const { policy, sources } = loaded;
+  const out2 = sources.filter((s) => s.endsWith("(unreadable)")).map((s) => ({ severity: "high", rule: "policy/unreadable", title: "Policy file could not be parsed", location: s, remediation: "Fix the JSON. Until then the policy is not enforced." }));
+  if (sources.some((s) => !s.endsWith("(unreadable)"))) out2.push(...checkServers(servers, policy, `policy (${sources.join(", ")})`));
+  if (loaded.team) {
+    const own2 = new Set(out2.map((f) => `${f.rule}|${f.location}`));
+    out2.push(...checkServers(servers, loaded.team.policy, `the team policy of ${excerpt(loaded.team.org, 60)} (version ${loaded.team.version})`).filter((f) => !own2.has(`${f.rule}|${f.location}`)));
+  }
+  return out2;
+}
+function auditPluginPolicy(plugins, loaded) {
+  if (!loaded) return [];
+  const layers = [
+    { policy: loaded.policy, ref: `policy (${loaded.sources.join(", ")})`, active: loaded.sources.some((s) => !s.endsWith("(unreadable)")) },
+    ...loaded.team ? [{ policy: loaded.team.policy, ref: `the team policy of ${excerpt(loaded.team.org, 60)} (version ${loaded.team.version})`, active: true }] : []
+  ];
+  const out2 = [];
+  const seen = /* @__PURE__ */ new Set();
+  for (const { policy, ref, active } of layers) {
+    if (!active) continue;
+    for (const p of plugins) {
+      const where = `plugin "${excerpt(p.name, 60)}"${p.version ? ` ${excerpt(p.version, 30)}` : ""}`;
+      const blocked = policy.blockedPlugins?.find((x) => globToRegExp(x).test(p.name));
+      const key = (rule) => `${rule}|${p.name}`;
+      if (blocked && !seen.has(key("policy/blocked-plugin"))) {
+        seen.add(key("policy/blocked-plugin"));
+        out2.push({ severity: "critical", rule: "policy/blocked-plugin", title: `Plugin is on the block list ("${excerpt(blocked, 60)}")`, location: where, remediation: `Uninstall it. Blocked by ${ref}.` });
+      } else if (!blocked && policy.allowedPlugins && !policy.allowedPlugins.some((x) => globToRegExp(x).test(p.name)) && !seen.has(key("policy/unapproved-plugin"))) {
+        seen.add(key("policy/unapproved-plugin"));
+        out2.push({ severity: "high", rule: "policy/unapproved-plugin", title: "Plugin is not on the approved list", location: where, remediation: `Get it reviewed and ask for approval ("team request plugin ${excerpt(p.name, 60)}"), or uninstall it. Enforced by ${ref}.` });
+      }
+    }
+  }
+  return out2;
 }
 function applyPolicy(findings, loaded) {
-  if (!loaded?.policy.requirePinnedVersions) return findings;
+  if (!loaded?.policy.requirePinnedVersions && !loaded?.team?.policy.requirePinnedVersions) return findings;
   return findings.map((f) => f.rule === "config/unpinned-package" || f.rule === "config/docker-unpinned-image" ? { ...f, severity: "high", title: `${f.title} (policy requires pinned versions)` } : f);
 }
 function policyFromServers(servers) {
@@ -20809,22 +20880,22 @@ function checkUnpinned(s, loc) {
 function checkDocker(s, loc) {
   if (!s.command || !["docker", "podman"].includes(baseCommand(s.command))) return [];
   const args = s.args ?? [];
-  const out = [];
+  const out2 = [];
   const joined = args.join(" ");
   if (args.includes("--privileged")) {
-    out.push({ severity: "high", rule: "config/docker-privileged", title: "Container runs with --privileged", location: loc, evidence: excerpt(joined), remediation: "Remove --privileged; grant only the specific capabilities the server needs." });
+    out2.push({ severity: "high", rule: "config/docker-privileged", title: "Container runs with --privileged", location: loc, evidence: excerpt(joined), remediation: "Remove --privileged; grant only the specific capabilities the server needs." });
   }
   if (/(^|\s)(-v|--volume)[ =]\/:/.test(joined) || /(^|\s)(-v|--volume)[ =](~|\$HOME|\/Users\/[^/:]+|\/home\/[^/:]+):/.test(joined)) {
-    out.push({ severity: "high", rule: "config/docker-broad-mount", title: "Container mounts the root or home directory", location: loc, evidence: excerpt(joined), remediation: "Mount only the project directory the server needs, read-only (:ro) when possible." });
+    out2.push({ severity: "high", rule: "config/docker-broad-mount", title: "Container mounts the root or home directory", location: loc, evidence: excerpt(joined), remediation: "Mount only the project directory the server needs, read-only (:ro) when possible." });
   }
   if (/--network[ =]host|--net[ =]host/.test(joined)) {
-    out.push({ severity: "medium", rule: "config/docker-host-network", title: "Container uses host networking", location: loc, evidence: excerpt(joined), remediation: "Use the default bridge network unless host networking is required." });
+    out2.push({ severity: "medium", rule: "config/docker-host-network", title: "Container uses host networking", location: loc, evidence: excerpt(joined), remediation: "Use the default bridge network unless host networking is required." });
   }
   const image = dockerImageOf(s);
   if (image && !image.includes("@sha256:") && (!/:[^/]+$/.test(image) || image.endsWith(":latest"))) {
-    out.push({ severity: "medium", rule: "config/docker-unpinned-image", title: `Image "${excerpt(image, 80)}" has no fixed tag or digest`, location: loc, evidence: excerpt(joined), remediation: "Reference the image by digest (image@sha256:\u2026) or at least an immutable version tag." });
+    out2.push({ severity: "medium", rule: "config/docker-unpinned-image", title: `Image "${excerpt(image, 80)}" has no fixed tag or digest`, location: loc, evidence: excerpt(joined), remediation: "Reference the image by digest (image@sha256:\u2026) or at least an immutable version tag." });
   }
-  return out;
+  return out2;
 }
 function dockerImageOf(s) {
   if (!s.command || !["docker", "podman"].includes(baseCommand(s.command))) return void 0;
@@ -20844,44 +20915,44 @@ function dockerImageOf(s) {
 function checkShell(s, loc) {
   if (!s.command) return [];
   const full = [s.command, ...s.args ?? []].join(" ");
-  const out = [];
+  const out2 = [];
   if (/\b(curl|wget|iwr|Invoke-WebRequest)\b[^|]*\|\s*(sh|bash|zsh|python3?|node|iex)\b/i.test(full)) {
-    out.push({ severity: "high", rule: "config/pipe-to-shell", title: "Launch command downloads and executes a remote script", location: loc, evidence: excerpt(full), remediation: "Install the server from a pinned package or a reviewed local checkout instead of piping a download into a shell." });
+    out2.push({ severity: "high", rule: "config/pipe-to-shell", title: "Launch command downloads and executes a remote script", location: loc, evidence: excerpt(full), remediation: "Install the server from a pinned package or a reviewed local checkout instead of piping a download into a shell." });
   } else if (SHELLS.has(baseCommand(s.command)) && (s.args ?? []).some((a) => /^(-c|\/c|-Command)$/i.test(a))) {
-    out.push({ severity: "medium", rule: "config/shell-wrapper", title: "Server is launched through an inline shell command", location: loc, evidence: excerpt(full), remediation: "Call the server binary directly so the launched command is explicit and auditable." });
+    out2.push({ severity: "medium", rule: "config/shell-wrapper", title: "Server is launched through an inline shell command", location: loc, evidence: excerpt(full), remediation: "Call the server binary directly so the launched command is explicit and auditable." });
   }
-  return out;
+  return out2;
 }
 function checkSecrets(s, loc) {
-  const out = [];
+  const out2 = [];
   for (const [k, v] of Object.entries(s.env ?? {})) {
     const hit = looksLikeSecretValue(k, v);
     if (hit) {
       const fix = s.scope === "claude-desktop" ? `Claude Desktop does not reliably expand variables here, so launch the server through a small wrapper script that reads ${k} from the OS keychain (e.g. \`security find-generic-password\` on macOS) instead of storing it in this file.` : `Replace the literal with a reference such as "\${${k}}" and set the variable in your shell or a secret manager.`;
-      out.push({ severity: "high", rule: "config/plaintext-secret", title: `${hit.kind} stored in plain text in env.${k}`, location: `${loc} \u203A env.${k}`, evidence: hit.masked, remediation: `${fix} Rotate the key if this file was ever shared, synced or committed.` });
+      out2.push({ severity: "high", rule: "config/plaintext-secret", title: `${hit.kind} stored in plain text in env.${k}`, location: `${loc} \u203A env.${k}`, evidence: hit.masked, remediation: `${fix} Rotate the key if this file was ever shared, synced or committed.` });
     }
   }
   for (const [k, v] of Object.entries(s.headers ?? {})) {
     if (isEnvReference(v.replace(/^Bearer\s+/i, ""))) continue;
     const hit = looksLikeSecretValue(k, v) ?? (/^authorization$/i.test(k) && v.length > 12 ? { kind: "Authorization header", masked: excerpt(v, 12) + "\u2026" } : void 0);
     if (hit) {
-      out.push({ severity: "high", rule: "config/plaintext-secret", title: `${hit.kind} stored in plain text in headers.${k}`, location: `${loc} \u203A headers.${k}`, evidence: hit.masked, remediation: `Use an environment variable reference (e.g. "Bearer \${TOKEN}") or the server's OAuth flow. Rotate the token if it was exposed.` });
+      out2.push({ severity: "high", rule: "config/plaintext-secret", title: `${hit.kind} stored in plain text in headers.${k}`, location: `${loc} \u203A headers.${k}`, evidence: hit.masked, remediation: `Use an environment variable reference (e.g. "Bearer \${TOKEN}") or the server's OAuth flow. Rotate the token if it was exposed.` });
     }
   }
   (s.args ?? []).forEach((a, i) => {
     const hit = findKnownSecret(a);
     if (hit) {
-      out.push({ severity: "high", rule: "config/secret-in-args", title: `${hit.kind} passed as a command-line argument`, location: `${loc} \u203A args[${i}]`, evidence: hit.masked, remediation: "Pass secrets via env references, not args: args are visible to every local process (ps) and end up in logs." });
+      out2.push({ severity: "high", rule: "config/secret-in-args", title: `${hit.kind} passed as a command-line argument`, location: `${loc} \u203A args[${i}]`, evidence: hit.masked, remediation: "Pass secrets via env references, not args: args are visible to every local process (ps) and end up in logs." });
     }
   });
   if (s.url) {
     const hit = findKnownSecret(s.url);
     const qs = /[?&](api[_-]?key|token|access_token|key|secret)=([^&]+)/i.exec(s.url);
     if (hit || qs && !isEnvReference(decodeURIComponent(qs[2]))) {
-      out.push({ severity: "high", rule: "config/secret-in-url", title: "Credential embedded in the server URL", location: `${loc} \u203A url`, evidence: hit?.masked ?? `${qs[1]}=****`, remediation: "Move the credential into a header that references an environment variable." });
+      out2.push({ severity: "high", rule: "config/secret-in-url", title: "Credential embedded in the server URL", location: `${loc} \u203A url`, evidence: hit?.masked ?? `${qs[1]}=****`, remediation: "Move the credential into a header that references an environment variable." });
     }
   }
-  return out;
+  return out2;
 }
 function checkRemote(s, loc) {
   if (!s.url) return [];
@@ -20929,9 +21000,9 @@ function auditConfig(projectDir, opts = {}) {
 
 // src/context-files.ts
 import { createHash } from "node:crypto";
-import { lstatSync, readFileSync as readFileSync3, readdirSync as readdirSync2 } from "node:fs";
-import { homedir as homedir3 } from "node:os";
-import { basename, extname, join as join4, relative, resolve as resolve2, sep } from "node:path";
+import { lstatSync, readFileSync as readFileSync4, readdirSync as readdirSync2 } from "node:fs";
+import { homedir as homedir4 } from "node:os";
+import { basename, extname, join as join5, relative, resolve as resolve2, sep } from "node:path";
 var MAX_FILE_BYTES = 256 * 1024;
 var MAX_FILES = 2e3;
 var MAX_DEPTH = 4;
@@ -20945,15 +21016,15 @@ function walk(dir, depth = 0) {
   } catch {
     return [];
   }
-  const out = [];
+  const out2 = [];
   for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
     if (e.isSymbolicLink()) continue;
-    const p = join4(dir, e.name);
+    const p = join5(dir, e.name);
     if (e.isDirectory()) {
-      if (!SKIP_DIRS.has(e.name) && !e.name.startsWith(".")) out.push(...walk(p, depth + 1));
-    } else if (e.isFile()) out.push(p);
+      if (!SKIP_DIRS.has(e.name) && !e.name.startsWith(".")) out2.push(...walk(p, depth + 1));
+    } else if (e.isFile()) out2.push(p);
   }
-  return out;
+  return out2;
 }
 function isRegularFile(path) {
   try {
@@ -20963,7 +21034,7 @@ function isRegularFile(path) {
   }
 }
 function collectRoot(root, add, opts) {
-  const skills = join4(root, "skills");
+  const skills = join5(root, "skills");
   for (const f of walk(skills)) {
     const rel = relative(skills, f).split(sep);
     const skillName = rel[0];
@@ -20973,20 +21044,21 @@ function collectRoot(root, add, opts) {
     else if (SCRIPT_EXT.has(ext)) add(f, "script", skillName, root);
   }
   for (const [dir, kind] of [["commands", "command"], ["agents", "agent"], ["rules", "rule"]]) {
-    const base = join4(root, dir);
+    const base = join5(root, dir);
     for (const f of walk(base)) if ([".md", ".mdx"].includes(extname(f).toLowerCase())) add(f, kind, relative(base, f).replace(/\.mdx?$/i, "").split(sep).join("/"), root);
   }
   if (opts.pluginLayout) {
-    for (const f of [join4(root, "hooks", "hooks.json"), join4(root, "hooks.json")]) add(f, "hooks", "hooks", root);
-    for (const f of walk(join4(root, "hooks"))) if (SCRIPT_EXT.has(extname(f).toLowerCase())) add(f, "script", "hooks", root);
+    for (const f of [join5(root, "hooks", "hooks.json"), join5(root, "hooks.json")]) add(f, "hooks", "hooks", root);
+    for (const f of walk(join5(root, "hooks"))) if (SCRIPT_EXT.has(extname(f).toLowerCase())) add(f, "script", "hooks", root);
   }
 }
 function discoverContext(projectDir, opts = {}) {
-  const home = opts.home ?? homedir3();
+  const home = opts.home ?? homedir4();
   const project = resolve2(projectDir);
   const files = [];
   const skipped = [];
   const versions = {};
+  const plugins = [];
   const seen = /* @__PURE__ */ new Set();
   const add = (origin) => (file, kind, name, root) => {
     const p = resolve2(file);
@@ -20997,7 +21069,7 @@ function discoverContext(projectDir, opts = {}) {
       return;
     }
     try {
-      const buf = readFileSync3(p);
+      const buf = readFileSync4(p);
       if (buf.length > MAX_FILE_BYTES) {
         skipped.push(`${p} (larger than ${MAX_FILE_BYTES / 1024} KB)`);
         return;
@@ -21008,28 +21080,29 @@ function discoverContext(projectDir, opts = {}) {
     }
   };
   const addProject = add("project");
-  for (const f of [join4(project, "CLAUDE.md"), join4(project, "CLAUDE.local.md"), join4(project, ".claude", "CLAUDE.md")]) addProject(f, "claude-md", basename(f), project);
-  collectRoot(join4(project, ".claude"), addProject, { pluginLayout: false });
+  for (const f of [join5(project, "CLAUDE.md"), join5(project, "CLAUDE.local.md"), join5(project, ".claude", "CLAUDE.md")]) addProject(f, "claude-md", basename(f), project);
+  collectRoot(join5(project, ".claude"), addProject, { pluginLayout: false });
   if (!opts.projectOnly) {
     const addUser = add("user");
-    addUser(join4(home, ".claude", "CLAUDE.md"), "claude-md", "CLAUDE.md", join4(home, ".claude"));
-    collectRoot(join4(home, ".claude"), addUser, { pluginLayout: false });
+    addUser(join5(home, ".claude", "CLAUDE.md"), "claude-md", "CLAUDE.md", join5(home, ".claude"));
+    collectRoot(join5(home, ".claude"), addUser, { pluginLayout: false });
     const sources = [];
     for (const { name, root, version: version2 } of pluginRoots(project, home, sources)) {
       if (version2 && !versions[`plugin:${name}`]) versions[`plugin:${name}`] = version2;
+      if (!plugins.some((p) => p.name === name)) plugins.push({ name, ...version2 ? { version: version2 } : {} });
       collectRoot(root, add(`plugin:${name}`), { pluginLayout: true });
     }
   }
-  return { files, versions, skipped };
+  return { files, versions, plugins, skipped };
 }
 
 // src/pins.ts
 import { createHash as createHash2 } from "node:crypto";
-import { existsSync as existsSync4, mkdirSync, readFileSync as readFileSync4, renameSync, statSync, writeFileSync } from "node:fs";
-import { homedir as homedir4 } from "node:os";
-import { dirname as dirname2, isAbsolute, join as join5, resolve as resolve3 } from "node:path";
+import { existsSync as existsSync5, mkdirSync as mkdirSync2, readFileSync as readFileSync5, renameSync as renameSync2, statSync, writeFileSync as writeFileSync2 } from "node:fs";
+import { homedir as homedir5 } from "node:os";
+import { dirname as dirname3, isAbsolute, join as join6, resolve as resolve3 } from "node:path";
 function pinsPath() {
-  return join5(process.env.MCP_SECURITY_HOME ?? join5(homedir4(), ".claude", "mcp-security"), "pins.json");
+  return join6(process.env.MCP_SECURITY_HOME ?? join6(homedir5(), ".claude", "mcp-security"), "pins.json");
 }
 function stableStringify(v) {
   if (Array.isArray(v)) return `[${v.map(stableStringify).join(",")}]`;
@@ -21043,26 +21116,26 @@ function hashTool(t) {
 }
 var MAX_HASHED_FILE = 20 * 1024 * 1024;
 function localFileHashes(s) {
-  const out = {};
+  const out2 = {};
   for (const a of [s.command, ...s.args ?? []]) {
     if (!a || a.startsWith("-") || a.includes("${") || !/[\\/]|\.(m?[jt]s|cjs|py|rb|sh|php|jar)$/i.test(a)) continue;
-    const p = isAbsolute(a) ? a : resolve3(dirname2(s.source), a);
+    const p = isAbsolute(a) ? a : resolve3(dirname3(s.source), a);
     try {
       const st = statSync(p);
-      if (st.isFile() && st.size <= MAX_HASHED_FILE) out[a] = createHash2("sha256").update(readFileSync4(p)).digest("hex");
+      if (st.isFile() && st.size <= MAX_HASHED_FILE) out2[a] = createHash2("sha256").update(readFileSync5(p)).digest("hex");
     } catch {
     }
   }
-  return out;
+  return out2;
 }
 function hashConfig(s) {
   const files = localFileHashes(s);
   return createHash2("sha256").update(stableStringify({ type: s.type, command: s.command, args: s.args, url: s.url, env: Object.keys(s.env ?? {}).sort(), headers: Object.keys(s.headers ?? {}).sort(), ...Object.keys(files).length ? { files } : {} })).digest("hex");
 }
 function loadPins(path = pinsPath()) {
-  if (!existsSync4(path)) return { version: 1, servers: {} };
+  if (!existsSync5(path)) return { version: 1, servers: {} };
   try {
-    const data = JSON.parse(readFileSync4(path, "utf8"));
+    const data = JSON.parse(readFileSync5(path, "utf8"));
     return data?.version === 1 && data.servers ? data : { version: 1, servers: {} };
   } catch {
     return { version: 1, servers: {} };
@@ -21122,6 +21195,7 @@ function buildCheckRequest(packages, servers, context) {
   };
 }
 function contextPlugins(context) {
+  if (context.plugins) return [...context.plugins].sort((a, b) => a.name.localeCompare(b.name));
   const names = [...new Set(context.files.filter((f) => f.origin.startsWith("plugin:")).map((f) => f.origin))].sort();
   return names.map((origin) => ({ name: origin.slice(7), ...context.versions[origin] ? { version: context.versions[origin] } : {} }));
 }
@@ -21146,7 +21220,7 @@ function parseCheckResponse(body) {
   return { findings, feedUpdatedAt: typeof at === "string" ? excerpt(at, 40) : "unknown" };
 }
 function toFindings(entries, packages, servers, context) {
-  const out = [];
+  const out2 = [];
   for (const e of entries) {
     const remediation = `Remove or replace this server until the issue is resolved.${e.reference ? ` Details: ${e.reference}` : ""}`;
     if (e.match.kind === "context" || e.match.kind === "plugin") {
@@ -21154,11 +21228,11 @@ function toFindings(entries, packages, servers, context) {
       const fileRemediation = `Remove this file or plugin and rotate any credentials it could have reached.${e.reference ? ` Details: ${e.reference}` : ""}`;
       if (m.kind === "context") {
         for (const f of context?.files ?? [])
-          if (f.hash === m.hash) out.push({ severity: e.severity, rule: "feed/context", title: e.title, location: `${f.kind} "${excerpt(f.name, 50)}" (${f.origin}) \u203A ${excerpt(f.rel, 90)}`, remediation: fileRemediation, file: f.path, line: 1 });
+          if (f.hash === m.hash) out2.push({ severity: e.severity, rule: "feed/context", title: e.title, location: `${f.kind} "${excerpt(f.name, 50)}" (${f.origin}) \u203A ${excerpt(f.rel, 90)}`, remediation: fileRemediation, file: f.path, line: 1 });
       } else {
         for (const p of contextPlugins(context ?? { files: [], versions: {} }))
           if (p.name.toLowerCase() === m.name.toLowerCase() && (!m.version || p.version === m.version))
-            out.push({ severity: e.severity, rule: "feed/plugin", title: e.title, location: `plugin "${excerpt(p.name, 60)}"${p.version ? ` ${excerpt(p.version, 30)}` : ""}`, remediation: fileRemediation });
+            out2.push({ severity: e.severity, rule: "feed/plugin", title: e.title, location: `plugin "${excerpt(p.name, 60)}"${p.version ? ` ${excerpt(p.version, 30)}` : ""}`, remediation: fileRemediation });
       }
       continue;
     }
@@ -21166,17 +21240,17 @@ function toFindings(entries, packages, servers, context) {
       const m = e.match;
       for (const p of packages) {
         if (p.ecosystem !== m.ecosystem || p.name.toLowerCase() !== m.name.toLowerCase() || m.version && p.version !== m.version) continue;
-        out.push({ severity: e.severity, rule: "feed/package", title: e.title, location: `server "${p.server.name}" (${p.server.scope}) \u203A ${p.ecosystem} ${p.name}${p.version ? `@${p.version}` : ""}`, remediation, file: p.server.source, server: p.server.name });
+        out2.push({ severity: e.severity, rule: "feed/package", title: e.title, location: `server "${p.server.name}" (${p.server.scope}) \u203A ${p.ecosystem} ${p.name}${p.version ? `@${p.version}` : ""}`, remediation, file: p.server.source, server: p.server.name });
       }
     } else {
       const hash = e.match.hash;
       for (const s of servers)
         for (const t of s.tools)
           if (hashTool(t) === hash)
-            out.push({ severity: e.severity, rule: "feed/tool", title: e.title, location: `server "${s.server.name}" (${s.server.scope}) \u203A tool "${excerpt(t.name, 60)}"`, remediation, file: s.server.source, server: s.server.name });
+            out2.push({ severity: e.severity, rule: "feed/tool", title: e.title, location: `server "${s.server.name}" (${s.server.scope}) \u203A tool "${excerpt(t.name, 60)}"`, remediation, file: s.server.source, server: s.server.name });
     }
   }
-  return out;
+  return out2;
 }
 var defaultFetcher = (url2, init) => fetch(url2, init);
 async function cloudCheck(packages, servers, opts = cloudOptionsFromEnv(), context) {
@@ -21219,31 +21293,31 @@ async function cloudCheck(packages, servers, opts = cloudOptionsFromEnv(), conte
 }
 
 // src/context-pins.ts
-import { existsSync as existsSync5, mkdirSync as mkdirSync2, readFileSync as readFileSync5, renameSync as renameSync2, writeFileSync as writeFileSync2 } from "node:fs";
-import { homedir as homedir5 } from "node:os";
-import { dirname as dirname3, join as join6, resolve as resolve4 } from "node:path";
+import { existsSync as existsSync6, mkdirSync as mkdirSync3, readFileSync as readFileSync6, renameSync as renameSync3, writeFileSync as writeFileSync3 } from "node:fs";
+import { homedir as homedir6 } from "node:os";
+import { dirname as dirname4, join as join7, resolve as resolve4 } from "node:path";
 
 // src/rules/tool-rules.ts
 function collectText(tool) {
-  const out = [{ path: "name", text: tool.name }];
-  if (tool.title) out.push({ path: "title", text: tool.title });
-  if (tool.description) out.push({ path: "description", text: tool.description });
+  const out2 = [{ path: "name", text: tool.name }];
+  if (tool.title) out2.push({ path: "title", text: tool.title });
+  if (tool.description) out2.push({ path: "description", text: tool.description });
   const walk2 = (node2, path) => {
     if (typeof node2 === "string") {
-      out.push({ path, text: node2 });
+      out2.push({ path, text: node2 });
     } else if (Array.isArray(node2)) {
       node2.forEach((n, i) => walk2(n, `${path}[${i}]`));
     } else if (node2 && typeof node2 === "object") {
       for (const [k, v] of Object.entries(node2)) {
         if (["$schema", "$ref", "pattern"].includes(k) && typeof v === "string") continue;
-        if (path.endsWith(".properties")) out.push({ path: `${path}.${k} (name)`, text: k });
+        if (path.endsWith(".properties")) out2.push({ path: `${path}.${k} (name)`, text: k });
         walk2(v, `${path}.${k}`);
       }
     }
   };
   walk2(tool.inputSchema, "inputSchema");
   walk2(tool.annotations, "annotations");
-  return out;
+  return out2;
 }
 var DIRECTIVE_RE = /\b(read|reading|cat|open|load|include|including|pass|send|upload|copy|attach|paste|append|put|provide|extract|forward|post|share|embed|add|insert|fill)\b/i;
 function sentenceAt(text, index) {
@@ -21378,15 +21452,15 @@ function collidingServers(name, others) {
 function invalidSchemaTypes(node2, path) {
   if (!node2 || typeof node2 !== "object") return [];
   if (Array.isArray(node2)) return node2.flatMap((n, i) => invalidSchemaTypes(n, `${path}[${i}]`));
-  const out = [];
+  const out2 = [];
   for (const [k, v] of Object.entries(node2)) {
     if (k === "type") {
-      for (const t of Array.isArray(v) ? v : [v]) if (typeof t === "string" && !SCHEMA_TYPES.has(t)) out.push({ path: `${path}.type`, value: t });
+      for (const t of Array.isArray(v) ? v : [v]) if (typeof t === "string" && !SCHEMA_TYPES.has(t)) out2.push({ path: `${path}.type`, value: t });
     } else if (k !== "const" && k !== "default" && k !== "examples" && k !== "enum") {
-      out.push(...invalidSchemaTypes(v, `${path}.${k}`));
+      out2.push(...invalidSchemaTypes(v, `${path}.${k}`));
     }
   }
-  return out;
+  return out2;
 }
 function describeDefinition(name) {
   if (name === "#instructions") return { kind: "instructions", label: "" };
@@ -21458,7 +21532,7 @@ function analyzeTools(serverName, tools, otherServersTools = {}) {
 import { sep as sep2 } from "node:path";
 var lineAt = (text, index) => text.slice(0, index).split("\n").length;
 function fenceRanges(text) {
-  const out = [];
+  const out2 = [];
   const re = /^[ \t]*(```|~~~)[^\n]*$/gm;
   let open2;
   let marker = "";
@@ -21467,12 +21541,12 @@ function fenceRanges(text) {
       open2 = m.index;
       marker = m[1];
     } else if (m[1] === marker) {
-      out.push([open2, m.index + m[0].length]);
+      out2.push([open2, m.index + m[0].length]);
       open2 = void 0;
     }
   }
-  if (open2 !== void 0) out.push([open2, text.length]);
-  return out;
+  if (open2 !== void 0) out2.push([open2, text.length]);
+  return out2;
 }
 var inRanges = (ranges, index) => ranges.some(([a, b]) => index >= a && index < b);
 var ABOUT_ATTACKS_RE = /\b(?:attack(?:s|er|ers)?|malicious|payloads?|prompt[- ]injections?|jailbreak(?:s|ing)?|poison(?:ed|ing)?|red[- ]team(?:ing)?|untrusted|adversar\w+|exploit(?:s|ed)?)\b/i;
@@ -21489,10 +21563,10 @@ var ENCODED_EXEC_RE = /\bbase64\s+(?:-d|-D|--decode)\b[^\n]*\|\s*(?:sudo\s+)?(?:
 var STEALER_STORE_RE = new RegExp(`(?:${STRONG_STORE})`, "i");
 var NETWORK_CODE_RE = /\b(?:requests\.(?:post|put|get)|urllib\.request|http\.client|httpx\.|aiohttp|fetch\s*\(|axios\.|XMLHttpRequest|net\.connect|socket\.(?:socket|create_connection)|https?\.request)\b|\b(?:curl|wget|nc|ncat|Invoke-WebRequest)\b/;
 function shellFindings(text, base, meta2, make) {
-  const out = [];
+  const out2 = [];
   const push = (f, index) => {
     const made = make(f, base + index);
-    if (made) out.push(made);
+    if (made) out2.push(made);
   };
   for (const m of text.matchAll(EXFIL_RE)) {
     const strong = Boolean(m[1] ?? m[3]);
@@ -21532,7 +21606,7 @@ function shellFindings(text, base, meta2, make) {
       m.index
     );
   }
-  return out;
+  return out2;
 }
 var NEGATION_RE = /\b(?:never|do not|don't|dont|must not|should not|shouldn't|avoid|refuse|refrain|without|not to|no need to|instead of)\b/i;
 var EGRESS_RE = /\b(?:send|upload|post|email|e-mail|webhook|curl|wget|exfiltrate|transmit|forward|share|paste|submit)\b|https?:\/\//i;
@@ -21685,23 +21759,23 @@ function analyzeContext(files) {
 
 // src/context-pins.ts
 function contextPinsPath() {
-  return join6(process.env.MCP_SECURITY_HOME ?? join6(homedir5(), ".claude", "mcp-security"), "context-pins.json");
+  return join7(process.env.MCP_SECURITY_HOME ?? join7(homedir6(), ".claude", "mcp-security"), "context-pins.json");
 }
 var originKey = (origin, projectDir) => origin === "project" ? `project:${resolve4(projectDir)}` : origin;
 function loadContextPins(path = contextPinsPath()) {
-  if (!existsSync5(path)) return { version: 1, origins: {} };
+  if (!existsSync6(path)) return { version: 1, origins: {} };
   try {
-    const data = JSON.parse(readFileSync5(path, "utf8"));
+    const data = JSON.parse(readFileSync6(path, "utf8"));
     return data?.version === 1 && data.origins && typeof data.origins === "object" ? data : { version: 1, origins: {} };
   } catch {
     return { version: 1, origins: {} };
   }
 }
 function saveContextPins(pins, path = contextPinsPath()) {
-  mkdirSync2(dirname3(path), { recursive: true, mode: 448 });
+  mkdirSync3(dirname4(path), { recursive: true, mode: 448 });
   const tmp = `${path}.tmp`;
-  writeFileSync2(tmp, JSON.stringify(pins, null, 2), { mode: 384 });
-  renameSync2(tmp, path);
+  writeFileSync3(tmp, JSON.stringify(pins, null, 2), { mode: 384 });
+  renameSync3(tmp, path);
 }
 function snapshotContext(d, projectDir) {
   const byOrigin = /* @__PURE__ */ new Map();
@@ -21714,9 +21788,9 @@ function snapshotContext(d, projectDir) {
   return [...byOrigin.values()].sort((a, b) => a.key.localeCompare(b.key));
 }
 function flaggedOrigins(files, projectDir) {
-  const out = /* @__PURE__ */ new Set();
-  for (const f of files) if (analyzeContextFile(f).some((x) => x.severity === "critical" || x.severity === "high")) out.add(originKey(f.origin, projectDir));
-  return out;
+  const out2 = /* @__PURE__ */ new Set();
+  for (const f of files) if (analyzeContextFile(f).some((x) => x.severity === "critical" || x.severity === "high")) out2.add(originKey(f.origin, projectDir));
+  return out2;
 }
 function pinContext(d, projectDir, opts = {}, path = contextPinsPath()) {
   const pins = loadContextPins(path);
@@ -21784,11 +21858,12 @@ function auditContext(projectDir, opts = {}) {
   const discovered = discoverContext(projectDir, opts);
   const pins = loadContextPins();
   const drift = Object.keys(pins.origins).length ? contextDrift(discovered, projectDir, pins) : { lines: [], findings: [] };
-  return { ...discovered, findings: [...analyzeContext(discovered.files), ...drift.findings], driftLines: drift.lines };
+  const policyFindings = auditPluginPolicy(discovered.plugins, loadPolicy(projectDir));
+  return { ...discovered, findings: [...analyzeContext(discovered.files), ...drift.findings, ...policyFindings], driftLines: drift.lines };
 }
 async function feedCheckContext(a, opts = cloudOptionsFromEnv()) {
   if (!a.files.length) return { findings: [] };
-  const r = await cloudCheck([], [], opts, { files: a.files, versions: a.versions });
+  const r = await cloudCheck([], [], opts, { files: a.files, versions: a.versions, plugins: a.plugins });
   return { findings: r.findings, note: r.note };
 }
 var KIND_LABEL = {
@@ -21817,10 +21892,10 @@ ${a.skipped.slice(0, 10).map((s) => `- ${s}`).join("\n")}${a.skipped.length > 10
 }
 
 // src/fixes.ts
-import { chmodSync, existsSync as existsSync6, mkdirSync as mkdirSync3, readFileSync as readFileSync6, renameSync as renameSync3, rmSync as rmSync2, writeFileSync as writeFileSync3 } from "node:fs";
+import { chmodSync, existsSync as existsSync7, mkdirSync as mkdirSync4, readFileSync as readFileSync7, renameSync as renameSync4, rmSync as rmSync2, writeFileSync as writeFileSync4 } from "node:fs";
 import { createHash as createHash3 } from "node:crypto";
-import { homedir as homedir6 } from "node:os";
-import { basename as basename2, dirname as dirname4, join as join7 } from "node:path";
+import { homedir as homedir7 } from "node:os";
+import { basename as basename2, dirname as dirname5, join as join8 } from "node:path";
 
 // src/supply-chain.ts
 var DAY = 864e5;
@@ -21998,11 +22073,11 @@ async function checkSupplyChain(servers, fetcher = fetch, now = Date.now()) {
 
 // src/fixes.ts
 function readJsonFile(path) {
-  return existsSync6(path) ? JSON.parse(readFileSync6(path, "utf8")) : {};
+  return existsSync7(path) ? JSON.parse(readFileSync7(path, "utf8")) : {};
 }
 var serialize = (data) => JSON.stringify(data, null, 2) + "\n";
 function planPermissions(projectDir, ask) {
-  const path = join7(projectDir, ".claude", "settings.json");
+  const path = join8(projectDir, ".claude", "settings.json");
   const settings = readJsonFile(path);
   const perms = settings.permissions ??= {};
   const existing = /* @__PURE__ */ new Set([...perms.ask ?? [], ...perms.deny ?? []]);
@@ -22012,8 +22087,8 @@ function planPermissions(projectDir, ask) {
   return { changes: [{ path, edits: add.map((r) => `permissions.ask += "${r}"`), content: serialize(settings) }], notes: [] };
 }
 async function planPinVersions(projectDir, servers, fetcher = fetch) {
-  const path = join7(projectDir, ".mcp.json");
-  if (!existsSync6(path)) return { changes: [], notes: ["No project .mcp.json."] };
+  const path = join8(projectDir, ".mcp.json");
+  if (!existsSync7(path)) return { changes: [], notes: ["No project .mcp.json."] };
   const data = readJsonFile(path);
   const notes = [];
   const edits = [];
@@ -22045,8 +22120,8 @@ async function planPinVersions(projectDir, servers, fetcher = fetch) {
   return { changes: edits.length ? [{ path, edits, content: serialize(data) }] : [], notes: edits.length || notes.length ? notes : ["Every npx/uvx package in .mcp.json is already pinned."] };
 }
 function planEnvRefs(projectDir) {
-  const path = join7(projectDir, ".mcp.json");
-  if (!existsSync6(path)) return { changes: [], notes: ["No project .mcp.json."] };
+  const path = join8(projectDir, ".mcp.json");
+  if (!existsSync7(path)) return { changes: [], notes: ["No project .mcp.json."] };
   const data = readJsonFile(path);
   const edits = [];
   const notes = [];
@@ -22066,28 +22141,28 @@ function planEnvRefs(projectDir) {
   return { changes: edits.length ? [{ path, edits, content: serialize(data), backupHoldsSecrets: true }] : [], notes: edits.length ? notes : ["No literal secrets in .mcp.json."] };
 }
 function backupPath(file) {
-  const dir = join7(process.env.MCP_SECURITY_HOME ?? join7(homedir6(), ".claude", "mcp-security"), "backups");
-  mkdirSync3(dir, { recursive: true, mode: 448 });
+  const dir = join8(process.env.MCP_SECURITY_HOME ?? join8(homedir7(), ".claude", "mcp-security"), "backups");
+  mkdirSync4(dir, { recursive: true, mode: 448 });
   const id = createHash3("sha256").update(file).digest("hex").slice(0, 8);
-  return join7(dir, `${basename2(file)}-${id}-${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-")}`);
+  return join8(dir, `${basename2(file)}-${id}-${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-")}`);
 }
 function applyPlan(plan) {
   const written = [];
   const backups = [];
   const backupOf = {};
   for (const c of plan.changes) {
-    mkdirSync3(dirname4(c.path), { recursive: true });
-    if (existsSync6(c.path)) {
+    mkdirSync4(dirname5(c.path), { recursive: true });
+    if (existsSync7(c.path)) {
       const backup = backupPath(c.path);
       rmSync2(backup, { force: true });
-      writeFileSync3(backup, readFileSync6(c.path), { mode: c.backupHoldsSecrets ? 384 : 420, flag: "wx" });
+      writeFileSync4(backup, readFileSync7(c.path), { mode: c.backupHoldsSecrets ? 384 : 420, flag: "wx" });
       if (c.backupHoldsSecrets) chmodSync(backup, 384);
       backups.push(backup);
       backupOf[c.path] = backup;
     }
     const tmp = `${c.path}.mcpsec-tmp`;
-    writeFileSync3(tmp, c.content);
-    renameSync3(tmp, c.path);
+    writeFileSync4(tmp, c.content);
+    renameSync4(tmp, c.path);
     written.push(c.path);
   }
   return { written, backups, backupOf };
@@ -22216,11 +22291,11 @@ function toxicFlowFindings(surfaces) {
     return { ...s, legs };
   });
   const has = (legs) => legs.untrusted.length > 0 && legs.private.length > 0 && legs.egress.length > 0;
-  const out = [];
+  const out2 = [];
   for (const s of perServer) {
     if (!has(s.legs)) continue;
     const ask = s.legs.egress.map((t) => permissionName(s.server, t)).filter((n) => !!n);
-    out.push({
+    out2.push({
       severity: "low",
       rule: "flow/single-server-trifecta",
       title: `One server combines untrusted input, private data and a way to send data out (untrusted: ${list3(s.legs.untrusted)}; private: ${list3(s.legs.private)}; send out: ${list3(s.legs.egress)})`,
@@ -22237,7 +22312,7 @@ function toxicFlowFindings(surfaces) {
   if (!alone && merged.untrusted.length && merged.private.length && merged.egress.length && involved.size >= 2) {
     const who = (l) => merged[l].map((x) => `${excerpt(x.server.name, 40)}: ${list3(x.tools, 3)}`).join("; ");
     const ask = merged.egress.flatMap((x) => x.tools.map((t) => permissionName(x.server, t))).filter((n) => !!n);
-    out.push({
+    out2.push({
       severity: "info",
       rule: "flow/cross-server-trifecta",
       title: `Servers together form a leak path: untrusted input (${who("untrusted")}), private data (${who("private")}), send out (${who("egress")})`,
@@ -22245,7 +22320,7 @@ function toxicFlowFindings(surfaces) {
       remediation: `${REMEDIATION}${ask.length ? ` Suggested permissions.ask entries: ${[...new Set(ask)].slice(0, 6).map((n) => `"${excerpt(n, 80)}"`).join(", ")}${ask.length > 6 ? ", \u2026" : ""}.` : ""}`
     });
   }
-  return out;
+  return out2;
 }
 
 // src/score.ts
@@ -22387,6 +22462,7 @@ var BY_RULE = [
   [/^config\/(insecure-transport|invalid-url)$/, ["MCP07"]],
   [/^auth\//, ["MCP07"]],
   [/^config\/(duplicate-name|claude-ai-connector)$/, ["MCP09"]],
+  [/^policy\/(blocked|unapproved)-plugin$/, ["MCP04", "MCP09"]],
   [/^policy\//, ["MCP09"]],
   // Skills, commands, CLAUDE.md and hooks are not MCP, but their risks map onto the same list.
   [/^context\/(instruction-override|conceal-from-user|invisible-characters|ansi-escape|hidden-comment)$/, ["MCP03", "MCP06"]],
@@ -22412,7 +22488,7 @@ function owaspLabel(rule) {
 // src/html-report.ts
 var esc2 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 function markdown(md) {
-  const out = [];
+  const out2 = [];
   const lines = esc2(md).split("\n");
   const inline = (t) => t.replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   for (let i = 0; i < lines.length; i++) {
@@ -22420,22 +22496,22 @@ function markdown(md) {
     if (l.startsWith("```")) {
       const block = [];
       while (++i < lines.length && !lines[i].startsWith("```")) block.push(lines[i]);
-      out.push(`<pre>${block.join("\n")}</pre>`);
+      out2.push(`<pre>${block.join("\n")}</pre>`);
     } else if (l.startsWith("|")) {
       const rows = [];
       for (; i < lines.length && lines[i].startsWith("|"); i++) if (!/^\|[\s|:-]+\|$/.test(lines[i])) rows.push(lines[i].slice(1, -1).split("|").map((c) => inline(c.trim())));
       i--;
-      out.push(`<table><thead><tr>${rows[0].map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${rows.slice(1).map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`);
+      out2.push(`<table><thead><tr>${rows[0].map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${rows.slice(1).map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`);
     } else if (l.startsWith("- ")) {
       const items = [];
       for (; i < lines.length && lines[i].startsWith("- "); i++) items.push(`<li>${inline(lines[i].slice(2))}</li>`);
       i--;
-      out.push(`<ul>${items.join("")}</ul>`);
+      out2.push(`<ul>${items.join("")}</ul>`);
     } else if (l.trim()) {
-      out.push(`<p>${inline(l)}</p>`);
+      out2.push(`<p>${inline(l)}</p>`);
     }
   }
-  return out.join("\n");
+  return out2.join("\n");
 }
 var LABEL = { critical: "Critical", high: "High", medium: "Medium", low: "Low", info: "Info" };
 function toHtml(title, findings, sections, version2, generatedAt = /* @__PURE__ */ new Date()) {
@@ -22532,14 +22608,14 @@ function report(title, findings, sections = []) {
 }
 
 // src/sarif.ts
-import { existsSync as existsSync7, readFileSync as readFileSync7 } from "node:fs";
+import { existsSync as existsSync8, readFileSync as readFileSync8 } from "node:fs";
 import { relative as relative2, resolve as resolve5, sep as sep3 } from "node:path";
 var LEVEL = { critical: "error", high: "error", medium: "warning", low: "note", info: "note" };
 var SECURITY_SEVERITY = { critical: "9.5", high: "8.0", medium: "5.5", low: "3.0", info: "1.0" };
 function lineOf(file, server) {
-  if (!file || !server || !existsSync7(file)) return 1;
+  if (!file || !server || !existsSync8(file)) return 1;
   const key = server.split(":").pop();
-  const lines = readFileSync7(file, "utf8").split("\n");
+  const lines = readFileSync8(file, "utf8").split("\n");
   const idx = lines.findIndex((l) => l.includes(`"${key}"`) && /:\s*\{?\s*$/.test(l.split(`"${key}"`)[1] ?? ""));
   return idx >= 0 ? idx + 1 : 1;
 }
@@ -22575,6 +22651,8 @@ function toSarif(findings, projectDir, version2) {
 }
 
 // src/session-check.ts
+import { resolve as resolve6 } from "node:path";
+import { homedir as homedir8 } from "node:os";
 async function sessionCheck(projectDir, mode, timeoutMs = 1e4) {
   if (mode === "off") return { problems: [], checked: 0 };
   const pins = loadPins();
@@ -22602,10 +22680,229 @@ async function sessionCheck(projectDir, mode, timeoutMs = 1e4) {
       return issues.length ? `${label}: ${issues.join("; ")}` : void 0;
     })
   );
-  const policyProblems = auditPolicy(servers, loadPolicy(projectDir)).filter((f) => f.severity === "critical" || f.severity === "high").map((f) => `${f.server ? `"${excerpt(f.server, 50)}"` : "policy"}: ${f.title}`);
+  const loadedPolicy = loadPolicy(projectDir);
+  const plugins = pluginRoots(resolve6(projectDir), homedir8(), []).map((p) => ({ name: p.name, ...p.version ? { version: p.version } : {} }));
+  const policyProblems = [...auditPolicy(servers, loadedPolicy), ...auditPluginPolicy(plugins, loadedPolicy)].filter((f) => f.severity === "critical" || f.severity === "high").map((f) => `${f.server ? `"${excerpt(f.server, 50)}"` : f.location.startsWith("plugin ") ? excerpt(f.location, 80) : "policy"}: ${f.title}`);
   const contextPins = loadContextPins();
   const contextProblems = Object.keys(contextPins.origins).length ? contextDrift(discoverContext(projectDir), projectDir, contextPins).findings.filter((f) => f.severity === "high" || f.severity === "critical").map((f) => `${f.title} (${f.location})`) : [];
   return { problems: [...results.filter((r) => !!r), ...policyProblems, ...contextProblems.map((p) => excerpt(p, 240))], checked: pinned.length };
+}
+
+// src/team-cli.ts
+import { readFileSync as readFileSync9 } from "node:fs";
+import { resolve as resolve8 } from "node:path";
+
+// src/team.ts
+import { homedir as homedir9 } from "node:os";
+import { resolve as resolve7 } from "node:path";
+var SYNC_TTL_MS = 60 * 60 * 1e3;
+var RETRY_AFTER_FAILURE_MS = 15 * 60 * 1e3;
+var NOT_TEAM_TTL_MS = 24 * 60 * 60 * 1e3;
+var DEFAULT_TIMEOUT_MS2 = 5e3;
+function teamOptionsFromEnv(env = process.env) {
+  const { apiKey, endpoint } = cloudOptionsFromEnv(env);
+  return { apiKey, endpoint };
+}
+var safeLabel = (text) => text.replace(/[^A-Za-z0-9_.:@/ -]/g, "_").slice(0, 200);
+async function teamRequest(opts, method, path, body) {
+  if (!opts.apiKey) return { ok: false, reason: "no API key: set MCP_SECURITY_API_KEY or enter the key in the plugin's settings" };
+  if (!opts.endpoint || !endpointAllowed(opts.endpoint)) return { ok: false, reason: "MCP_SECURITY_API_URL must be an https URL" };
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? DEFAULT_TIMEOUT_MS2);
+  try {
+    const res = await (opts.fetcher ?? ((u, i) => fetch(u, i)))(new URL(path, opts.endpoint).href, {
+      method,
+      ...body === void 0 ? {} : { body: JSON.stringify(body) },
+      headers: { authorization: `Bearer ${opts.apiKey}`, ...body === void 0 ? {} : { "content-type": "application/json" } },
+      signal: controller.signal
+    });
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      data = void 0;
+    }
+    if (res.ok) return { ok: true, data };
+    const message = typeof data?.error === "string" ? excerpt(data.error, 160) : void 0;
+    const why = res.status === 401 ? "the API key was rejected" : res.status === 402 ? "the subscription has expired" : res.status === 429 ? "too many requests, try again in a minute" : message ?? `the service answered ${res.status}`;
+    return { ok: false, status: res.status, reason: why };
+  } catch (e) {
+    return { ok: false, reason: e?.name === "AbortError" ? "no answer from the service" : "the service could not be reached" };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+async function syncTeamPolicy(opts = teamOptionsFromEnv(), force = false) {
+  if (!opts.apiKey) return { status: "skipped", note: "No API key." };
+  const now = (opts.now ?? (() => /* @__PURE__ */ new Date()))();
+  const cached2 = readTeamCache();
+  if (!force && cached2) {
+    const age = now.getTime() - Date.parse(cached2.fetchedAt);
+    if (age >= 0 && age < (cached2.notTeam ? NOT_TEAM_TTL_MS : SYNC_TTL_MS)) return { status: cached2.notTeam ? "not-team" : "fresh", note: cached2.notTeam ? "This key does not belong to a team." : "Team policy is up to date.", cache: cached2 };
+  }
+  if (!force && cached2?.lastFailedAt && now.getTime() - Date.parse(cached2.lastFailedAt) < RETRY_AFTER_FAILURE_MS) return { status: "skipped", note: "", cache: cached2 };
+  const r = await teamRequest(opts, "GET", "/v1/team/policy");
+  if (!r.ok) {
+    if (r.status === 403) {
+      const cache2 = { version: 1, fetchedAt: now.toISOString(), notTeam: true };
+      writeTeamCache(cache2);
+      return { status: "not-team", note: "This key does not belong to a team.", cache: cache2 };
+    }
+    const failed = { ...cached2 ?? { version: 1, fetchedAt: (/* @__PURE__ */ new Date(0)).toISOString() }, lastFailedAt: now.toISOString() };
+    writeTeamCache(failed);
+    return { status: "skipped", note: `Team policy not synced: ${r.reason}.${cached2?.policy ? " The last synced policy stays in force." : ""}`, cache: failed };
+  }
+  const a = r.data;
+  const cache = {
+    version: 1,
+    fetchedAt: now.toISOString(),
+    org: typeof a.org?.name === "string" ? excerpt(a.org.name, 80) : void 0,
+    role: a.role === "admin" ? "admin" : "member",
+    policyVersion: typeof a.version === "number" ? a.version : 0,
+    fleetVisibility: a.fleetVisibility === true,
+    policy: a.policy && typeof a.policy === "object" ? a.policy : null
+  };
+  writeTeamCache(cache);
+  return { status: "synced", note: `Team policy of ${cache.org ?? "your organisation"}: version ${cache.policyVersion}${cache.policy ? "" : " (no policy set)"}.`, cache };
+}
+function buildInventory(projectDir, home) {
+  const { servers } = discoverServers(projectDir, home);
+  const pins = loadPins();
+  const packages = servers.flatMap(packagesOf);
+  const pkgOf = (s) => packages.find((p) => p.server === s);
+  const host = (s) => {
+    try {
+      return s.url ? new URL(s.url.replace(/\$\{[^}]+\}/g, "x")).hostname.toLowerCase() : void 0;
+    } catch {
+      return void 0;
+    }
+  };
+  const out2 = servers.map((s) => {
+    const p = pkgOf(s);
+    const h = host(s);
+    return {
+      name: safeLabel(s.name),
+      scope: safeLabel(s.scope),
+      transport: transportOf(s),
+      ...p ? { package: { ecosystem: p.ecosystem, name: safeLabel(p.name), ...p.version ? { version: p.version } : {} } } : {},
+      ...h && /^[a-z0-9.-]{1,253}$/.test(h) ? { host: h } : {},
+      pinned: !!pins.servers[pinKey(s.scope, s.name)]
+    };
+  });
+  const plugins = pluginRoots(resolve7(projectDir), home ?? homedir9(), []).map((p) => ({ name: safeLabel(p.name), ...p.version ? { version: p.version } : {} }));
+  return { client: { name: "mcp-security-guard", version: VERSION }, servers: out2.slice(0, 500), plugins: plugins.slice(0, 500) };
+}
+async function reportInventory(opts, report2) {
+  return teamRequest(opts, "POST", "/v1/team/inventory", report2);
+}
+async function requestApproval(opts, kind, identity, note) {
+  return teamRequest(opts, "POST", "/v1/team/approvals", { kind, identity, ...note ? { note } : {} });
+}
+var listApprovals = (opts, status) => teamRequest(opts, "GET", `/v1/team/approvals${status ? `?status=${encodeURIComponent(status)}` : ""}`);
+var decideApproval = (opts, id, decision, note) => teamRequest(opts, "POST", `/v1/team/approvals/${encodeURIComponent(id)}/decision`, { decision, ...note ? { note } : {} });
+var fleetInventory = (opts) => teamRequest(opts, "GET", "/v1/team/inventory");
+var pushPolicy = (opts, policy) => teamRequest(opts, "PUT", "/v1/team/policy", policy);
+var getSettings = (opts) => teamRequest(opts, "GET", "/v1/team/settings");
+var putSettings = (opts, patch) => teamRequest(opts, "PUT", "/v1/team/settings", patch);
+async function teamSessionStart(projectDir, env = process.env, opts = teamOptionsFromEnv(env)) {
+  if (!opts.apiKey || (env.MCP_SECURITY_TEAM_SYNC ?? "on").toLowerCase() === "off") return [];
+  const notes = [];
+  const quick = { ...opts, timeoutMs: opts.timeoutMs ?? 3e3 };
+  try {
+    const sync = await syncTeamPolicy(quick);
+    if (sync.status === "skipped" && sync.note) notes.push(sync.note);
+    const reportOn = (env.MCP_SECURITY_TEAM_REPORT ?? "off").toLowerCase() === "on";
+    if (reportOn && sync.cache?.fleetVisibility && !sync.cache.notTeam) {
+      const r = await reportInventory(quick, buildInventory(projectDir));
+      if (!r.ok) notes.push(`Team report not sent: ${r.reason}.`);
+    }
+  } catch {
+  }
+  return notes;
+}
+
+// src/team-cli.ts
+var TEAM_USAGE = `Team plan (needs a team API key; MCP_SECURITY_API_KEY or the plugin's settings):
+  team status                         sync and show your organisation, role and policy version
+  team sync                           fetch the organisation's policy now (otherwise hourly, at session start)
+  team report [--dry-run]             send your servers and plugins (names and versions only; the admin must have turned fleet visibility on). --dry-run prints what would be sent
+  team request server|plugin NAME [--note TEXT]   ask the admin to approve a server (e.g. project:linear) or plugin
+  team approvals [--status pending|approved|rejected]
+  admin: team approve ID [--note TEXT] | team reject ID [--note TEXT]
+  admin: team inventory               the latest report of every member, with policy violations
+  admin: team policy-push FILE        replace the central policy (a .mcp-security.json-style file)
+  admin: team settings [--fleet on|off] [--webhook URL|none]
+Environment: MCP_SECURITY_TEAM_SYNC=off stops the session-start sync; MCP_SECURITY_TEAM_REPORT=on also reports at session start (default off).
+`;
+var violationLine = (v) => `  - ${v.kind} ${excerpt(v.name, 80)}: ${v.reason}`;
+function out(r, ok) {
+  return r.ok ? { text: ok(r.data).join("\n"), code: 0 } : { text: `team: ${r.reason}`, code: 1 };
+}
+async function runTeam(a, opts = teamOptionsFromEnv()) {
+  const sub = a.sub;
+  if (!sub || sub === "help") return { text: TEAM_USAGE, code: sub ? 0 : 2 };
+  if (!opts.apiKey) return { text: "team: no API key. Set MCP_SECURITY_API_KEY (or the plugin's API key setting) to a team key.", code: 1 };
+  if (sub === "sync" || sub === "status") {
+    const s = await syncTeamPolicy(opts, true);
+    if (s.status === "not-team") return { text: "This key does not belong to a team.", code: 1 };
+    if (s.status === "skipped") return { text: s.note, code: 1 };
+    const c = s.cache ?? readTeamCache();
+    const p = c?.policy;
+    const lines = [s.note, `Role: ${c?.role ?? "member"}. Fleet visibility: ${c?.fleetVisibility ? "on (your reports are accepted)" : "off (reports are refused until an admin turns it on)"}.`];
+    if (p) lines.push(`Policy: ${p.allowedServers?.length ?? 0} allowed server pattern(s), ${p.blockedServers?.length ?? 0} blocked, ${p.allowedRemoteHosts?.length ?? 0} allowed host(s), ${p.allowedPlugins?.length ?? 0} allowed plugin(s), ${p.blockedPlugins?.length ?? 0} blocked${p.requirePinnedVersions ? ", pinned versions required" : ""}. Enforced next to your own policy.`);
+    return { text: lines.join("\n"), code: 0 };
+  }
+  if (sub === "report") {
+    const report2 = buildInventory(a.project);
+    if (a.dryRun) return { text: `Would send (nothing else leaves your machine):
+${JSON.stringify(report2, null, 2)}`, code: 0 };
+    return out(await reportInventory(opts, report2), (d) => [`Reported ${report2.servers.length} server(s) and ${report2.plugins.length} plugin(s). Policy version ${d.policyVersion}.`, d.violations.length ? `${d.violations.length} violation(s):` : "No policy violations.", ...d.violations.map(violationLine)]);
+  }
+  if (sub === "request") {
+    const [kind, ...name] = a.rest;
+    const identity = name.join(" ").trim();
+    if (kind !== "server" && kind !== "plugin" || !identity) return { text: "usage: team request server|plugin NAME [--note TEXT]", code: 2 };
+    return out(await requestApproval(opts, kind, identity, a.note), (d) => [d.alreadyRequested ? `Already requested (${d.id}); your admin has not decided yet.` : `Requested (${d.id}). Your admin has been notified if an alert webhook is set.`]);
+  }
+  if (sub === "approvals") {
+    return out(await listApprovals(opts, a.status), (d) => d.approvals.length ? d.approvals.map((x) => `${x.id}  ${x.status.padEnd(8)} ${x.kind} ${excerpt(x.identity, 80)}${x.requestedBy ? ` (by ${excerpt(x.requestedBy, 40)})` : ""}${x.note ? ` - ${excerpt(x.note, 120)}` : ""}`) : ["No approval requests."]);
+  }
+  if (sub === "approve" || sub === "reject") {
+    const id = a.rest[0];
+    if (!id) return { text: `usage: team ${sub} ID [--note TEXT]`, code: 2 };
+    return out(await decideApproval(opts, id, sub, a.note), (d) => [`${id}: ${d.status}${d.policyVersion ? `. The policy is now version ${d.policyVersion}; members get it at their next sync.` : "."}`]);
+  }
+  if (sub === "inventory") {
+    return out(await fleetInventory(opts), (d) => [
+      `${d.members.length} member(s) reported, ${d.violationCount} violation(s).`,
+      ...d.members.flatMap((m) => [`- ${excerpt(m.label ?? "unnamed", 40)} (${m.reportedAt}): ${m.servers.length} server(s), ${m.plugins.length} plugin(s)`, ...m.violations.map(violationLine)]),
+      d.servers.length ? "Servers by number of members using them:" : "",
+      ...d.servers.slice(0, 20).map((s) => `  ${s.members}  ${excerpt(s.name, 80)}`)
+    ].filter(Boolean));
+  }
+  if (sub === "policy-push") {
+    const file = a.rest[0];
+    if (!file) return { text: "usage: team policy-push FILE", code: 2 };
+    let policy;
+    try {
+      policy = JSON.parse(readFileSync9(resolve8(file), "utf8"));
+    } catch {
+      return { text: `team: ${file} is not readable JSON`, code: 2 };
+    }
+    return out(await pushPolicy(opts, policy), (d) => [`Policy pushed: version ${d.version}. Members get it within the hour or at \`team sync\`.`]);
+  }
+  if (sub === "settings") {
+    const patch = {};
+    if (a.fleet !== void 0) {
+      if (!["on", "off"].includes(a.fleet)) return { text: "--fleet must be on or off", code: 2 };
+      patch.fleetVisibility = a.fleet === "on";
+    }
+    if (a.webhook !== void 0) patch.webhookUrl = a.webhook === "none" ? null : a.webhook;
+    const r = Object.keys(patch).length ? await putSettings(opts, patch) : await getSettings(opts);
+    return out(r, (d) => [`Organisation: ${excerpt(d.name, 60)}`, `Fleet visibility: ${d.fleetVisibility ? "on" : "off"}`, `Alert webhook: ${d.webhookConfigured ? "set" : "not set"}`]);
+  }
+  return { text: `team: unknown command "${excerpt(sub, 40)}"
+${TEAM_USAGE}`, code: 2 };
 }
 
 // src/cli.ts
@@ -22619,6 +22916,7 @@ Usage:
   mcp-security-guard adversarial FILE --server NAME --i-own-this-server --confirm-launch [--canary-dir DIR] [--host-canary-dir DIR] [--include-destructive]
   mcp-security-guard fix [--permissions --confirm-launch] [--pin-versions] [--env-refs] [--write] [--project DIR]
   mcp-security-guard policy-init [--project DIR] [--force]
+  mcp-security-guard team <status|sync|report|request|approvals|approve|reject|inventory|policy-push|settings> [...]   (Team plan; see \`team help\`)
   mcp-security-guard scan FILE --confirm-launch [--timeout SECONDS] [--format ...] [--output FILE] [--fail-on SEVERITY]
 
   audit-context    scans skills, slash commands, subagents, rules, CLAUDE.md, plugin hooks and skill scripts
@@ -22649,11 +22947,11 @@ async function readStdin() {
   return data;
 }
 function firstRunMessage(projectDir) {
-  const marker = join8(process.env.MCP_SECURITY_HOME ?? join8(homedir7(), ".claude", "mcp-security"), "welcomed");
-  if (existsSync8(marker)) return void 0;
+  const marker = join9(process.env.MCP_SECURITY_HOME ?? join9(homedir10(), ".claude", "mcp-security"), "welcomed");
+  if (existsSync9(marker)) return void 0;
   try {
-    mkdirSync4(dirname5(marker), { recursive: true, mode: 448 });
-    writeFileSync4(marker, (/* @__PURE__ */ new Date()).toISOString() + "\n");
+    mkdirSync5(dirname6(marker), { recursive: true, mode: 448 });
+    writeFileSync5(marker, (/* @__PURE__ */ new Date()).toISOString() + "\n");
   } catch {
     return void 0;
   }
@@ -22672,9 +22970,11 @@ async function runSessionCheck() {
   const mode = raw === "off" || raw === "config" ? raw : "full";
   const projectDir = process.env.CLAUDE_PROJECT_DIR ?? cwd ?? process.cwd();
   const welcome = mode === "off" ? void 0 : firstRunMessage(projectDir);
+  const teamNotes = mode === "off" ? [] : await teamSessionStart(projectDir);
   const { problems } = await sessionCheck(projectDir, mode);
   if (!problems.length) {
-    if (welcome) process.stdout.write(JSON.stringify({ systemMessage: welcome }));
+    const msg = [welcome, ...teamNotes].filter(Boolean).join("\n");
+    if (msg) process.stdout.write(JSON.stringify({ systemMessage: msg }));
     return;
   }
   const list4 = problems.map((p) => `- ${p}`).join("\n");
@@ -22693,7 +22993,7 @@ Before relying on them, tell the user and suggest running /mcp-audit. Names and 
 }
 function emit(title, findings, projectDir, format, output, sections = []) {
   const body = format === "sarif" ? JSON.stringify(toSarif(findings, projectDir, VERSION), null, 2) : format === "html" ? toHtml(title, findings, sections, VERSION) : format === "json" ? JSON.stringify({ tool: "mcp-security-guard", version: VERSION, findings }, null, 2) : report(title, findings, sections);
-  if (output) writeFileSync4(output, body + "\n");
+  if (output) writeFileSync5(output, body + "\n");
   else process.stdout.write(body + "\n");
 }
 function exitCode(findings, failOn) {
@@ -22724,6 +23024,11 @@ async function main() {
       help: { type: "boolean", short: "h" },
       force: { type: "boolean", default: false },
       origin: { type: "string", multiple: true },
+      status: { type: "string" },
+      note: { type: "string" },
+      "dry-run": { type: "boolean", default: false },
+      fleet: { type: "string" },
+      webhook: { type: "string" },
       "supply-chain": { type: "boolean", default: false },
       "scan-images": { type: "boolean", default: false },
       server: { type: "string" },
@@ -22742,7 +23047,7 @@ async function main() {
     return 0;
   }
   if (!["markdown", "json", "sarif", "html"].includes(values.format)) throw new Error(`invalid --format: ${values.format}`);
-  const projectDir = resolve6(values.project);
+  const projectDir = resolve9(values.project);
   if (command === "audit") {
     const { findings, servers, sources } = auditConfig(projectDir, { projectOnly: values["project-only"] });
     const supply = values["supply-chain"] ? await checkSupplyChain(servers) : void 0;
@@ -22765,6 +23070,12 @@ async function main() {
     emit("Agent context audit (skills, commands, agents, CLAUDE.md, hooks)", a.findings, projectDir, values.format, values.output, [...contextSummary(a), feed.note ?? ""]);
     return exitCode(a.findings, values["fail-on"]);
   }
+  if (command === "team") {
+    const r = await runTeam({ sub: positionals[0], rest: positionals.slice(1), project: projectDir, status: values.status, note: values.note, dryRun: values["dry-run"], fleet: values.fleet, webhook: values.webhook });
+    (r.code === 0 ? process.stdout : process.stderr).write(r.text.endsWith("\n") ? r.text : `${r.text}
+`);
+    return r.code;
+  }
   if (command === "pin-context") {
     const r = pinContext(discoverContext(projectDir), projectDir, { only: values.origin, force: values.force });
     for (const p of r.pinned) process.stdout.write(`pinned ${p.key.startsWith("project:") ? "project" : p.key}: ${p.files} file(s)${p.version ? `, version ${p.version}` : ""}
@@ -22778,11 +23089,11 @@ async function main() {
   if (command === "analyze-tools") {
     const file = positionals[0];
     if (!file) throw new Error("analyze-tools needs a JSON file (a tools/list result or an array of tools)");
-    const data = JSON.parse(readFileSync8(file, "utf8"));
+    const data = JSON.parse(readFileSync10(file, "utf8"));
     const tools = Array.isArray(data) ? data : data.tools ?? data.result?.tools ?? [];
     if (!tools.length) throw new Error(`no tools found in ${file}`);
     const name = values.name ?? basename3(file);
-    const findings = analyzeTools(name, tools).map((f) => ({ ...f, file: resolve6(file) }));
+    const findings = analyzeTools(name, tools).map((f) => ({ ...f, file: resolve9(file) }));
     emit(`Tool definition analysis: ${name}`, findings, projectDir, values.format, values.output, [`Analyzed **${tools.length}** tool(s).`]);
     return exitCode(findings, values["fail-on"]);
   }
@@ -22790,8 +23101,8 @@ async function main() {
     const file = positionals[0];
     if (!file || !values.server) throw new Error("adversarial needs a JSON file with mcpServers and --server NAME");
     if (!values["i-own-this-server"] || !values["confirm-launch"]) throw new Error("adversarial calls the server's tools with attack payloads; it needs --i-own-this-server and --confirm-launch");
-    const source = resolve6(file);
-    const data = JSON.parse(readFileSync8(source, "utf8"));
+    const source = resolve9(file);
+    const data = JSON.parse(readFileSync10(source, "utf8"));
     const target = toServers(data.mcpServers ?? data, "project", source).find((s) => s.name === values.server);
     if (!target) throw new Error(`server "${values.server}" not found in ${file}`);
     const r = await adversarialTest(target, { canaryDir: values["canary-dir"], hostCanaryDir: values["host-canary-dir"], includeDestructive: values["include-destructive"] });
@@ -22818,9 +23129,9 @@ ${r.skippedTools.map((t) => `- ${t.tool}: ${t.reason}`).join("\n")}` : ""
     return 0;
   }
   if (command === "policy-init") {
-    const target = resolve6(projectDir, ".mcp-security.json");
-    if (existsSync8(target) && !values.force) throw new Error(`${target} already exists (use --force to overwrite)`);
-    writeFileSync4(target, JSON.stringify(policyFromServers(discoverServers(projectDir).servers), null, 2) + "\n");
+    const target = resolve9(projectDir, ".mcp-security.json");
+    if (existsSync9(target) && !values.force) throw new Error(`${target} already exists (use --force to overwrite)`);
+    writeFileSync5(target, JSON.stringify(policyFromServers(discoverServers(projectDir).servers), null, 2) + "\n");
     process.stdout.write(`Wrote ${target}. Review allowedServers, then commit it.
 `);
     return 0;
@@ -22829,8 +23140,8 @@ ${r.skippedTools.map((t) => `- ${t.tool}: ${t.reason}`).join("\n")}` : ""
     const file = positionals[0];
     if (!file) throw new Error("scan needs a JSON file with an mcpServers object");
     if (!values["confirm-launch"]) throw new Error("scan launches the servers in the file; re-run with --confirm-launch once you are OK with that");
-    const source = resolve6(file);
-    const data = JSON.parse(readFileSync8(source, "utf8"));
+    const source = resolve9(file);
+    const data = JSON.parse(readFileSync10(source, "utf8"));
     const servers = toServers(data.mcpServers ?? data, "project", source);
     if (!servers.length) throw new Error(`no servers found in ${file}`);
     const audit = await auditTools(servers, Number(values.timeout) || 20, void 0, loadPolicy(projectDir));

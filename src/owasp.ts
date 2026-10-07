@@ -33,6 +33,7 @@ const BY_RULE: [RegExp, string[]][] = [
   [/^config\/(insecure-transport|invalid-url)$/, ["MCP07"]],
   [/^auth\//, ["MCP07"]],
   [/^config\/(duplicate-name|claude-ai-connector)$/, ["MCP09"]],
+  [/^policy\/(blocked|unapproved)-plugin$/, ["MCP04", "MCP09"]],
   [/^policy\//, ["MCP09"]],
   // Skills, commands, CLAUDE.md and hooks are not MCP, but their risks map onto the same list.
   [/^context\/(instruction-override|conceal-from-user|invisible-characters|ansi-escape|hidden-comment)$/, ["MCP03", "MCP06"]],

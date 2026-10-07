@@ -1,9 +1,11 @@
 import { fetchSurface, surfaceDefinitions } from "./client.js";
-import { discoverServers } from "./config.js";
+import { discoverServers, pluginRoots } from "./config.js";
 import { discoverContext } from "./context-files.js";
 import { contextDrift, loadContextPins } from "./context-pins.js";
 import { computeDrift, hasDrift, hashConfig, loadPins, pinKey } from "./pins.js";
-import { auditPolicy, loadPolicy } from "./policy.js";
+import { auditPluginPolicy, auditPolicy, loadPolicy } from "./policy.js";
+import { resolve } from "node:path";
+import { homedir } from "node:os";
 import { analyzeTools } from "./rules/tool-rules.js";
 import { excerpt } from "./sanitize.js";
 
@@ -48,9 +50,11 @@ export async function sessionCheck(projectDir: string, mode: CheckMode, timeoutM
     }),
   );
   // Policy violations need no launch, so they are reported for every configured server.
-  const policyProblems = auditPolicy(servers, loadPolicy(projectDir))
+  const loadedPolicy = loadPolicy(projectDir);
+  const plugins = pluginRoots(resolve(projectDir), homedir(), []).map((p) => ({ name: p.name, ...(p.version ? { version: p.version } : {}) }));
+  const policyProblems = [...auditPolicy(servers, loadedPolicy), ...auditPluginPolicy(plugins, loadedPolicy)]
     .filter((f) => f.severity === "critical" || f.severity === "high")
-    .map((f) => `${f.server ? `"${excerpt(f.server, 50)}"` : "policy"}: ${f.title}`);
+    .map((f) => `${f.server ? `"${excerpt(f.server, 50)}"` : f.location.startsWith("plugin ") ? excerpt(f.location, 80) : "policy"}: ${f.title}`);
 
   // Pinned skills, commands, agents and CLAUDE.md: local files only, nothing is launched.
   const contextPins = loadContextPins();

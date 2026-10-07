@@ -53,6 +53,8 @@ export type CloudMatch =
 export interface ContextSurface {
   files: ContextFile[];
   versions: Record<string, string>;
+  /** Every enabled plugin; without it the plugins are inferred from the files found. */
+  plugins?: CloudPlugin[];
 }
 
 export interface CloudFeedEntry {
@@ -131,6 +133,7 @@ export function buildCheckRequest(packages: PackageRef[], servers: ServerTools[]
 
 /** Installed plugins seen in the scan, by name and version, sorted. */
 function contextPlugins(context: ContextSurface): CloudPlugin[] {
+  if (context.plugins) return [...context.plugins].sort((a, b) => a.name.localeCompare(b.name));
   const names = [...new Set(context.files.filter((f) => f.origin.startsWith("plugin:")).map((f) => f.origin))].sort();
   return names.map((origin) => ({ name: origin.slice(7), ...(context.versions[origin] ? { version: context.versions[origin] } : {}) }));
 }
