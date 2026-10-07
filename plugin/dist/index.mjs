@@ -7179,8 +7179,8 @@ var require_dist = __commonJS({
         return ajv;
       }
       const [formats, exportName] = opts.mode === "fast" ? [formats_1.fastFormats, fastName] : [formats_1.fullFormats, fullName];
-      const list2 = opts.formats || formats_1.formatNames;
-      addFormats(ajv, list2, formats, exportName);
+      const list3 = opts.formats || formats_1.formatNames;
+      addFormats(ajv, list3, formats, exportName);
       if (opts.keywords)
         (0, limit_1.default)(ajv);
       return ajv;
@@ -7192,11 +7192,11 @@ var require_dist = __commonJS({
         throw new Error(`Unknown format "${name}"`);
       return f;
     };
-    function addFormats(ajv, list2, fs, exportName) {
+    function addFormats(ajv, list3, fs, exportName) {
       var _a3;
       var _b;
       (_a3 = (_b = ajv.opts.code).formats) !== null && _a3 !== void 0 ? _a3 : _b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`;
-      for (const f of list2)
+      for (const f of list3)
         ajv.addFormat(f, fs[f]);
     }
     module.exports = exports = formatsPlugin;
@@ -27594,8 +27594,8 @@ var contributors = {
 function aggregateChecks(schema) {
   const agg = {};
   const def = schema._zod.def;
-  const list2 = schema._zod.traits.has("$ZodCheck") ? [schema, ...def.checks ?? []] : def.checks ?? [];
-  for (const ch of list2)
+  const list3 = schema._zod.traits.has("$ZodCheck") ? [schema, ...def.checks ?? []] : def.checks ?? [];
+  for (const ch of list3)
     contributors[ch._zod.def.check]?.(agg, ch._zod.def);
   const bag = schema._zod.bag;
   if (bag.minimum !== void 0)
@@ -40931,12 +40931,12 @@ function auditServerConfig(s) {
 function auditDuplicates(servers) {
   const byName = /* @__PURE__ */ new Map();
   for (const s of servers.filter((s2) => s2.scope !== "claude-desktop" && s2.scope !== "claude-ai")) byName.set(s.name, [...byName.get(s.name) ?? [], s]);
-  return [...byName.entries()].filter(([, list2]) => list2.length > 1).map(([name, list2]) => ({
+  return [...byName.entries()].filter(([, list3]) => list3.length > 1).map(([name, list3]) => ({
     severity: "low",
     rule: "config/duplicate-name",
-    title: `Server name "${name}" is defined in ${list2.length} scopes (${list2.map((s) => s.scope).join(", ")})`,
-    location: list2.map((s) => s.source).join(", "),
-    file: list2[0].source,
+    title: `Server name "${name}" is defined in ${list3.length} scopes (${list3.map((s) => s.scope).join(", ")})`,
+    location: list3.map((s) => s.source).join(", "),
+    file: list3[0].source,
     server: name,
     remediation: "Keep one definition. Claude Code picks one by scope precedence (local > project > user), so a project .mcp.json can silently replace a server you trust."
   }));
@@ -41552,6 +41552,7 @@ var BY_RULE = [
   [/^capability\/(destructive|filesystem-write)$/, ["MCP02"]],
   [/^capability\/command-execution$/, ["MCP05", "MCP02"]],
   [/^capability\/network-egress$/, ["MCP10"]],
+  [/^flow\//, ["MCP10", "MCP06"]],
   [/^config\/(unpinned-package|docker-unpinned-image|pipe-to-shell|shell-wrapper)$/, ["MCP04"]],
   [/^supply-chain\//, ["MCP04"]],
   [/^feed\/package$/, ["MCP04"]],
@@ -41787,6 +41788,84 @@ async function cloudCheck(packages, servers, opts = cloudOptionsFromEnv()) {
   }
 }
 
+// src/toxic-flow.ts
+var words2 = (name) => name.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+var READ_VERBS2 = /* @__PURE__ */ new Set(["get", "list", "read", "search", "find", "query", "fetch", "view", "show", "lookup", "browse", "scrape", "crawl", "download", "navigate", "open", "load", "cat", "inspect", "retrieve", "pull"]);
+var SEND_VERBS = /* @__PURE__ */ new Set(["send", "post", "publish", "share", "forward", "reply", "tweet", "notify", "webhook", "broadcast", "email"]);
+var WRITE_VERBS2 = /* @__PURE__ */ new Set(["create", "add", "update", "write", "push", "upload", "submit", "open", "comment", "append", "put"]);
+var OUTBOUND_OBJECTS = /* @__PURE__ */ new Set(["issue", "issues", "comment", "comments", "gist", "pr", "pull", "message", "messages", "email", "emails", "mail", "tweet", "post", "release", "review", "thread", "channel", "page", "ticket", "invite", "event"]);
+var UNTRUSTED_OBJECTS = /* @__PURE__ */ new Set(["email", "emails", "mail", "inbox", "message", "messages", "thread", "threads", "channel", "comment", "comments", "issue", "issues", "pr", "prs", "pull", "review", "reviews", "ticket", "tickets", "feed", "rss", "tweet", "tweets", "post", "posts", "web", "webpage", "page", "url", "website", "site", "browse", "scrape", "crawl", "fetch", "navigate", "download", "dm", "dms", "notification", "notifications"]);
+var PRIVATE_OBJECTS = /* @__PURE__ */ new Set(["file", "files", "directory", "dir", "folder", "path", "database", "db", "table", "tables", "sql", "record", "records", "secret", "secrets", "credential", "credentials", "vault", "env", "drive", "note", "notes", "notebook", "calendar", "contact", "contacts", "customer", "customers", "repo", "repos", "repository", "commit", "commits", "branch", "email", "emails", "mail", "inbox", "message", "messages", "memory", "memories", "dm", "dms", "issue", "issues"]);
+var DB_PARAMS = /^(sql|statement)$/i;
+var PATH_PARAMS = /^(path|file|filepath|file_path|filename|dir|directory)$/i;
+function paramNames2(schema) {
+  const props = schema?.properties;
+  return props && typeof props === "object" ? Object.keys(props) : [];
+}
+function legsOf(tool) {
+  const w = words2(tool.name);
+  const params = paramNames2(tool.inputSchema);
+  const caps = classifyTool(tool);
+  const ann = tool.annotations ?? {};
+  const legs = /* @__PURE__ */ new Set();
+  if (caps.includes("command-execution")) return ["untrusted", "private", "egress"];
+  const readLike = ann.readOnlyHint === true || READ_VERBS2.has(w[0]) || caps.includes("read-only");
+  const writeLike = !readLike && (WRITE_VERBS2.has(w[0]) || w.some((x) => SEND_VERBS.has(x)));
+  if (caps.includes("network-egress")) {
+    legs.add("egress");
+    if (readLike || w.some((x) => ["fetch", "browse", "scrape", "crawl", "navigate", "download", "http", "curl", "request"].includes(x))) legs.add("untrusted");
+  }
+  if (readLike) {
+    if (w.some((x) => UNTRUSTED_OBJECTS.has(x))) legs.add("untrusted");
+    if (w.some((x) => PRIVATE_OBJECTS.has(x)) || params.some((p) => PATH_PARAMS.test(p) || DB_PARAMS.test(p))) legs.add("private");
+  }
+  if (!readLike) {
+    if (w.some((x) => SEND_VERBS.has(x))) legs.add("egress");
+    else if (writeLike && w.some((x) => OUTBOUND_OBJECTS.has(x))) legs.add("egress");
+  }
+  return [...legs];
+}
+var list2 = (xs, max = 5) => xs.slice(0, max).map((x) => `"${excerpt(x, 40)}"`).join(", ") + (xs.length > max ? ` (+${xs.length - max} more)` : "");
+var REMEDIATION = "Injected text in the untrusted source can tell the model to read private data and send it out. Put the send-out tools behind approval (permissions.ask), keep untrusted sources and private data out of the same session where you can, and pin the servers involved.";
+function toxicFlowFindings(surfaces) {
+  const perServer = surfaces.map((s) => {
+    const legs = { untrusted: [], private: [], egress: [] };
+    for (const t of s.tools) for (const l of legsOf(t)) legs[l].push(t.name);
+    return { ...s, legs };
+  });
+  const has = (legs) => legs.untrusted.length > 0 && legs.private.length > 0 && legs.egress.length > 0;
+  const out = [];
+  for (const s of perServer) {
+    if (!has(s.legs)) continue;
+    const ask = s.legs.egress.map((t) => permissionName(s.server, t)).filter((n) => !!n);
+    out.push({
+      severity: "low",
+      rule: "flow/single-server-trifecta",
+      title: `One server combines untrusted input, private data and a way to send data out (untrusted: ${list2(s.legs.untrusted)}; private: ${list2(s.legs.private)}; send out: ${list2(s.legs.egress)})`,
+      location: `server "${s.server.name}" (${s.server.scope})`,
+      remediation: `${REMEDIATION}${ask.length ? ` Suggested permissions.ask entries: ${ask.slice(0, 6).map((n) => `"${excerpt(n, 80)}"`).join(", ")}${ask.length > 6 ? ", \u2026" : ""}.` : ""}`,
+      file: s.server.source,
+      server: s.server.name
+    });
+  }
+  const merged = { untrusted: [], private: [], egress: [] };
+  for (const s of perServer) for (const l of ["untrusted", "private", "egress"]) if (s.legs[l].length) merged[l].push({ server: s.server, tools: s.legs[l] });
+  const involved = new Set(Object.values(merged).flat().map((x) => x.server));
+  const alone = perServer.some((s) => has(s.legs));
+  if (!alone && merged.untrusted.length && merged.private.length && merged.egress.length && involved.size >= 2) {
+    const who = (l) => merged[l].map((x) => `${excerpt(x.server.name, 40)}: ${list2(x.tools, 3)}`).join("; ");
+    const ask = merged.egress.flatMap((x) => x.tools.map((t) => permissionName(x.server, t))).filter((n) => !!n);
+    out.push({
+      severity: "info",
+      rule: "flow/cross-server-trifecta",
+      title: `Servers together form a leak path: untrusted input (${who("untrusted")}), private data (${who("private")}), send out (${who("egress")})`,
+      location: `servers ${[...involved].map((s) => `"${excerpt(s.name, 40)}"`).join(", ")}`,
+      remediation: `${REMEDIATION}${ask.length ? ` Suggested permissions.ask entries: ${[...new Set(ask)].slice(0, 6).map((n) => `"${excerpt(n, 80)}"`).join(", ")}${ask.length > 6 ? ", \u2026" : ""}.` : ""}`
+    });
+  }
+  return out;
+}
+
 // src/supply-chain.ts
 var DAY = 864e5;
 var POPULAR_PACKAGES = {
@@ -42001,6 +42080,7 @@ async function auditTools(servers, timeoutSeconds, pins, policy) {
   const driftLines = [];
   const inventories = ok.map((r) => inventory(r.server, r.tools));
   findings.push(...inventories.flatMap(capabilityFindings));
+  findings.push(...toxicFlowFindings(ok.filter((r) => CLAUDE_CODE_SCOPES.includes(r.server.scope)).map((r) => ({ server: r.server, tools: r.tools }))));
   for (const r of ok) {
     const own2 = [];
     const others = Object.fromEntries(ok.filter((o) => o !== r).map((o) => [o.server.name, o.tools.map((t) => t.name)]));
@@ -42015,10 +42095,10 @@ async function auditTools(servers, timeoutSeconds, pins, policy) {
       }
       const d = computeDrift(pinned, r.definitions);
       driftLines.push(hasDrift(d) ? `- ${label}: \u26A0\uFE0F changed since ${pinned.pinnedAt}` : `- ${label}: unchanged since ${pinned.pinnedAt}`);
-      const list2 = (xs) => xs.map((x) => `"${excerpt(x, 50)}"`).join(", ");
-      if (d.changed.length) own2.push({ severity: "high", rule: "drift/tool-changed", title: `${d.changed.length} tool definition(s) changed since pinning: ${list2(d.changed)}`, location: where, remediation: "A server that rewrites tool descriptions after approval is the rug-pull pattern. Review the findings for these tools, and re-pin only once you trust the new wording." });
-      if (d.added.length) own2.push({ severity: "medium", rule: "drift/tool-added", title: `${d.added.length} new tool(s) since pinning: ${list2(d.added)}`, location: where, remediation: "Check that the new tools match a release you expected, then re-pin." });
-      if (d.removed.length) own2.push({ severity: "low", rule: "drift/tool-removed", title: `${d.removed.length} tool(s) removed since pinning: ${list2(d.removed)}`, location: where, remediation: "Usually a normal upgrade. Re-pin after reviewing." });
+      const list3 = (xs) => xs.map((x) => `"${excerpt(x, 50)}"`).join(", ");
+      if (d.changed.length) own2.push({ severity: "high", rule: "drift/tool-changed", title: `${d.changed.length} tool definition(s) changed since pinning: ${list3(d.changed)}`, location: where, remediation: "A server that rewrites tool descriptions after approval is the rug-pull pattern. Review the findings for these tools, and re-pin only once you trust the new wording." });
+      if (d.added.length) own2.push({ severity: "medium", rule: "drift/tool-added", title: `${d.added.length} new tool(s) since pinning: ${list3(d.added)}`, location: where, remediation: "Check that the new tools match a release you expected, then re-pin." });
+      if (d.removed.length) own2.push({ severity: "low", rule: "drift/tool-removed", title: `${d.removed.length} tool(s) removed since pinning: ${list3(d.removed)}`, location: where, remediation: "Usually a normal upgrade. Re-pin after reviewing." });
     }
     findings.push(...own2.map((f) => ({ ...f, file: r.server.source, server: r.server.name })));
   }

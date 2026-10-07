@@ -20,6 +20,7 @@ const BY_RULE: [RegExp, string[]][] = [
   [/^capability\/(destructive|filesystem-write)$/, ["MCP02"]],
   [/^capability\/command-execution$/, ["MCP05", "MCP02"]],
   [/^capability\/network-egress$/, ["MCP10"]],
+  [/^flow\//, ["MCP10", "MCP06"]],
   [/^config\/(unpinned-package|docker-unpinned-image|pipe-to-shell|shell-wrapper)$/, ["MCP04"]],
   [/^supply-chain\//, ["MCP04"]],
   [/^feed\/package$/, ["MCP04"]],

@@ -15,6 +15,7 @@ A Claude Code plugin that audits the **MCP servers you have installed**. Your co
 | Supply chain | OSV vulnerabilities and malicious versions, typosquats, missing or brand-new packages, install scripts, publisher changes (opt-in network check) |
 | Runtime | Hooks on every MCP call: ask before credentials are sent, warn on injected instructions or credentials in outputs, content-free audit log |
 | Policy | `.mcp-security.json` approved/blocked servers and hosts, enforced in audits, CI and at session start |
+| Toxic flows | Servers that hold all three legs of the "lethal trifecta" (untrusted input, private data, a way to send data out), on their own or together, with the tools to put behind approval. A posture note (`low` or `info`), not a defect |
 | Agent context | The text Claude reads besides MCP tools: skills and their scripts, slash commands, subagents, rules, `CLAUDE.md` and plugin hooks. Instruction overrides, "don't tell the user", invisible text, HTML comments addressed to the model, directives to read credential files, commands that upload credentials, download-and-run, encoded execution, infostealer scripts, pre-approved unrestricted `Bash` |
 | Configuration | Plaintext secrets in env/headers/args/URLs, plain-HTTP remotes, unpinned `npx`/`uvx` packages, privileged or unpinned Docker images, pipe-to-shell launches, duplicate names across scopes |
 

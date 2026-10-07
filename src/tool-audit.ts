@@ -1,6 +1,7 @@
 import { capabilityFindings, inventory, recommendPermissions, type ServerInventory } from "./capabilities.js";
 import { fetchSurface, surfaceDefinitions } from "./client.js";
 import { cloudCheck } from "./cloud.js";
+import { toxicFlowFindings } from "./toxic-flow.js";
 import { packagesOf } from "./supply-chain.js";
 import { applyPolicy, auditPolicy, type LoadedPolicy } from "./policy.js";
 import { computeDrift, hasDrift, hashConfig, pinKey, type PinFile } from "./pins.js";
@@ -8,7 +9,7 @@ import { auditServerConfig } from "./rules/config-rules.js";
 import { analyzeTools } from "./rules/tool-rules.js";
 import { scoreServer, scoreTable } from "./score.js";
 import { excerpt } from "./sanitize.js";
-import type { Finding, ServerConfig, ToolDefinition } from "./types.js";
+import { CLAUDE_CODE_SCOPES, type Finding, type ServerConfig, type ToolDefinition } from "./types.js";
 
 export function selectServers(all: ServerConfig[], names: string[]): { picked: ServerConfig[]; unknown: string[] } {
   if (names.includes("*")) return { picked: all, unknown: [] };
@@ -75,6 +76,7 @@ export async function auditTools(servers: ServerConfig[], timeoutSeconds: number
   const driftLines: string[] = [];
   const inventories = ok.map((r) => inventory(r.server, r.tools));
   findings.push(...inventories.flatMap(capabilityFindings));
+  findings.push(...toxicFlowFindings(ok.filter((r) => CLAUDE_CODE_SCOPES.includes(r.server.scope)).map((r) => ({ server: r.server, tools: r.tools }))));
 
   for (const r of ok) {
     const own: Finding[] = [];
