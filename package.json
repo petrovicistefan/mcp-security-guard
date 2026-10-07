@@ -1,6 +1,6 @@
 {
   "name": "mcp-security-guard",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Security scanner for MCP servers in Claude Code: tool poisoning, shadowing, rug pulls and risky configuration.",
   "mcpName": "io.github.petrovicistefan/mcp-security-guard",
   "main": "plugin/dist/index.mjs",

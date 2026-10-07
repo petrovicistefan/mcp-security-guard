@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.1
+
+- **Loads in Cowork as well as Claude Code**: the optional threat feed key now has an empty default, because Cowork ignores a local MCP server that references a `userConfig` option without a default. Nothing changes for Claude Code (the key stays optional and the server connects without it)
+- Shorter plugin description for the directory listing
+
 ## 0.8.0
 
 Skills, commands and CLAUDE.md get the same treatment as MCP servers: scanned, pinned and checked against the threat feed. New paid Team plan (opt-in; the free plugin is unchanged and nothing is sent without an API key). Deploy order: the backend (migrations 0004 and 0005) is already live; this release only adds client behaviour.

@@ -20429,7 +20429,7 @@ function transportOf(s) {
 }
 
 // src/version.ts
-var VERSION = "0.8.0";
+var VERSION = "0.8.1";
 
 // src/client.ts
 function expand(value) {
