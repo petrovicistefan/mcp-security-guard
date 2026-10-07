@@ -39,16 +39,16 @@ interface MatchContext {
 }
 
 /** Verbs that turn a mention into an instruction to the model. */
-const DIRECTIVE_RE = /\b(read|reading|cat|open|load|include|including|pass|send|upload|copy|attach|paste|append|put|provide|extract|forward|post|share|embed|add|insert|fill)\b/i;
+export const DIRECTIVE_RE = /\b(read|reading|cat|open|load|include|including|pass|send|upload|copy|attach|paste|append|put|provide|extract|forward|post|share|embed|add|insert|fill)\b/i;
 
-function sentenceAt(text: string, index: number): string {
+export function sentenceAt(text: string, index: number): string {
   const before = text.slice(0, index).search(/(?:[.!?](?=\s)|\n)[^.!?\n]*$/);
   const start = before < 0 ? 0 : before + 1;
   const after = text.slice(index).search(/[.!?](?=\s|$)|\n/);
   return text.slice(start, after < 0 ? text.length : index + after);
 }
 
-const PATTERNS: { rule: string; severity: Severity; title: string; re: RegExp; remediation: string; refine?: (ctx: MatchContext) => { severity: Severity; title?: string } | null }[] = [
+export const PATTERNS: { rule: string; severity: Severity; title: string; re: RegExp; remediation: string; refine?: (ctx: MatchContext) => { severity: Severity; title?: string } | null }[] = [
   {
     rule: "tool/instruction-override",
     severity: "critical",

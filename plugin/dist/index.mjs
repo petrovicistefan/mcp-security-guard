@@ -2990,7 +2990,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve3.call(this, root, ref);
+      let _sch = resolve4.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a3 = root.localRefs) === null || _a3 === void 0 ? void 0 : _a3[ref];
         const { schemaId } = this.opts;
@@ -3017,7 +3017,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve3(root, ref) {
+    function resolve4(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -3847,7 +3847,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve3(baseURI, relativeURI, options) {
+    function resolve4(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const {
         parsed: baseParsed,
@@ -3880,49 +3880,49 @@ var require_fast_uri = __commonJS({
       schemelessOptions.skipEscape = true;
       return serialize2(resolved, schemelessOptions);
     }
-    function resolveComponent(base, relative, options, skipNormalization) {
+    function resolveComponent(base, relative2, options, skipNormalization) {
       const target = {};
       if (!skipNormalization) {
         base = parse3(serialize2(base, options), options);
-        relative = parse3(serialize2(relative, options), options);
+        relative2 = parse3(serialize2(relative2, options), options);
       }
       options = options || {};
-      if (!options.tolerant && relative.scheme) {
-        target.scheme = relative.scheme;
-        target.userinfo = relative.userinfo;
-        target.host = relative.host;
-        target.port = relative.port;
-        target.path = removeDotSegments(relative.path || "");
-        target.query = relative.query;
+      if (!options.tolerant && relative2.scheme) {
+        target.scheme = relative2.scheme;
+        target.userinfo = relative2.userinfo;
+        target.host = relative2.host;
+        target.port = relative2.port;
+        target.path = removeDotSegments(relative2.path || "");
+        target.query = relative2.query;
       } else {
-        if (relative.userinfo !== void 0 || relative.host !== void 0 || relative.port !== void 0) {
-          target.userinfo = relative.userinfo;
-          target.host = relative.host;
-          target.port = relative.port;
-          target.path = removeDotSegments(relative.path || "");
-          target.query = relative.query;
+        if (relative2.userinfo !== void 0 || relative2.host !== void 0 || relative2.port !== void 0) {
+          target.userinfo = relative2.userinfo;
+          target.host = relative2.host;
+          target.port = relative2.port;
+          target.path = removeDotSegments(relative2.path || "");
+          target.query = relative2.query;
         } else {
-          if (!relative.path) {
+          if (!relative2.path) {
             target.path = base.path;
-            if (relative.query !== void 0) {
-              target.query = relative.query;
+            if (relative2.query !== void 0) {
+              target.query = relative2.query;
             } else {
               target.query = base.query;
             }
           } else {
-            if (relative.path[0] === "/") {
-              target.path = removeDotSegments(relative.path);
+            if (relative2.path[0] === "/") {
+              target.path = removeDotSegments(relative2.path);
             } else {
               if ((base.userinfo !== void 0 || base.host !== void 0 || base.port !== void 0) && !base.path) {
-                target.path = "/" + relative.path;
+                target.path = "/" + relative2.path;
               } else if (!base.path) {
-                target.path = relative.path;
+                target.path = relative2.path;
               } else {
-                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative.path;
+                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative2.path;
               }
               target.path = removeDotSegments(target.path);
             }
-            target.query = relative.query;
+            target.query = relative2.query;
           }
           target.userinfo = base.userinfo;
           target.host = base.host;
@@ -3930,7 +3930,7 @@ var require_fast_uri = __commonJS({
         }
         target.scheme = base.scheme;
       }
-      target.fragment = relative.fragment;
+      target.fragment = relative2.fragment;
       return target;
     }
     function equal(uriA, uriB, options) {
@@ -4216,7 +4216,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve3,
+      resolve: resolve4,
       resolveComponent,
       equal,
       serialize: serialize2,
@@ -7299,12 +7299,12 @@ var require_isexe = __commonJS({
         if (typeof Promise !== "function") {
           throw new TypeError("callback not provided");
         }
-        return new Promise(function(resolve3, reject) {
+        return new Promise(function(resolve4, reject) {
           isexe(path, options || {}, function(er, is) {
             if (er) {
               reject(er);
             } else {
-              resolve3(is);
+              resolve4(is);
             }
           });
         });
@@ -7370,27 +7370,27 @@ var require_which = __commonJS({
         opt = {};
       const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt);
       const found = [];
-      const step = (i) => new Promise((resolve3, reject) => {
+      const step = (i) => new Promise((resolve4, reject) => {
         if (i === pathEnv.length)
-          return opt.all && found.length ? resolve3(found) : reject(getNotFoundError(cmd));
+          return opt.all && found.length ? resolve4(found) : reject(getNotFoundError(cmd));
         const ppRaw = pathEnv[i];
         const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw;
         const pCmd = path.join(pathPart, cmd);
         const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd : pCmd;
-        resolve3(subStep(p, i, 0));
+        resolve4(subStep(p, i, 0));
       });
-      const subStep = (p, i, ii) => new Promise((resolve3, reject) => {
+      const subStep = (p, i, ii) => new Promise((resolve4, reject) => {
         if (ii === pathExt.length)
-          return resolve3(step(i + 1));
+          return resolve4(step(i + 1));
         const ext = pathExt[ii];
         isexe(p + ext, { pathExt: pathExtExe }, (er, is) => {
           if (!er && is) {
             if (opt.all)
               found.push(p + ext);
             else
-              return resolve3(p + ext);
+              return resolve4(p + ext);
           }
-          return resolve3(subStep(p, i, ii + 1));
+          return resolve4(subStep(p, i, ii + 1));
         });
       });
       return cb ? step(0).then((res) => cb(null, res), cb) : step(0);
@@ -16464,7 +16464,7 @@ var recursive = /* @__PURE__ */ new WeakMap();
 var NONE = 0;
 var ASSUMED = 1;
 var PROVEN = 2;
-function isRecursive(inst, stack, resolve3) {
+function isRecursive(inst, stack, resolve4) {
   const cached2 = recursive.get(inst);
   if (cached2 !== void 0)
     return cached2 ? PROVEN : NONE;
@@ -16474,7 +16474,7 @@ function isRecursive(inst, stack, resolve3) {
   let result = NONE;
   const check2 = (child) => {
     if (result !== PROVEN && child?._zod) {
-      const answer = isRecursive(child, stack, resolve3);
+      const answer = isRecursive(child, stack, resolve4);
       if (answer > result)
         result = answer;
     }
@@ -16485,7 +16485,7 @@ function isRecursive(inst, stack, resolve3) {
       const desc = Object.getOwnPropertyDescriptor(sh, key);
       if (spread && !desc.enumerable)
         continue;
-      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve3) : NONE;
+      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve4) : NONE;
       if (child > answer)
         answer = child;
     }
@@ -16549,7 +16549,7 @@ function isRecursive(inst, stack, resolve3) {
       break;
     // `$ZodLazy` caches its inner on the def, so a resolved edge is followed exactly
     case "lazy": {
-      const inner = def._cachedInner ?? (resolve3 ? inst._zod.innerType : void 0);
+      const inner = def._cachedInner ?? (resolve4 ? inst._zod.innerType : void 0);
       merge2(inner ? isRecursive(inner, stack, false) : ASSUMED);
       break;
     }
@@ -34980,7 +34980,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve3) => setTimeout(resolve3, pollInterval));
+        await new Promise((resolve4) => setTimeout(resolve4, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error62) {
@@ -34997,7 +34997,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve3, reject) => {
+    return new Promise((resolve4, reject) => {
       const earlyReject = (error62) => {
         reject(error62);
       };
@@ -35075,7 +35075,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve3(parseResult.data);
+            resolve4(parseResult.data);
           }
         } catch (error62) {
           reject(error62);
@@ -35337,12 +35337,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve3, reject) => {
+    return new Promise((resolve4, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve3, interval);
+      const timeoutId = setTimeout(resolve4, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -36473,7 +36473,7 @@ var McpServer = class {
     let task = createTaskResult.task;
     const pollInterval = task.pollInterval ?? 5e3;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve3) => setTimeout(resolve3, pollInterval));
+      await new Promise((resolve4) => setTimeout(resolve4, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -37137,12 +37137,12 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve3) => {
+    return new Promise((resolve4) => {
       const json2 = serializeMessage(message);
       if (this._stdout.write(json2)) {
-        resolve3();
+        resolve4();
       } else {
-        this._stdout.once("drain", resolve3);
+        this._stdout.once("drain", resolve4);
       }
     });
   }
@@ -39455,7 +39455,7 @@ var SSEClientTransport = class {
     const baseFetch = this?._eventSourceInit?.fetch ?? this._fetch ?? fetch;
     const fetchImpl = this._followRedirects ? baseFetch : fetchWithinOrigin(baseFetch);
     let redirect;
-    return new Promise((resolve3, reject) => {
+    return new Promise((resolve4, reject) => {
       this._eventSource = new EventSource(this._url.href, {
         ...this._eventSourceInit,
         fetch: async (url2, init) => {
@@ -39477,7 +39477,7 @@ var SSEClientTransport = class {
       this._abortController = new AbortController();
       this._eventSource.onerror = (event) => {
         if (event.code === 401 && this._authProvider) {
-          this._authThenStart().then(resolve3, reject);
+          this._authThenStart().then(resolve4, reject);
           return;
         }
         const error62 = new SseError(event.code, redirect ?? event.message, event);
@@ -39499,7 +39499,7 @@ var SSEClientTransport = class {
           void this.close();
           return;
         }
-        resolve3();
+        resolve4();
       });
       this._eventSource.onmessage = (event) => {
         const messageEvent = event;
@@ -39639,7 +39639,7 @@ var StdioClientTransport = class {
     if (this._process) {
       throw new Error("StdioClientTransport already started! If using Client class, note that connect() calls start() automatically.");
     }
-    return new Promise((resolve3, reject) => {
+    return new Promise((resolve4, reject) => {
       this._process = (0, import_cross_spawn.default)(this._serverParams.command, this._serverParams.args ?? [], {
         // merge default env with server env because mcp server needs some env vars
         env: {
@@ -39656,7 +39656,7 @@ var StdioClientTransport = class {
         this.onerror?.(error62);
       });
       this._process.on("spawn", () => {
-        resolve3();
+        resolve4();
       });
       this._process.on("close", (_code) => {
         this._process = void 0;
@@ -39721,22 +39721,22 @@ var StdioClientTransport = class {
     if (this._process) {
       const processToClose = this._process;
       this._process = void 0;
-      const closePromise = new Promise((resolve3) => {
+      const closePromise = new Promise((resolve4) => {
         processToClose.once("close", () => {
-          resolve3();
+          resolve4();
         });
       });
       try {
         processToClose.stdin?.end();
       } catch {
       }
-      await Promise.race([closePromise, new Promise((resolve3) => setTimeout(resolve3, 2e3).unref())]);
+      await Promise.race([closePromise, new Promise((resolve4) => setTimeout(resolve4, 2e3).unref())]);
       if (processToClose.exitCode === null) {
         try {
           processToClose.kill("SIGTERM");
         } catch {
         }
-        await Promise.race([closePromise, new Promise((resolve3) => setTimeout(resolve3, 2e3).unref())]);
+        await Promise.race([closePromise, new Promise((resolve4) => setTimeout(resolve4, 2e3).unref())]);
       }
       if (processToClose.exitCode === null) {
         try {
@@ -39748,15 +39748,15 @@ var StdioClientTransport = class {
     this._readBuffer.clear();
   }
   send(message) {
-    return new Promise((resolve3) => {
+    return new Promise((resolve4) => {
       if (!this._process?.stdin) {
         throw new Error("Not connected");
       }
       const json2 = serializeMessage(message);
       if (this._process.stdin.write(json2)) {
-        resolve3();
+        resolve4();
       } else {
-        this._process.stdin.once("drain", resolve3);
+        this._process.stdin.once("drain", resolve4);
       }
     });
   }
@@ -40389,6 +40389,15 @@ function pluginDirServers(root, pluginName, sources) {
   return blocks.flatMap(({ block, source }) => toServers(block, "plugin", source).map((sv) => substitutePluginRoot({ ...sv, name: `${pluginName}:${sv.name}` }, root)));
 }
 function discoverPluginServers(project, home, sources) {
+  const out = [];
+  for (const { name, root, synced } of pluginRoots(project, home, sources)) {
+    for (const sv of pluginDirServers(root, name, sources)) {
+      if (!synced || !out.some((o) => o.name === sv.name)) out.push(sv);
+    }
+  }
+  return out;
+}
+function pluginRoots(project, home, sources) {
   const enabled = enabledPlugins(project, home, sources);
   const out = [];
   const installedPath = join(home, ".claude", "plugins", "installed_plugins.json");
@@ -40396,11 +40405,11 @@ function discoverPluginServers(project, home, sources) {
   if (installed && typeof installed === "object") {
     for (const [key, entries] of Object.entries(installed)) {
       if (enabled[key] === false || !Array.isArray(entries)) continue;
-      const pluginName = key.split("@")[0];
+      const name = key.split("@")[0];
       for (const e of entries) {
         if (typeof e?.installPath !== "string") continue;
         if (e.scope && e.scope !== "user" && e.projectPath && resolve(e.projectPath) !== project) continue;
-        out.push(...pluginDirServers(e.installPath, pluginName, sources));
+        out.push({ name, root: e.installPath, synced: false });
       }
     }
   }
@@ -40410,12 +40419,10 @@ function discoverPluginServers(project, home, sources) {
       const root = join(syncedRoot, bucket, dir);
       const manifest = join(root, ".claude-plugin", "plugin.json");
       if (!existsSync(manifest)) continue;
-      const name = readJson(manifest, sources)?.name;
-      const pluginName = typeof name === "string" && name ? name : dir;
-      if (enabled[`${pluginName}@synced`] === false) continue;
-      for (const sv of pluginDirServers(root, pluginName, sources)) {
-        if (!out.some((o) => o.name === sv.name)) out.push(sv);
-      }
+      const manifestName = readJson(manifest, sources)?.name;
+      const name = typeof manifestName === "string" && manifestName ? manifestName : dir;
+      if (enabled[`${name}@synced`] === false) continue;
+      out.push({ name, root, synced: true });
     }
   }
   return out;
@@ -40639,7 +40646,7 @@ async function adversarialTest(s, opts = {}) {
 }
 
 // src/index.ts
-import { readFileSync as readFileSync6 } from "node:fs";
+import { readFileSync as readFileSync7 } from "node:fs";
 
 // src/policy.ts
 import { existsSync as existsSync3, readFileSync as readFileSync2 } from "node:fs";
@@ -40944,6 +40951,587 @@ function auditConfig(projectDir2, opts = {}) {
   return { ...discovered, servers, findings, policy };
 }
 
+// src/context-files.ts
+import { lstatSync, readFileSync as readFileSync3, readdirSync as readdirSync2 } from "node:fs";
+import { homedir as homedir3 } from "node:os";
+import { basename, extname, join as join4, relative, resolve as resolve2, sep } from "node:path";
+var MAX_FILE_BYTES = 256 * 1024;
+var MAX_FILES = 2e3;
+var MAX_DEPTH = 4;
+var SKIP_DIRS = /* @__PURE__ */ new Set(["node_modules", ".git", "dist", "build", "__pycache__", ".venv", "venv"]);
+var SCRIPT_EXT = /* @__PURE__ */ new Set([".sh", ".bash", ".zsh", ".py", ".js", ".mjs", ".cjs", ".ts", ".ps1", ".rb", ".pl"]);
+function walk(dir, depth = 0) {
+  if (depth > MAX_DEPTH) return [];
+  let entries;
+  try {
+    entries = readdirSync2(dir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const out = [];
+  for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+    if (e.isSymbolicLink()) continue;
+    const p = join4(dir, e.name);
+    if (e.isDirectory()) {
+      if (!SKIP_DIRS.has(e.name) && !e.name.startsWith(".")) out.push(...walk(p, depth + 1));
+    } else if (e.isFile()) out.push(p);
+  }
+  return out;
+}
+function isRegularFile(path) {
+  try {
+    return lstatSync(path).isFile();
+  } catch {
+    return false;
+  }
+}
+function collectRoot(root, origin, add, opts) {
+  const skills = join4(root, "skills");
+  for (const f of walk(skills)) {
+    const rel = relative(skills, f).split(sep);
+    const skillName = rel[0];
+    const ext = extname(f).toLowerCase();
+    if (basename(f).toLowerCase() === "skill.md") add(f, "skill", skillName);
+    else if (ext === ".md" || ext === ".mdx" || ext === ".txt") add(f, "skill", skillName);
+    else if (SCRIPT_EXT.has(ext)) add(f, "script", skillName);
+  }
+  for (const [dir, kind] of [["commands", "command"], ["agents", "agent"], ["rules", "rule"]]) {
+    const base = join4(root, dir);
+    for (const f of walk(base)) if ([".md", ".mdx"].includes(extname(f).toLowerCase())) add(f, kind, relative(base, f).replace(/\.mdx?$/i, "").split(sep).join("/"));
+  }
+  if (opts.pluginLayout) {
+    for (const f of [join4(root, "hooks", "hooks.json"), join4(root, "hooks.json")]) add(f, "hooks", "hooks");
+    for (const f of walk(join4(root, "hooks"))) if (SCRIPT_EXT.has(extname(f).toLowerCase())) add(f, "script", "hooks");
+  }
+}
+function discoverContext(projectDir2, opts = {}) {
+  const home = opts.home ?? homedir3();
+  const project = resolve2(projectDir2);
+  const files = [];
+  const skipped = [];
+  const seen = /* @__PURE__ */ new Set();
+  const add = (origin) => (file2, kind, name) => {
+    const p = resolve2(file2);
+    if (seen.has(p) || !isRegularFile(p)) return;
+    seen.add(p);
+    if (files.length >= MAX_FILES) {
+      skipped.push(`${p} (limit of ${MAX_FILES} files reached)`);
+      return;
+    }
+    try {
+      const buf = readFileSync3(p);
+      if (buf.length > MAX_FILE_BYTES) {
+        skipped.push(`${p} (larger than ${MAX_FILE_BYTES / 1024} KB)`);
+        return;
+      }
+      files.push({ path: p, kind, origin, name, text: buf.toString("utf8") });
+    } catch {
+      skipped.push(`${p} (unreadable)`);
+    }
+  };
+  const addProject = add("project");
+  for (const f of [join4(project, "CLAUDE.md"), join4(project, "CLAUDE.local.md"), join4(project, ".claude", "CLAUDE.md")]) addProject(f, "claude-md", basename(f));
+  collectRoot(join4(project, ".claude"), "project", addProject, { pluginLayout: false });
+  if (!opts.projectOnly) {
+    const addUser = add("user");
+    addUser(join4(home, ".claude", "CLAUDE.md"), "claude-md", "CLAUDE.md");
+    collectRoot(join4(home, ".claude"), "user", addUser, { pluginLayout: false });
+    const sources = [];
+    for (const { name, root } of pluginRoots(project, home, sources)) {
+      collectRoot(root, `plugin:${name}`, add(`plugin:${name}`), { pluginLayout: true });
+    }
+  }
+  return { files, skipped };
+}
+
+// src/rules/tool-rules.ts
+function collectText(tool) {
+  const out = [{ path: "name", text: tool.name }];
+  if (tool.title) out.push({ path: "title", text: tool.title });
+  if (tool.description) out.push({ path: "description", text: tool.description });
+  const walk2 = (node2, path) => {
+    if (typeof node2 === "string") {
+      out.push({ path, text: node2 });
+    } else if (Array.isArray(node2)) {
+      node2.forEach((n, i) => walk2(n, `${path}[${i}]`));
+    } else if (node2 && typeof node2 === "object") {
+      for (const [k, v] of Object.entries(node2)) {
+        if (["$schema", "$ref", "pattern"].includes(k) && typeof v === "string") continue;
+        if (path.endsWith(".properties")) out.push({ path: `${path}.${k} (name)`, text: k });
+        walk2(v, `${path}.${k}`);
+      }
+    }
+  };
+  walk2(tool.inputSchema, "inputSchema");
+  walk2(tool.annotations, "annotations");
+  return out;
+}
+var DIRECTIVE_RE = /\b(read|reading|cat|open|load|include|including|pass|send|upload|copy|attach|paste|append|put|provide|extract|forward|post|share|embed|add|insert|fill)\b/i;
+function sentenceAt(text2, index) {
+  const before = text2.slice(0, index).search(/(?:[.!?](?=\s)|\n)[^.!?\n]*$/);
+  const start = before < 0 ? 0 : before + 1;
+  const after = text2.slice(index).search(/[.!?](?=\s|$)|\n/);
+  return text2.slice(start, after < 0 ? text2.length : index + after);
+}
+var PATTERNS = [
+  {
+    rule: "tool/instruction-override",
+    severity: "critical",
+    title: "Tries to override the model's instructions",
+    re: /\b(ignore|disregard|forget|override)\b.{0,30}\b(previous|prior|above|earlier|all|other|system)\b.{0,20}\b(instructions?|rules|prompts?|directions|guidelines)\b/i,
+    remediation: "A tool description has no reason to talk about the model's other instructions. Treat this server as malicious and remove it."
+  },
+  {
+    rule: "tool/conceal-from-user",
+    severity: "critical",
+    title: "Asks the model to hide something from the user",
+    re: /\b(do not|don't|dont|never|without)\b.{0,25}\b(tell|telling|inform|informing|mention|mentioning|notify|notifying|reveal|revealing|show|showing|alert|alerting)\b.{0,25}\b(the )?user\b/i,
+    remediation: "Legitimate tools never ask for secrecy. Remove the server and check what it has already been called with."
+  },
+  // Non-English variants of the two most common payloads. JS `\b` only knows ASCII letters, so
+  // words ending in diacritics, Cyrillic or CJK are matched without a trailing boundary.
+  {
+    rule: "tool/instruction-override",
+    severity: "critical",
+    title: "Tries to override the model's instructions (non-English)",
+    re: /(?:ignor[ăa]|uit[ăa])\s[^.!?。\n]{0,30}instruc[țţt]iunile\s+(?:anterioare|precedente|de\s+mai\s+sus)|\bignora\s[^.!?。\n]{0,20}instrucciones\s+(?:anteriores|previas)|\bignore[rz]?\s[^.!?。\n]{0,20}instructions\s+(?:précédentes|antérieures)|\bignorier(?:e|en)?\s[^.!?。\n]{0,30}(?:vorherigen|bisherigen|obigen)\s+(?:Anweisungen|Instruktionen)|\bignore\s[^.!?。\n]{0,20}instruções\s+(?:anteriores|prévias)|\bignora\s[^.!?。\n]{0,20}istruzioni\s+(?:precedenti|sopra)|忽略[^.!?。\n]{0,6}(?:之前|以上|先前|所有)[^.!?。\n]{0,6}(?:指令|指示|说明)|игнорируй(?:те)?\s+(?:все\s+)?(?:предыдущие|прежние)\s+инструкции/iu,
+    remediation: "A tool description has no reason to talk about the model's other instructions. Treat this server as malicious and remove it."
+  },
+  {
+    rule: "tool/conceal-from-user",
+    severity: "critical",
+    title: "Asks the model to hide something from the user (non-English)",
+    re: /\bnu\s*-?\s*(?:i\s+)?(?:spune|informa|men[țţt]iona|ar[ăa]ta)\s[^.!?。\n]{0,25}utilizatorului|\bno\s+(?:le\s+)?(?:digas|informes|menciones|muestres)\s[^.!?。\n]{0,20}usuario|\bne\s+(?:le\s+|lui\s+)?(?:dis|dites|mentionne[sz]?|montre[sz]?)\s+(?:pas|rien)\s[^.!?。\n]{0,25}utilisateur|\bnicht\s[^.!?。\n]{0,20}(?:dem\s+)?(?:Benutzer|Nutzer)\s[^.!?。\n]{0,20}(?:sagen|mitteilen|zeigen|erzählen)|\bnão\s+(?:conte|diga|informe|mencione|mostre)\s[^.!?。\n]{0,20}usuário|\bnon\s+(?:dire|dirlo|informare|menzionare|mostrare)\s[^.!?。\n]{0,20}utente|不要[^.!?。\n]{0,4}(?:告诉|通知|让)[^.!?。\n]{0,2}用户|не\s+(?:говори|сообщай|рассказывай)(?:те)?\s+пользователю/iu,
+    remediation: "Legitimate tools never ask for secrecy. Remove the server and check what it has already been called with."
+  },
+  {
+    rule: "tool/hidden-instruction-tag",
+    severity: "high",
+    title: "Contains pseudo-system tags typical of tool poisoning",
+    re: /<\s*\/?\s*(important|system|instructions?|secret|hidden|admin|assistant|context)\s*>/i,
+    remediation: "Tags like <IMPORTANT> are used to make injected text look authoritative. Review the full description before trusting this tool."
+  },
+  {
+    rule: "tool/role-hijack",
+    severity: "high",
+    title: "Attempts to redefine the model's role",
+    re: /\b(you are now|from now on,? you|act as (an?|the) |new instructions|system prompt|developer mode|jailbreak)\b/i,
+    remediation: "Remove the server unless the wording is clearly documentation (e.g. a tool that edits system prompts)."
+  },
+  {
+    rule: "tool/precondition-chain",
+    severity: "medium",
+    title: "Tells the model to do something else before or after calling it",
+    re: /\b(before|prior to|after)\b.{0,30}\b(using|calling|invoking|running|executing)\b.{0,40}\b(you must|must first|first (read|call|run|fetch|send)|always (read|call|run|send|include))\b/i,
+    remediation: "Check what the extra step does. Poisoned tools use this to make the model read files or call other tools on their behalf.",
+    // "Before calling this tool you must first call list_projects" is normal API sequencing within one server.
+    refine: ({ sentence, ownTools }) => ownTools.some((n) => toolMention(n).test(sentence)) ? null : { severity: "medium" }
+  },
+  {
+    rule: "tool/sensitive-path",
+    severity: "high",
+    title: "Instructs the model to access credential files or secrets",
+    // Dot-directories must start a path segment, so domains like repost.aws or docs.docker.com do not match.
+    // `.env.example` and friends are templates, not secrets.
+    re: /(?:^|[\s"'`(~\\/])\.(?:ssh|aws|gnupg|kube|docker|config\/gh)(?![\w.-])|\bid[_ ]?(?:rsa|ed25519|ecdsa)\b|(?:^|[\s/"'`])\.env(?!\.(?:example|sample|template|dist|defaults)\b)\b|\b(?:ssh|pgp|gpg)\s+(?:private\s+)?keys?\b|\bprivate\s+keys?\b|\bseed\s+phrase\b|\.netrc\b|\.npmrc\b|\.pypirc\b|\bcredentials\.json\b|\.git-credentials\b|\bclaude(?:_desktop_config)?\.json\b|\bmcp\.json\b|\/etc\/(?:passwd|shadow)\b|\bkeychain\b/i,
+    remediation: "A tool description has no reason to direct the model at secrets. Remove the server unless the sentence is clearly documentation.",
+    // A bare mention ("uses the kubeconfig at ~/.kube/config", "refuses .env files") is documentation;
+    // pairing it with an action verb ("read ~/.ssh/id_rsa and pass it") is the poisoning pattern.
+    refine: ({ sentence }) => DIRECTIVE_RE.test(sentence) ? { severity: "high" } : { severity: "low", title: "Mentions a credential file or sensitive path" }
+  },
+  {
+    rule: "tool/context-harvesting",
+    severity: "high",
+    title: "Asks for the conversation, system prompt or prior messages",
+    re: /\b(?:conversation|chat)[\s_]+(?:history|log|transcript|context)\b|\b(?:previous|prior|earlier|all)\s+(?:user\s+)?messages\b|\bsystem[\s_]+prompt\b|\bsummary[\s_]+of[\s_]+(?:the[\s_]+)?conversation\b/i,
+    remediation: "Tools that need the conversation itself are rare. Harvesting it into a parameter or URL is a standard exfiltration technique.",
+    refine: ({ sentence }) => DIRECTIVE_RE.test(sentence) ? { severity: "high" } : { severity: "low", title: "Mentions the conversation or system prompt" }
+  },
+  {
+    rule: "tool/markdown-exfiltration",
+    severity: "high",
+    title: "Embeds a remote image or link with data placeholders",
+    re: /!\[[^\]]*\]\(\s*https?:\/\/[^)\s]*[?#{][^)]*\)|<img[^>]+src\s*=\s*["']?https?:\/\/[^"'\s>]*[?{]/i,
+    remediation: "When the client renders this image, the query string is sent to the remote host. That is a zero-click exfiltration channel."
+  },
+  {
+    rule: "tool/hidden-comment",
+    severity: "high",
+    title: "Contains an HTML comment (hidden from rendered views)",
+    re: /<!--[\s\S]*?-->/,
+    remediation: "Comments are invisible in rendered Markdown but fully visible to the model. Read the comment text."
+  },
+  {
+    rule: "tool/exfiltration-wording",
+    severity: "medium",
+    title: "Describes sending data to an external destination",
+    re: /\b(send|post|upload|forward|transmit|exfiltrate|copy|include|append)\b.{0,50}\b(to|into|in)\b.{0,40}(https?:\/\/|webhook|endpoint|remote server|e-?mail|\bcc\b|bcc|the ['"`]?[\w-]+['"`]? (?:parameter|argument|field))/i,
+    remediation: "Confirm the destination is the tool's own documented API. Exfiltration attacks hide data in parameters or redirect it to attacker URLs."
+  },
+  {
+    rule: "tool/encoded-payload",
+    severity: "medium",
+    title: "Contains a long encoded blob",
+    re: /(?:[A-Za-z0-9+/]{4}){20,}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?|(?:\\x[0-9a-f]{2}){12,}|(?:%[0-9a-f]{2}){12,}/i,
+    remediation: "Decode and review it. Encoded text in a description is a common way to slip instructions past reviewers."
+  },
+  {
+    rule: "tool/cross-tool-reference",
+    severity: "medium",
+    title: "Gives instructions about other tools",
+    re: /\b(when|whenever|if)\b.{0,30}\b(any|other|another|all)\b.{0,15}\btools?\b|\b(instead of|rather than)\b.{0,20}\b(using|calling)\b.{0,30}\btool\b/i,
+    remediation: "A tool should describe itself. Instructions about other tools are how one server hijacks another (tool shadowing)."
+  }
+];
+function toolMention(name) {
+  const n = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  if (/[_\-.\d]|[a-z][A-Z]/.test(name)) return new RegExp(`(?<![\\w-])${n}(?![\\w-])`);
+  return new RegExp(`[\`'"]${n}[\`'"]|\\b${n}\\s*\\(|\\b${n}\\s+tool\\b`, "i");
+}
+var URL_RE = /https?:\/\/[^\s"'<>)`]+/gi;
+var ESCAPE_RE = /\u001b[[\]PX^_]|\u009b/;
+var CONTROL_RE = /[\u0000-\u0008\u000b\u000c\u000e-\u001a\u001c-\u001f\u007f\u0080-\u009a\u009c-\u009f]/;
+var SCHEMA_TYPES = /* @__PURE__ */ new Set(["string", "number", "integer", "boolean", "object", "array", "null"]);
+var MAX_DESCRIPTION = 1500;
+function collidingServers(name, others) {
+  return Object.entries(others).filter(([, names]) => names.includes(name)).map(([srv]) => srv);
+}
+function invalidSchemaTypes(node2, path) {
+  if (!node2 || typeof node2 !== "object") return [];
+  if (Array.isArray(node2)) return node2.flatMap((n, i) => invalidSchemaTypes(n, `${path}[${i}]`));
+  const out = [];
+  for (const [k, v] of Object.entries(node2)) {
+    if (k === "type") {
+      for (const t of Array.isArray(v) ? v : [v]) if (typeof t === "string" && !SCHEMA_TYPES.has(t)) out.push({ path: `${path}.type`, value: t });
+    } else if (k !== "const" && k !== "default" && k !== "examples" && k !== "enum") {
+      out.push(...invalidSchemaTypes(v, `${path}.${k}`));
+    }
+  }
+  return out;
+}
+function describeDefinition(name) {
+  if (name === "#instructions") return { kind: "instructions", label: "" };
+  const m = /^(prompt|resource|template):(.*)$/s.exec(name);
+  return m ? { kind: m[1], label: m[2] } : { kind: "tool", label: name };
+}
+function analyzeTools(serverName, tools, otherServersTools = {}) {
+  const findings = [];
+  const seen = /* @__PURE__ */ new Set();
+  const add = (f) => {
+    const key = `${f.rule}|${f.location}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      findings.push(f);
+    }
+  };
+  const otherNames = Object.entries(otherServersTools).flatMap(
+    ([srv, names]) => names.filter((n) => n.length >= 4 && !tools.some((t) => t.name === n)).map((n) => ({ srv, n }))
+  );
+  for (const tool of tools) {
+    const { kind, label } = describeDefinition(tool.name);
+    const where = (p) => kind === "instructions" ? `server "${serverName}" \u203A server instructions` : `server "${serverName}" \u203A ${kind} "${excerpt(label, 60)}" \u203A ${p}`;
+    if (kind === "tool" && /[^\x20-\x7E]/.test(tool.name)) {
+      add({ severity: "medium", rule: "tool/non-ascii-name", title: "Tool name contains non-ASCII characters (possible homoglyph impersonation)", location: where("name"), evidence: excerpt(tool.name), remediation: "Tool names should be plain ASCII. Look-alike characters let a tool impersonate a trusted one." });
+    }
+    if ((tool.description?.length ?? 0) > MAX_DESCRIPTION) {
+      add({ severity: "low", rule: "tool/oversized-description", title: `Description is unusually long (${tool.description.length} chars)`, location: where("description"), remediation: "Long descriptions are where injected instructions usually hide. Read the full text." });
+    }
+    for (const other of kind === "tool" ? collidingServers(tool.name, otherServersTools) : []) {
+      add({ severity: "medium", rule: "tool/name-collision", title: `Tool name also exposed by server "${excerpt(other, 50)}"`, location: where("name"), evidence: excerpt(tool.name), remediation: "Two servers with the same tool name leave it to the client which one runs, and one can impersonate the other. Rename or disable one of them." });
+    }
+    for (const bad of invalidSchemaTypes(tool.inputSchema, "inputSchema")) {
+      add({ severity: "high", rule: "tool/schema-anomaly", title: "Schema `type` field contains text that is not a JSON Schema type", location: where(bad.path), evidence: excerpt(bad.value), remediation: "Valid types are string, number, integer, boolean, object, array and null. Free text here is full-schema poisoning: the model reads it, schema validators ignore it." });
+    }
+    for (const { path, text: raw } of collectText(tool)) {
+      const text2 = path === "name" || path.endsWith("(name)") ? raw.replace(/[_-]+/g, " ") : raw;
+      if (ESCAPE_RE.test(raw)) {
+        add({ severity: "critical", rule: "tool/ansi-escape", title: "Contains terminal escape sequences", location: where(path), evidence: excerpt(raw), remediation: "ANSI escapes can hide or rewrite text in terminal UIs while the model still reads it (Trail of Bits, 2025). No legitimate tool description needs them." });
+      } else if (CONTROL_RE.test(raw)) {
+        add({ severity: "high", rule: "tool/control-characters", title: "Contains non-printing control characters", location: where(path), evidence: excerpt(raw), remediation: "Control characters have no place in tool metadata and can confuse renderers and reviewers." });
+      }
+      INVISIBLE_RE.lastIndex = 0;
+      const inv = text2.match(INVISIBLE_RE);
+      if (inv) {
+        add({ severity: "critical", rule: "tool/invisible-characters", title: `Contains ${inv.length} invisible or bidi-control character(s)`, location: where(path), evidence: excerpt(text2), remediation: "Invisible characters hide text from human reviewers while the model still reads it. Treat as malicious." });
+      }
+      for (const p of PATTERNS) {
+        const m = p.re.exec(text2);
+        if (!m) continue;
+        const refined = p.refine ? p.refine({ sentence: sentenceAt(text2, m.index), ownTools: tools.map((t) => t.name) }) : { severity: p.severity };
+        if (refined) add({ severity: refined.severity, rule: p.rule, title: refined.title ?? p.title, location: where(path), evidence: excerptAround(text2, m.index, m[0].length), remediation: p.remediation });
+      }
+      const urls = text2.match(URL_RE);
+      if (urls && path !== "name") {
+        add({ severity: "info", rule: "tool/embedded-url", title: `Mentions ${urls.length} URL(s)`, location: where(path), evidence: urls.slice(0, 3).map((u) => excerpt(u, 80)).join(", "), remediation: "Check that each URL belongs to the service this server integrates with." });
+      }
+      for (const { srv, n } of otherNames) {
+        const idx = text2.search(toolMention(n));
+        if (idx >= 0 && path !== "name") {
+          add({ severity: "high", rule: "tool/shadowing", title: `Mentions tool "${excerpt(n, 60)}" from another server ("${srv}")`, location: where(path), evidence: excerptAround(text2, idx, n.length), remediation: `A server referencing another server's tools may be trying to change how "${srv}" is used (tool shadowing). Disable one of the two until reviewed.` });
+        }
+      }
+    }
+  }
+  return findings;
+}
+
+// src/rules/context-rules.ts
+import { sep as sep2 } from "node:path";
+var lineAt = (text2, index) => text2.slice(0, index).split("\n").length;
+function fenceRanges(text2) {
+  const out = [];
+  const re = /^[ \t]*(```|~~~)[^\n]*$/gm;
+  let open2;
+  let marker = "";
+  for (let m = re.exec(text2); m; m = re.exec(text2)) {
+    if (open2 === void 0) {
+      open2 = m.index;
+      marker = m[1];
+    } else if (m[1] === marker) {
+      out.push([open2, m.index + m[0].length]);
+      open2 = void 0;
+    }
+  }
+  if (open2 !== void 0) out.push([open2, text2.length]);
+  return out;
+}
+var inRanges = (ranges, index) => ranges.some(([a, b]) => index >= a && index < b);
+var ABOUT_ATTACKS_RE = /\b(?:attack(?:s|er|ers)?|malicious|payloads?|prompt[- ]injections?|jailbreak(?:s|ing)?|poison(?:ed|ing)?|red[- ]team(?:ing)?|untrusted|adversar\w+|exploit(?:s|ed)?)\b/i;
+function isQuoted(text2, index) {
+  return /["'“‘`«]\s*$/.test(text2.slice(Math.max(0, index - 3), index));
+}
+var STRONG_STORE = String.raw`\.ssh\b|\.aws\b|\.gnupg\b|\.kube\b|\.npmrc\b|\.netrc\b|\.pypirc\b|\.git-credentials\b|\bid_(?:rsa|ed25519|ecdsa)\b|credentials\.json\b|\bKeychains?\b|Login Data|\bwallet\.dat\b|\.config\/gcloud|\/etc\/(?:passwd|shadow)\b|(?:Chrome|Chromium|Firefox|BraveSoftware|Edge)\/[^\s"']*(?:Cookies|Login Data|key4\.db|logins\.json)`;
+var ENV_FILE = String.raw`(?:^|[\s/"'\x60=@<~])\.env(?!\.(?:example|sample|template|dist|defaults)\b)\b`;
+var NET_TOOLS = String.raw`(?:curl|wget|nc|ncat|netcat|scp|rsync|socat|Invoke-WebRequest|Invoke-RestMethod|iwr|irm)`;
+var EXFIL_RE = new RegExp(`\\b${NET_TOOLS}\\b[^\\n]*?(?:(${STRONG_STORE})|(${ENV_FILE}))|(?:(${STRONG_STORE})|(${ENV_FILE}))[^\\n]*?\\|\\s*(?:base64[^\\n]*\\|\\s*)?${NET_TOOLS}\\b`, "gim");
+var PIPE_TO_SHELL_RE = /\b(?:curl|wget)\b[^\n|]*\|\s*(?:sudo\s+(?:-\w+\s+)*)?(?:(?:ba|z|da|k)?sh|python3?|node|perl|ruby)\b|\b(?:ba|z)?sh\s+<\(\s*(?:curl|wget)\b|\b(?:iex|Invoke-Expression)\b[^\n]*\b(?:iwr|irm|Invoke-WebRequest|Invoke-RestMethod|DownloadString)\b|\b(?:iwr|irm|Invoke-WebRequest|Invoke-RestMethod)\b[^\n]*\|\s*(?:iex|Invoke-Expression)\b/gi;
+var SUSPICIOUS_HOST_RE = /https?:\/\/(?:\d{1,3}(?:\.\d{1,3}){3}|[^/\s"']*(?:pastebin\.com|paste\.ee|hastebin|bit\.ly|tinyurl\.com|is\.gd|webhook\.site|requestbin|pipedream\.net|ngrok(?:-free)?\.(?:io|app|dev)|trycloudflare\.com|transfer\.sh|interact\.sh|oast\.\w+|burpcollaborator|discord(?:app)?\.com\/api\/webhooks)[^\s"']*)/i;
+var ENCODED_EXEC_RE = /\bbase64\s+(?:-d|-D|--decode)\b[^\n]*\|\s*(?:sudo\s+)?(?:ba|z)?sh\b|\b(?:eval|exec)\b[^\n]*\bbase64\b[^\n]*(?:-d\b|--decode|b64decode|atob)|\bpowershell(?:\.exe)?\b[^\n]*\s-(?:e|enc|encodedcommand)\s+[A-Za-z0-9+/=]{20,}|\b(?:python3?|node)\s+-[ce]\s+["'][^\n]*(?:b64decode|atob)|\bxxd\s+-r[^\n]*\|\s*(?:ba)?sh\b/gi;
+var STEALER_STORE_RE = new RegExp(`(?:${STRONG_STORE})`, "i");
+var NETWORK_CODE_RE = /\b(?:requests\.(?:post|put|get)|urllib\.request|http\.client|httpx\.|aiohttp|fetch\s*\(|axios\.|XMLHttpRequest|net\.connect|socket\.(?:socket|create_connection)|https?\.request)\b|\b(?:curl|wget|nc|ncat|Invoke-WebRequest)\b/;
+function shellFindings(text2, base, meta3, make) {
+  const out = [];
+  const push = (f, index) => {
+    const made = make(f, base + index);
+    if (made) out.push(made);
+  };
+  for (const m of text2.matchAll(EXFIL_RE)) {
+    const strong = Boolean(m[1] ?? m[3]);
+    push(
+      {
+        severity: strong ? "critical" : "high",
+        rule: "context/exfil-command",
+        title: strong ? "Command sends credential files off the machine" : "Command sends an .env file off the machine",
+        evidence: excerptAround(text2, m.index, m[0].length),
+        remediation: "No skill, command or hook needs to upload private keys or credential files. Treat the plugin or file as malicious, remove it and rotate the credentials it could reach."
+      },
+      m.index
+    );
+  }
+  for (const m of text2.matchAll(PIPE_TO_SHELL_RE)) {
+    const suspicious = SUSPICIOUS_HOST_RE.test(text2.slice(m.index, m.index + 400));
+    push(
+      {
+        severity: suspicious || meta3.executes ? "high" : "low",
+        rule: "context/pipe-to-shell",
+        title: suspicious ? "Downloads from a throwaway or anonymous host and runs it" : meta3.executes ? "Downloads and runs code in one step" : "Install snippet downloads and runs code in one step",
+        evidence: excerptAround(text2, m.index, m[0].length),
+        remediation: "Content fetched at run time can change after you reviewed it. Pin a version or checksum, or download, read and then run it."
+      },
+      m.index
+    );
+  }
+  for (const m of text2.matchAll(ENCODED_EXEC_RE)) {
+    push(
+      {
+        severity: "high",
+        rule: "context/encoded-execution",
+        title: "Decodes a hidden payload and runs it",
+        evidence: excerptAround(text2, m.index, m[0].length),
+        remediation: "Decode and read the payload. Legitimate setup steps do not hide what they run."
+      },
+      m.index
+    );
+  }
+  return out;
+}
+var NEGATION_RE = /\b(?:never|do not|don't|dont|must not|should not|shouldn't|avoid|refuse|refrain|without|not to|no need to|instead of)\b/i;
+var EGRESS_RE = /\b(?:send|upload|post|email|e-mail|webhook|curl|wget|exfiltrate|transmit|forward|share|paste|submit)\b|https?:\/\//i;
+var HIDDEN_STRONG_RE = /[\u202A-\u202E\u2066-\u2069\u{E0000}-\u{E007F}\u{E0100}-\u{E01EF}]/u;
+var HIDDEN_WEAK_RE = /[\u200B\u2060-\u2064\u180E\u3164\uFFA0\u034F]/;
+var ESCAPE_RE2 = /\u001b[[\]PX^_]|\u009b/;
+var CONCEAL_RES = [
+  /\b(?:do not|don't|dont|never|must not|should not)\b[^.!?\n]{0,30}\b(?:tell|inform|mention|notify|reveal|disclose|alert|show)\b[^.!?\n]{0,15}\b(?:this|that|it|these|those|the above|the following|any of)\b[^.!?\n]{0,30}\b(?:to|from)\s+(?:the\s+)?user/i,
+  /\b(?:do not|don't|dont|never|must not|should not)\b[^.!?\n]{0,15}\b(?:tell|inform|notify|alert|warn|show)\s+(?:the\s+)?user\s+(?:about|of|that)\s+(?:this|it|these|the above|the following|the extra|the additional|any of)\b/i,
+  /\b(?:hide|conceal|withhold)\b[^.!?\n]{0,25}\b(?:this|that|it|these|the above)\b[^.!?\n]{0,25}\bfrom\s+(?:the\s+)?user/i,
+  /\bkeep\b[^.!?\n]{0,15}\b(?:this|that|it|these)\b[^.!?\n]{0,15}\b(?:secret|hidden|confidential|quiet)\b[^.!?\n]{0,20}\bfrom\s+(?:the\s+)?user/i,
+  /\bwithout\s+(?:the\s+)?user\s+(?:knowing|noticing|seeing|realizing|being\s+aware)\b|\b(?:don't|do not|never)\s+let\s+(?:the\s+)?user\s+(?:know|see|notice|find out)\b/i,
+  /\b(?:secretly|covertly|silently)\s+(?:send|upload|post|forward|exfiltrate|copy)\b/i
+];
+var OVERRIDE_PATTERNS = PATTERNS.filter((p) => p.rule === "tool/instruction-override");
+var CONCEAL_NON_EN = PATTERNS.filter((p) => p.rule === "tool/conceal-from-user" && p.title.includes("non-English"));
+var INSTRUCTION_PATTERNS = [
+  ...OVERRIDE_PATTERNS.map((p) => ({ rule: "context/instruction-override", re: p.re })),
+  ...CONCEAL_NON_EN.map((p) => ({ rule: "context/conceal-from-user", re: p.re })),
+  ...CONCEAL_RES.map((re) => ({ rule: "context/conceal-from-user", re }))
+];
+var PROSE_SECRET_RE = /\bid_(?:rsa|ed25519|ecdsa)\b(?!\.pub)|\.aws\/credentials|\.git-credentials|\.netrc\b|\.npmrc\b|\.pypirc\b|\.gnupg\b|\bcredentials\.json\b|\bKeychains?\b|\bLogin Data\b|\bwallet\.dat\b|\bprivate (?:ssh )?keys?\b|\.ssh\/(?!config\b|known_hosts\b|authorized_keys\b|[\w.-]*\.pub\b)/gi;
+var READ_OR_SEND_RE = /\b(?:read|reading|cat|open|load|include|send|upload|copy|attach|paste|extract|forward|post|share|embed|print|dump|output|exfiltrate)\b/i;
+var SETUP_RE = /\b(?:ssh-keygen|ssh-add|add-key|generate|create|chmod|chown|\.pub)\b/i;
+var MD_EXFIL_RE = /!\[[^\]]*\]\(\s*https?:\/\/[^)\s]*(?:[?&#][^)\s]*(?:\{|\$\{?|%s|<|\bdata=|\bq=|\bcontent=|\bprompt=|\bchat=|\bhistory=|\btoken=|\bsecret=)|\{[^})]*\})[^)]*\)|<img[^>]+src\s*=\s*["']?https?:\/\/[^"'\s>]*[?&][^"'\s>]*(?:\{|\$\{?|%s)/gi;
+var PERMISSION_WEAKENING_RE = /--dangerously-skip-permissions|["']?defaultMode["']?\s*[:=]\s*["']?bypassPermissions|\benableAllProjectMcpServers["']?\s*[:=]\s*true|--permission-mode[ =]bypassPermissions/gi;
+function parseFrontmatter(text2) {
+  const m = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(text2);
+  return m ? { block: m[1], end: m[0].length } : void 0;
+}
+function allowedTools(block) {
+  const lines = block.split(/\r?\n/);
+  const i = lines.findIndex((l) => /^allowed-tools[ \t]*:/i.test(l));
+  if (i < 0) return [];
+  const first = lines[i].replace(/^allowed-tools[ \t]*:/i, "").trim().replace(/^\[|\]$/g, "");
+  const items = first ? first.includes(",") || first.includes("(") ? first.split(/,(?![^(]*\))/) : first.split(/\s+/) : [];
+  for (let j = i + 1; j < lines.length && /^[ \t]*-[ \t]+/.test(lines[j]); j++) items.push(lines[j].replace(/^[ \t]*-[ \t]+/, ""));
+  return items.map((t) => t.trim().replace(/^["']|["']$/g, "")).filter(Boolean);
+}
+var shortPath = (p) => p.split(sep2).slice(-3).join("/");
+function analyzeContextFile(file2) {
+  const { text: text2, kind, origin, name, path } = file2;
+  const findings = [];
+  const seen = /* @__PURE__ */ new Set();
+  const where = (index) => `${kind} "${excerpt(name, 50)}" (${origin}) \u203A ${excerpt(shortPath(path), 90)}:${lineAt(text2, index)}`;
+  const make = (f, index) => {
+    const line = lineAt(text2, index);
+    const key = `${f.rule}|${line}`;
+    if (seen.has(key)) return void 0;
+    seen.add(key);
+    return { ...f, location: where(index), file: path, line };
+  };
+  const add = (f, index) => {
+    const made = make(f, index);
+    if (made) findings.push(made);
+  };
+  const strong = HIDDEN_STRONG_RE.exec(text2);
+  const weak = HIDDEN_WEAK_RE.exec(text2);
+  const bom = text2.indexOf("\uFEFF", 1);
+  if (strong || weak || bom > 0) {
+    const index = strong?.index ?? weak?.index ?? bom;
+    const count = [...text2.matchAll(new RegExp(`${HIDDEN_STRONG_RE.source}|${HIDDEN_WEAK_RE.source}`, "gu"))].length || 1;
+    add({ severity: strong ? "critical" : "high", rule: "context/invisible-characters", title: `Contains ${count} invisible or bidi-control character(s)`, evidence: excerptAround(text2, index, 1), remediation: "Invisible characters hide text from human reviewers while the model still reads it. Treat the file as malicious." }, index);
+  }
+  const esc2 = ESCAPE_RE2.exec(text2);
+  if (esc2) add({ severity: "high", rule: "context/ansi-escape", title: "Contains terminal escape sequences", evidence: excerptAround(text2, esc2.index, 1), remediation: "Escape sequences can hide or rewrite text in terminal UIs while the model still reads it." }, esc2.index);
+  if (kind === "script" || kind === "hooks") {
+    if (kind === "hooks") {
+      for (const m of text2.matchAll(/"command"\s*:\s*"((?:[^"\\]|\\.)*)"/g)) {
+        let cmd = m[1];
+        try {
+          cmd = JSON.parse(`"${m[1]}"`);
+        } catch {
+        }
+        findings.push(...shellFindings(cmd, m.index, { executes: true }, make));
+      }
+      return findings;
+    }
+    findings.push(...shellFindings(text2, 0, { executes: true }, make));
+    const store = STEALER_STORE_RE.exec(text2);
+    if (store && NETWORK_CODE_RE.test(text2) && !/\b(?:tests?|mocks?|fixtures?)\b/i.test(path)) {
+      add({ severity: "high", rule: "context/credential-stealer", title: "Script reads credential stores and also has network access", evidence: excerptAround(text2, store.index, store[0].length), remediation: "A skill script that opens private keys, keychains, wallets or browser profiles and can reach the network matches the infostealer pattern seen in malicious skills. Read the script before running it." }, store.index);
+    }
+    return findings;
+  }
+  const fm = parseFrontmatter(text2);
+  const fences = fenceRanges(text2);
+  for (const p of INSTRUCTION_PATTERNS) {
+    const re = new RegExp(p.re.source, p.re.flags.includes("g") ? p.re.flags : `${p.re.flags}g`);
+    let count = 0;
+    for (let m = re.exec(text2); m && count < 50; m = re.exec(text2), count++) {
+      const sentence = sentenceAt(text2, m.index);
+      const docs = inRanges(fences, m.index) || isQuoted(text2, m.index) || ABOUT_ATTACKS_RE.test(sentence);
+      const override = p.rule === "context/instruction-override";
+      const severity = docs ? "medium" : override ? "critical" : "high";
+      add({
+        severity,
+        rule: p.rule,
+        title: `${override ? "Tries to override the model's instructions" : "Asks the model to hide something from the user"}${docs ? " (appears in an example or documentation)" : ""}`,
+        evidence: excerptAround(text2, m.index, m[0].length),
+        remediation: docs ? "This looks like a quoted example. Read the surrounding text to confirm it is not an instruction the model will follow." : override ? "Skills, commands and CLAUDE.md files have no reason to tell the model to ignore its other instructions. Treat the file as malicious and find where it came from." : "Legitimate instructions do not ask for secrecy towards the user. Read the file and remove it unless this is a deliberate persona rule you wrote."
+      }, m.index);
+    }
+  }
+  for (const m of text2.matchAll(/<!--([\s\S]*?)-->/g)) {
+    const body = m[1];
+    const toModel = /\b(?:assistant|claude|ai agent|ai assistant|the model|language model|llm)\b/i.test(body);
+    const override = INSTRUCTION_PATTERNS.some((p) => p.re.test(body));
+    const secrets = new RegExp(PROSE_SECRET_RE.source, "i").test(body) && READ_OR_SEND_RE.test(body);
+    if (toModel || override || secrets) {
+      add({ severity: "high", rule: "context/hidden-comment", title: "HTML comment addressed to the model (hidden from rendered views)", evidence: excerptAround(text2, m.index, m[0].length), remediation: "Comments are invisible in rendered Markdown but fully visible to the model. Read the comment text and remove it if it is not yours." }, m.index);
+    }
+  }
+  for (const m of text2.matchAll(PROSE_SECRET_RE)) {
+    if (inRanges(fences, m.index)) continue;
+    const sentence = sentenceAt(text2, m.index);
+    if (!READ_OR_SEND_RE.test(sentence) || NEGATION_RE.test(sentence) || ABOUT_ATTACKS_RE.test(sentence) || SETUP_RE.test(sentence)) continue;
+    const egress = EGRESS_RE.test(sentence);
+    add({
+      severity: egress ? "high" : "medium",
+      rule: "context/sensitive-path",
+      title: egress ? "Tells the model to read credential files and send data out" : "Tells the model to read credential files",
+      evidence: excerptAround(text2, m.index, m[0].length),
+      remediation: "A skill, command or CLAUDE.md file has no reason to direct the model at private keys or credential stores. Remove it unless the sentence is clearly documentation."
+    }, m.index);
+  }
+  for (const m of text2.matchAll(MD_EXFIL_RE)) {
+    add({ severity: "high", rule: "context/markdown-exfiltration", title: "Embeds a remote image with data placeholders", evidence: excerptAround(text2, m.index, m[0].length), remediation: "When the client renders this image, the query string is sent to the remote host. That is a zero-click exfiltration channel." }, m.index);
+  }
+  const shellBlocks = [];
+  for (const m of text2.matchAll(/!`([^`\n]+)`/g)) shellBlocks.push({ text: m[1], base: m.index + 2, executes: kind === "command" || kind === "skill" });
+  for (const [start, end] of fences) shellBlocks.push({ text: text2.slice(start, end), base: start, executes: false });
+  const proseOutsideFences = fences.reduce((t, [a, b]) => t.slice(0, a) + " ".repeat(b - a) + t.slice(b), text2);
+  shellBlocks.push({ text: proseOutsideFences, base: 0, executes: false });
+  for (const b of shellBlocks) findings.push(...shellFindings(b.text, b.base, { executes: b.executes }, make));
+  for (const m of text2.matchAll(PERMISSION_WEAKENING_RE)) {
+    add({ severity: "medium", rule: "context/permission-weakening", title: "Tells the model or the user to switch off Claude Code's permission checks", evidence: excerptAround(text2, m.index, m[0].length), remediation: "Permission prompts are the safety net for every other finding. Do not follow instructions that disable them." }, m.index);
+  }
+  if (fm && (kind === "skill" || kind === "command")) {
+    const broad = allowedTools(fm.block).filter((t) => /^(?:\*|Bash|Bash\(\s*\*?\s*\)|Bash\(\*:\*\))$/.test(t));
+    if (broad.length) {
+      add({ severity: origin === "project" ? "medium" : origin === "user" ? "info" : "low", rule: "context/overbroad-tools", title: `Pre-approves unrestricted shell access (allowed-tools: ${excerpt(broad.join(", "), 60)})`, evidence: excerpt(fm.block.split("\n").find((l) => /^allowed-tools/i.test(l)) ?? "", 120), remediation: "Tools listed in allowed-tools run without asking. Restrict it to the commands this skill needs, e.g. Bash(git status:*)." }, text2.indexOf("allowed-tools"));
+    }
+  }
+  return findings;
+}
+function analyzeContext(files) {
+  return files.flatMap(analyzeContextFile);
+}
+
+// src/context-audit.ts
+function auditContext(projectDir2, opts = {}) {
+  const discovered = discoverContext(projectDir2, opts);
+  return { ...discovered, findings: analyzeContext(discovered.files) };
+}
+var KIND_LABEL = {
+  "claude-md": "CLAUDE.md file(s)",
+  skill: "skill file(s)",
+  command: "command(s)",
+  agent: "subagent(s)",
+  rule: "rule file(s)",
+  hooks: "plugin hook config(s)",
+  script: "bundled script(s)"
+};
+function contextSummary(a) {
+  const count = (keys) => keys.reduce((m, k) => (m[k] = (m[k] ?? 0) + 1, m), {});
+  const kinds = count(a.files.map((f) => f.kind));
+  const origins = count(a.files.map((f) => f.origin.startsWith("plugin:") ? "plugins" : f.origin));
+  const pluginNames = new Set(a.files.filter((f) => f.origin.startsWith("plugin:")).map((f) => f.origin.slice(7)));
+  return [
+    `Scanned **${a.files.length}** file(s): ${Object.entries(kinds).map(([k, n]) => `${n} ${KIND_LABEL[k]}`).join(", ") || "none"}.`,
+    `Sources: ${Object.entries(origins).map(([k, n]) => `${k} (${n})`).join(", ") || "none"}${pluginNames.size ? `; ${pluginNames.size} plugin(s)` : ""}.`,
+    a.skipped.length ? `**Skipped:**
+${a.skipped.slice(0, 10).map((s) => `- ${s}`).join("\n")}${a.skipped.length > 10 ? `
+- \u2026 and ${a.skipped.length - 10} more` : ""}` : ""
+  ];
+}
+
 // src/owasp.ts
 var OWASP_MCP = {
   MCP01: "Token Mismanagement & Secret Exposure",
@@ -40974,6 +41562,12 @@ var BY_RULE = [
   [/^auth\//, ["MCP07"]],
   [/^config\/(duplicate-name|claude-ai-connector)$/, ["MCP09"]],
   [/^policy\//, ["MCP09"]],
+  // Skills, commands, CLAUDE.md and hooks are not MCP, but their risks map onto the same list.
+  [/^context\/(instruction-override|conceal-from-user|invisible-characters|ansi-escape|hidden-comment)$/, ["MCP03", "MCP06"]],
+  [/^context\/(exfil-command|credential-stealer)$/, ["MCP01", "MCP10"]],
+  [/^context\/(sensitive-path|markdown-exfiltration)$/, ["MCP10"]],
+  [/^context\/(pipe-to-shell|encoded-execution)$/, ["MCP05", "MCP04"]],
+  [/^context\/(overbroad-tools|permission-weakening)$/, ["MCP02"]],
   [/^tool\/(instruction-override|role-hijack)$/, ["MCP03", "MCP06"]],
   [/^runtime\/injection-in-output$/, ["MCP06"]],
   [/^tool\/(sensitive-path|context-harvesting|exfiltration-wording|markdown-exfiltration)$/, ["MCP03", "MCP10"]],
@@ -40991,11 +41585,11 @@ function owaspLabel(rule) {
 
 // src/pins.ts
 import { createHash } from "node:crypto";
-import { existsSync as existsSync4, mkdirSync, readFileSync as readFileSync3, renameSync, statSync, writeFileSync } from "node:fs";
-import { homedir as homedir3 } from "node:os";
-import { dirname as dirname2, isAbsolute, join as join4, resolve as resolve2 } from "node:path";
+import { existsSync as existsSync4, mkdirSync, readFileSync as readFileSync4, renameSync, statSync, writeFileSync } from "node:fs";
+import { homedir as homedir4 } from "node:os";
+import { dirname as dirname2, isAbsolute, join as join5, resolve as resolve3 } from "node:path";
 function pinsPath() {
-  return join4(process.env.MCP_SECURITY_HOME ?? join4(homedir3(), ".claude", "mcp-security"), "pins.json");
+  return join5(process.env.MCP_SECURITY_HOME ?? join5(homedir4(), ".claude", "mcp-security"), "pins.json");
 }
 function stableStringify(v) {
   if (Array.isArray(v)) return `[${v.map(stableStringify).join(",")}]`;
@@ -41012,10 +41606,10 @@ function localFileHashes(s) {
   const out = {};
   for (const a of [s.command, ...s.args ?? []]) {
     if (!a || a.startsWith("-") || a.includes("${") || !/[\\/]|\.(m?[jt]s|cjs|py|rb|sh|php|jar)$/i.test(a)) continue;
-    const p = isAbsolute(a) ? a : resolve2(dirname2(s.source), a);
+    const p = isAbsolute(a) ? a : resolve3(dirname2(s.source), a);
     try {
       const st = statSync(p);
-      if (st.isFile() && st.size <= MAX_HASHED_FILE) out[a] = createHash("sha256").update(readFileSync3(p)).digest("hex");
+      if (st.isFile() && st.size <= MAX_HASHED_FILE) out[a] = createHash("sha256").update(readFileSync4(p)).digest("hex");
     } catch {
     }
   }
@@ -41031,7 +41625,7 @@ function pinEntry(s, definitions) {
 function loadPins(path = pinsPath()) {
   if (!existsSync4(path)) return { version: 1, servers: {} };
   try {
-    const data = JSON.parse(readFileSync3(path, "utf8"));
+    const data = JSON.parse(readFileSync4(path, "utf8"));
     return data?.version === 1 && data.servers ? data : { version: 1, servers: {} };
   } catch {
     return { version: 1, servers: {} };
@@ -41367,237 +41961,6 @@ async function checkSupplyChain(servers, fetcher = fetch, now = Date.now()) {
   return { findings, checked: pkgs, errors };
 }
 
-// src/rules/tool-rules.ts
-function collectText(tool) {
-  const out = [{ path: "name", text: tool.name }];
-  if (tool.title) out.push({ path: "title", text: tool.title });
-  if (tool.description) out.push({ path: "description", text: tool.description });
-  const walk = (node2, path) => {
-    if (typeof node2 === "string") {
-      out.push({ path, text: node2 });
-    } else if (Array.isArray(node2)) {
-      node2.forEach((n, i) => walk(n, `${path}[${i}]`));
-    } else if (node2 && typeof node2 === "object") {
-      for (const [k, v] of Object.entries(node2)) {
-        if (["$schema", "$ref", "pattern"].includes(k) && typeof v === "string") continue;
-        if (path.endsWith(".properties")) out.push({ path: `${path}.${k} (name)`, text: k });
-        walk(v, `${path}.${k}`);
-      }
-    }
-  };
-  walk(tool.inputSchema, "inputSchema");
-  walk(tool.annotations, "annotations");
-  return out;
-}
-var DIRECTIVE_RE = /\b(read|reading|cat|open|load|include|including|pass|send|upload|copy|attach|paste|append|put|provide|extract|forward|post|share|embed|add|insert|fill)\b/i;
-function sentenceAt(text2, index) {
-  const before = text2.slice(0, index).search(/(?:[.!?](?=\s)|\n)[^.!?\n]*$/);
-  const start = before < 0 ? 0 : before + 1;
-  const after = text2.slice(index).search(/[.!?](?=\s|$)|\n/);
-  return text2.slice(start, after < 0 ? text2.length : index + after);
-}
-var PATTERNS = [
-  {
-    rule: "tool/instruction-override",
-    severity: "critical",
-    title: "Tries to override the model's instructions",
-    re: /\b(ignore|disregard|forget|override)\b.{0,30}\b(previous|prior|above|earlier|all|other|system)\b.{0,20}\b(instructions?|rules|prompts?|directions|guidelines)\b/i,
-    remediation: "A tool description has no reason to talk about the model's other instructions. Treat this server as malicious and remove it."
-  },
-  {
-    rule: "tool/conceal-from-user",
-    severity: "critical",
-    title: "Asks the model to hide something from the user",
-    re: /\b(do not|don't|dont|never|without)\b.{0,25}\b(tell|telling|inform|informing|mention|mentioning|notify|notifying|reveal|revealing|show|showing|alert|alerting)\b.{0,25}\b(the )?user\b/i,
-    remediation: "Legitimate tools never ask for secrecy. Remove the server and check what it has already been called with."
-  },
-  // Non-English variants of the two most common payloads. JS `\b` only knows ASCII letters, so
-  // words ending in diacritics, Cyrillic or CJK are matched without a trailing boundary.
-  {
-    rule: "tool/instruction-override",
-    severity: "critical",
-    title: "Tries to override the model's instructions (non-English)",
-    re: /(?:ignor[ăa]|uit[ăa])\s[^.!?。\n]{0,30}instruc[țţt]iunile\s+(?:anterioare|precedente|de\s+mai\s+sus)|\bignora\s[^.!?。\n]{0,20}instrucciones\s+(?:anteriores|previas)|\bignore[rz]?\s[^.!?。\n]{0,20}instructions\s+(?:précédentes|antérieures)|\bignorier(?:e|en)?\s[^.!?。\n]{0,30}(?:vorherigen|bisherigen|obigen)\s+(?:Anweisungen|Instruktionen)|\bignore\s[^.!?。\n]{0,20}instruções\s+(?:anteriores|prévias)|\bignora\s[^.!?。\n]{0,20}istruzioni\s+(?:precedenti|sopra)|忽略[^.!?。\n]{0,6}(?:之前|以上|先前|所有)[^.!?。\n]{0,6}(?:指令|指示|说明)|игнорируй(?:те)?\s+(?:все\s+)?(?:предыдущие|прежние)\s+инструкции/iu,
-    remediation: "A tool description has no reason to talk about the model's other instructions. Treat this server as malicious and remove it."
-  },
-  {
-    rule: "tool/conceal-from-user",
-    severity: "critical",
-    title: "Asks the model to hide something from the user (non-English)",
-    re: /\bnu\s*-?\s*(?:i\s+)?(?:spune|informa|men[țţt]iona|ar[ăa]ta)\s[^.!?。\n]{0,25}utilizatorului|\bno\s+(?:le\s+)?(?:digas|informes|menciones|muestres)\s[^.!?。\n]{0,20}usuario|\bne\s+(?:le\s+|lui\s+)?(?:dis|dites|mentionne[sz]?|montre[sz]?)\s+(?:pas|rien)\s[^.!?。\n]{0,25}utilisateur|\bnicht\s[^.!?。\n]{0,20}(?:dem\s+)?(?:Benutzer|Nutzer)\s[^.!?。\n]{0,20}(?:sagen|mitteilen|zeigen|erzählen)|\bnão\s+(?:conte|diga|informe|mencione|mostre)\s[^.!?。\n]{0,20}usuário|\bnon\s+(?:dire|dirlo|informare|menzionare|mostrare)\s[^.!?。\n]{0,20}utente|不要[^.!?。\n]{0,4}(?:告诉|通知|让)[^.!?。\n]{0,2}用户|не\s+(?:говори|сообщай|рассказывай)(?:те)?\s+пользователю/iu,
-    remediation: "Legitimate tools never ask for secrecy. Remove the server and check what it has already been called with."
-  },
-  {
-    rule: "tool/hidden-instruction-tag",
-    severity: "high",
-    title: "Contains pseudo-system tags typical of tool poisoning",
-    re: /<\s*\/?\s*(important|system|instructions?|secret|hidden|admin|assistant|context)\s*>/i,
-    remediation: "Tags like <IMPORTANT> are used to make injected text look authoritative. Review the full description before trusting this tool."
-  },
-  {
-    rule: "tool/role-hijack",
-    severity: "high",
-    title: "Attempts to redefine the model's role",
-    re: /\b(you are now|from now on,? you|act as (an?|the) |new instructions|system prompt|developer mode|jailbreak)\b/i,
-    remediation: "Remove the server unless the wording is clearly documentation (e.g. a tool that edits system prompts)."
-  },
-  {
-    rule: "tool/precondition-chain",
-    severity: "medium",
-    title: "Tells the model to do something else before or after calling it",
-    re: /\b(before|prior to|after)\b.{0,30}\b(using|calling|invoking|running|executing)\b.{0,40}\b(you must|must first|first (read|call|run|fetch|send)|always (read|call|run|send|include))\b/i,
-    remediation: "Check what the extra step does. Poisoned tools use this to make the model read files or call other tools on their behalf.",
-    // "Before calling this tool you must first call list_projects" is normal API sequencing within one server.
-    refine: ({ sentence, ownTools }) => ownTools.some((n) => toolMention(n).test(sentence)) ? null : { severity: "medium" }
-  },
-  {
-    rule: "tool/sensitive-path",
-    severity: "high",
-    title: "Instructs the model to access credential files or secrets",
-    // Dot-directories must start a path segment, so domains like repost.aws or docs.docker.com do not match.
-    // `.env.example` and friends are templates, not secrets.
-    re: /(?:^|[\s"'`(~\\/])\.(?:ssh|aws|gnupg|kube|docker|config\/gh)(?![\w.-])|\bid[_ ]?(?:rsa|ed25519|ecdsa)\b|(?:^|[\s/"'`])\.env(?!\.(?:example|sample|template|dist|defaults)\b)\b|\b(?:ssh|pgp|gpg)\s+(?:private\s+)?keys?\b|\bprivate\s+keys?\b|\bseed\s+phrase\b|\.netrc\b|\.npmrc\b|\.pypirc\b|\bcredentials\.json\b|\.git-credentials\b|\bclaude(?:_desktop_config)?\.json\b|\bmcp\.json\b|\/etc\/(?:passwd|shadow)\b|\bkeychain\b/i,
-    remediation: "A tool description has no reason to direct the model at secrets. Remove the server unless the sentence is clearly documentation.",
-    // A bare mention ("uses the kubeconfig at ~/.kube/config", "refuses .env files") is documentation;
-    // pairing it with an action verb ("read ~/.ssh/id_rsa and pass it") is the poisoning pattern.
-    refine: ({ sentence }) => DIRECTIVE_RE.test(sentence) ? { severity: "high" } : { severity: "low", title: "Mentions a credential file or sensitive path" }
-  },
-  {
-    rule: "tool/context-harvesting",
-    severity: "high",
-    title: "Asks for the conversation, system prompt or prior messages",
-    re: /\b(?:conversation|chat)[\s_]+(?:history|log|transcript|context)\b|\b(?:previous|prior|earlier|all)\s+(?:user\s+)?messages\b|\bsystem[\s_]+prompt\b|\bsummary[\s_]+of[\s_]+(?:the[\s_]+)?conversation\b/i,
-    remediation: "Tools that need the conversation itself are rare. Harvesting it into a parameter or URL is a standard exfiltration technique.",
-    refine: ({ sentence }) => DIRECTIVE_RE.test(sentence) ? { severity: "high" } : { severity: "low", title: "Mentions the conversation or system prompt" }
-  },
-  {
-    rule: "tool/markdown-exfiltration",
-    severity: "high",
-    title: "Embeds a remote image or link with data placeholders",
-    re: /!\[[^\]]*\]\(\s*https?:\/\/[^)\s]*[?#{][^)]*\)|<img[^>]+src\s*=\s*["']?https?:\/\/[^"'\s>]*[?{]/i,
-    remediation: "When the client renders this image, the query string is sent to the remote host. That is a zero-click exfiltration channel."
-  },
-  {
-    rule: "tool/hidden-comment",
-    severity: "high",
-    title: "Contains an HTML comment (hidden from rendered views)",
-    re: /<!--[\s\S]*?-->/,
-    remediation: "Comments are invisible in rendered Markdown but fully visible to the model. Read the comment text."
-  },
-  {
-    rule: "tool/exfiltration-wording",
-    severity: "medium",
-    title: "Describes sending data to an external destination",
-    re: /\b(send|post|upload|forward|transmit|exfiltrate|copy|include|append)\b.{0,50}\b(to|into|in)\b.{0,40}(https?:\/\/|webhook|endpoint|remote server|e-?mail|\bcc\b|bcc|the ['"`]?[\w-]+['"`]? (?:parameter|argument|field))/i,
-    remediation: "Confirm the destination is the tool's own documented API. Exfiltration attacks hide data in parameters or redirect it to attacker URLs."
-  },
-  {
-    rule: "tool/encoded-payload",
-    severity: "medium",
-    title: "Contains a long encoded blob",
-    re: /(?:[A-Za-z0-9+/]{4}){20,}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?|(?:\\x[0-9a-f]{2}){12,}|(?:%[0-9a-f]{2}){12,}/i,
-    remediation: "Decode and review it. Encoded text in a description is a common way to slip instructions past reviewers."
-  },
-  {
-    rule: "tool/cross-tool-reference",
-    severity: "medium",
-    title: "Gives instructions about other tools",
-    re: /\b(when|whenever|if)\b.{0,30}\b(any|other|another|all)\b.{0,15}\btools?\b|\b(instead of|rather than)\b.{0,20}\b(using|calling)\b.{0,30}\btool\b/i,
-    remediation: "A tool should describe itself. Instructions about other tools are how one server hijacks another (tool shadowing)."
-  }
-];
-function toolMention(name) {
-  const n = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  if (/[_\-.\d]|[a-z][A-Z]/.test(name)) return new RegExp(`(?<![\\w-])${n}(?![\\w-])`);
-  return new RegExp(`[\`'"]${n}[\`'"]|\\b${n}\\s*\\(|\\b${n}\\s+tool\\b`, "i");
-}
-var URL_RE = /https?:\/\/[^\s"'<>)`]+/gi;
-var ESCAPE_RE = /\u001b[[\]PX^_]|\u009b/;
-var CONTROL_RE = /[\u0000-\u0008\u000b\u000c\u000e-\u001a\u001c-\u001f\u007f\u0080-\u009a\u009c-\u009f]/;
-var SCHEMA_TYPES = /* @__PURE__ */ new Set(["string", "number", "integer", "boolean", "object", "array", "null"]);
-var MAX_DESCRIPTION = 1500;
-function collidingServers(name, others) {
-  return Object.entries(others).filter(([, names]) => names.includes(name)).map(([srv]) => srv);
-}
-function invalidSchemaTypes(node2, path) {
-  if (!node2 || typeof node2 !== "object") return [];
-  if (Array.isArray(node2)) return node2.flatMap((n, i) => invalidSchemaTypes(n, `${path}[${i}]`));
-  const out = [];
-  for (const [k, v] of Object.entries(node2)) {
-    if (k === "type") {
-      for (const t of Array.isArray(v) ? v : [v]) if (typeof t === "string" && !SCHEMA_TYPES.has(t)) out.push({ path: `${path}.type`, value: t });
-    } else if (k !== "const" && k !== "default" && k !== "examples" && k !== "enum") {
-      out.push(...invalidSchemaTypes(v, `${path}.${k}`));
-    }
-  }
-  return out;
-}
-function describeDefinition(name) {
-  if (name === "#instructions") return { kind: "instructions", label: "" };
-  const m = /^(prompt|resource|template):(.*)$/s.exec(name);
-  return m ? { kind: m[1], label: m[2] } : { kind: "tool", label: name };
-}
-function analyzeTools(serverName, tools, otherServersTools = {}) {
-  const findings = [];
-  const seen = /* @__PURE__ */ new Set();
-  const add = (f) => {
-    const key = `${f.rule}|${f.location}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      findings.push(f);
-    }
-  };
-  const otherNames = Object.entries(otherServersTools).flatMap(
-    ([srv, names]) => names.filter((n) => n.length >= 4 && !tools.some((t) => t.name === n)).map((n) => ({ srv, n }))
-  );
-  for (const tool of tools) {
-    const { kind, label } = describeDefinition(tool.name);
-    const where = (p) => kind === "instructions" ? `server "${serverName}" \u203A server instructions` : `server "${serverName}" \u203A ${kind} "${excerpt(label, 60)}" \u203A ${p}`;
-    if (kind === "tool" && /[^\x20-\x7E]/.test(tool.name)) {
-      add({ severity: "medium", rule: "tool/non-ascii-name", title: "Tool name contains non-ASCII characters (possible homoglyph impersonation)", location: where("name"), evidence: excerpt(tool.name), remediation: "Tool names should be plain ASCII. Look-alike characters let a tool impersonate a trusted one." });
-    }
-    if ((tool.description?.length ?? 0) > MAX_DESCRIPTION) {
-      add({ severity: "low", rule: "tool/oversized-description", title: `Description is unusually long (${tool.description.length} chars)`, location: where("description"), remediation: "Long descriptions are where injected instructions usually hide. Read the full text." });
-    }
-    for (const other of kind === "tool" ? collidingServers(tool.name, otherServersTools) : []) {
-      add({ severity: "medium", rule: "tool/name-collision", title: `Tool name also exposed by server "${excerpt(other, 50)}"`, location: where("name"), evidence: excerpt(tool.name), remediation: "Two servers with the same tool name leave it to the client which one runs, and one can impersonate the other. Rename or disable one of them." });
-    }
-    for (const bad of invalidSchemaTypes(tool.inputSchema, "inputSchema")) {
-      add({ severity: "high", rule: "tool/schema-anomaly", title: "Schema `type` field contains text that is not a JSON Schema type", location: where(bad.path), evidence: excerpt(bad.value), remediation: "Valid types are string, number, integer, boolean, object, array and null. Free text here is full-schema poisoning: the model reads it, schema validators ignore it." });
-    }
-    for (const { path, text: raw } of collectText(tool)) {
-      const text2 = path === "name" || path.endsWith("(name)") ? raw.replace(/[_-]+/g, " ") : raw;
-      if (ESCAPE_RE.test(raw)) {
-        add({ severity: "critical", rule: "tool/ansi-escape", title: "Contains terminal escape sequences", location: where(path), evidence: excerpt(raw), remediation: "ANSI escapes can hide or rewrite text in terminal UIs while the model still reads it (Trail of Bits, 2025). No legitimate tool description needs them." });
-      } else if (CONTROL_RE.test(raw)) {
-        add({ severity: "high", rule: "tool/control-characters", title: "Contains non-printing control characters", location: where(path), evidence: excerpt(raw), remediation: "Control characters have no place in tool metadata and can confuse renderers and reviewers." });
-      }
-      INVISIBLE_RE.lastIndex = 0;
-      const inv = text2.match(INVISIBLE_RE);
-      if (inv) {
-        add({ severity: "critical", rule: "tool/invisible-characters", title: `Contains ${inv.length} invisible or bidi-control character(s)`, location: where(path), evidence: excerpt(text2), remediation: "Invisible characters hide text from human reviewers while the model still reads it. Treat as malicious." });
-      }
-      for (const p of PATTERNS) {
-        const m = p.re.exec(text2);
-        if (!m) continue;
-        const refined = p.refine ? p.refine({ sentence: sentenceAt(text2, m.index), ownTools: tools.map((t) => t.name) }) : { severity: p.severity };
-        if (refined) add({ severity: refined.severity, rule: p.rule, title: refined.title ?? p.title, location: where(path), evidence: excerptAround(text2, m.index, m[0].length), remediation: p.remediation });
-      }
-      const urls = text2.match(URL_RE);
-      if (urls && path !== "name") {
-        add({ severity: "info", rule: "tool/embedded-url", title: `Mentions ${urls.length} URL(s)`, location: where(path), evidence: urls.slice(0, 3).map((u) => excerpt(u, 80)).join(", "), remediation: "Check that each URL belongs to the service this server integrates with." });
-      }
-      for (const { srv, n } of otherNames) {
-        const idx = text2.search(toolMention(n));
-        if (idx >= 0 && path !== "name") {
-          add({ severity: "high", rule: "tool/shadowing", title: `Mentions tool "${excerpt(n, 60)}" from another server ("${srv}")`, location: where(path), evidence: excerptAround(text2, idx, n.length), remediation: `A server referencing another server's tools may be trying to change how "${srv}" is used (tool shadowing). Disable one of the two until reviewed.` });
-        }
-      }
-    }
-  }
-  return findings;
-}
-
 // src/tool-audit.ts
 function selectServers(all, names) {
   if (names.includes("*")) return { picked: all, unknown: [] };
@@ -41765,16 +42128,16 @@ function dashboardText(d) {
 }
 
 // src/fixes.ts
-import { chmodSync, existsSync as existsSync5, mkdirSync as mkdirSync2, readFileSync as readFileSync4, renameSync as renameSync2, rmSync as rmSync2, writeFileSync as writeFileSync2 } from "node:fs";
+import { chmodSync, existsSync as existsSync5, mkdirSync as mkdirSync2, readFileSync as readFileSync5, renameSync as renameSync2, rmSync as rmSync2, writeFileSync as writeFileSync2 } from "node:fs";
 import { createHash as createHash2 } from "node:crypto";
-import { homedir as homedir4 } from "node:os";
-import { basename, dirname as dirname3, join as join5 } from "node:path";
+import { homedir as homedir5 } from "node:os";
+import { basename as basename2, dirname as dirname3, join as join6 } from "node:path";
 function readJsonFile(path) {
-  return existsSync5(path) ? JSON.parse(readFileSync4(path, "utf8")) : {};
+  return existsSync5(path) ? JSON.parse(readFileSync5(path, "utf8")) : {};
 }
 var serialize = (data) => JSON.stringify(data, null, 2) + "\n";
 function planPermissions(projectDir2, ask) {
-  const path = join5(projectDir2, ".claude", "settings.json");
+  const path = join6(projectDir2, ".claude", "settings.json");
   const settings = readJsonFile(path);
   const perms = settings.permissions ??= {};
   const existing = /* @__PURE__ */ new Set([...perms.ask ?? [], ...perms.deny ?? []]);
@@ -41784,7 +42147,7 @@ function planPermissions(projectDir2, ask) {
   return { changes: [{ path, edits: add.map((r) => `permissions.ask += "${r}"`), content: serialize(settings) }], notes: [] };
 }
 async function planPinVersions(projectDir2, servers, fetcher = fetch) {
-  const path = join5(projectDir2, ".mcp.json");
+  const path = join6(projectDir2, ".mcp.json");
   if (!existsSync5(path)) return { changes: [], notes: ["No project .mcp.json."] };
   const data = readJsonFile(path);
   const notes = [];
@@ -41817,7 +42180,7 @@ async function planPinVersions(projectDir2, servers, fetcher = fetch) {
   return { changes: edits.length ? [{ path, edits, content: serialize(data) }] : [], notes: edits.length || notes.length ? notes : ["Every npx/uvx package in .mcp.json is already pinned."] };
 }
 function planEnvRefs(projectDir2) {
-  const path = join5(projectDir2, ".mcp.json");
+  const path = join6(projectDir2, ".mcp.json");
   if (!existsSync5(path)) return { changes: [], notes: ["No project .mcp.json."] };
   const data = readJsonFile(path);
   const edits = [];
@@ -41838,10 +42201,10 @@ function planEnvRefs(projectDir2) {
   return { changes: edits.length ? [{ path, edits, content: serialize(data), backupHoldsSecrets: true }] : [], notes: edits.length ? notes : ["No literal secrets in .mcp.json."] };
 }
 function backupPath(file2) {
-  const dir = join5(process.env.MCP_SECURITY_HOME ?? join5(homedir4(), ".claude", "mcp-security"), "backups");
+  const dir = join6(process.env.MCP_SECURITY_HOME ?? join6(homedir5(), ".claude", "mcp-security"), "backups");
   mkdirSync2(dir, { recursive: true, mode: 448 });
   const id = createHash2("sha256").update(file2).digest("hex").slice(0, 8);
-  return join5(dir, `${basename(file2)}-${id}-${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-")}`);
+  return join6(dir, `${basename2(file2)}-${id}-${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-")}`);
 }
 function applyPlan(plan) {
   const written = [];
@@ -41852,7 +42215,7 @@ function applyPlan(plan) {
     if (existsSync5(c.path)) {
       const backup = backupPath(c.path);
       rmSync2(backup, { force: true });
-      writeFileSync2(backup, readFileSync4(c.path), { mode: c.backupHoldsSecrets ? 384 : 420, flag: "wx" });
+      writeFileSync2(backup, readFileSync5(c.path), { mode: c.backupHoldsSecrets ? 384 : 420, flag: "wx" });
       if (c.backupHoldsSecrets) chmodSync(backup, 384);
       backups.push(backup);
       backupOf[c.path] = backup;
@@ -41967,17 +42330,17 @@ async function scanImages(servers, run = defaultRunner) {
 }
 
 // src/runtime.ts
-import { appendFileSync, existsSync as existsSync6, mkdirSync as mkdirSync3, readFileSync as readFileSync5, renameSync as renameSync3, statSync as statSync2 } from "node:fs";
-import { homedir as homedir5 } from "node:os";
-import { dirname as dirname4, join as join6 } from "node:path";
+import { appendFileSync, existsSync as existsSync6, mkdirSync as mkdirSync3, readFileSync as readFileSync6, renameSync as renameSync3, statSync as statSync2 } from "node:fs";
+import { homedir as homedir6 } from "node:os";
+import { dirname as dirname4, join as join7 } from "node:path";
 var MAX_SCAN_BYTES = 256 * 1024;
 var MAX_LOG_BYTES = 10 * 1024 * 1024;
 function auditLogPath() {
-  return join6(process.env.MCP_SECURITY_HOME ?? join6(homedir5(), ".claude", "mcp-security"), "audit.jsonl");
+  return join7(process.env.MCP_SECURITY_HOME ?? join7(homedir6(), ".claude", "mcp-security"), "audit.jsonl");
 }
 function readAudit(path = auditLogPath()) {
   if (!existsSync6(path)) return [];
-  return readFileSync5(path, "utf8").split("\n").filter(Boolean).flatMap((l) => {
+  return readFileSync6(path, "utf8").split("\n").filter(Boolean).flatMap((l) => {
     try {
       return [JSON.parse(l)];
     } catch {
@@ -42053,6 +42416,22 @@ server.registerTool(
         servers.length ? "Tool descriptions were not checked. Run `audit_server_tools` (launches the servers) for tool poisoning, shadowing and rug-pull detection." : ""
       ])
     );
+  }
+);
+server.registerTool(
+  "audit_agent_context",
+  {
+    title: "Audit skills, commands, agents and CLAUDE.md",
+    description: "Scans the text files Claude reads besides MCP tools: CLAUDE.md, skills (and their bundled scripts), slash commands, subagents, rules and the hook configs of installed plugins, from the user, the project and every enabled plugin. Flags instruction overrides, requests to hide things from the user, invisible text, HTML comments addressed to the model, directives to read credential files, commands that upload credentials, download-and-run and encoded execution, credential-stealing scripts, and pre-approved unrestricted shell access. Read-only; launches nothing and sends nothing.",
+    inputSchema: {
+      project_only: external_exports.boolean().default(false).describe("Only the project's own files (CLAUDE.md, .claude/). Use for repositories you are about to trust."),
+      project_dir: external_exports.string().optional().describe("Project directory. Defaults to the current project.")
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false }
+  },
+  async ({ project_only, project_dir }) => {
+    const a = auditContext(project_dir ?? projectDir(), { projectOnly: project_only });
+    return text(report("Agent context audit", a.findings, contextSummary(a)));
   }
 );
 var launchInput = {
@@ -42208,7 +42587,7 @@ server.registerResource(
   DASHBOARD_URI,
   { mimeType: DASHBOARD_MIME, description: "Interactive security dashboard (MCP App)." },
   async () => ({
-    contents: [{ uri: DASHBOARD_URI, mimeType: DASHBOARD_MIME, text: readFileSync6(new URL("./dashboard.html", import.meta.url), "utf8") }]
+    contents: [{ uri: DASHBOARD_URI, mimeType: DASHBOARD_MIME, text: readFileSync7(new URL("./dashboard.html", import.meta.url), "utf8") }]
   })
 );
 server.registerTool(

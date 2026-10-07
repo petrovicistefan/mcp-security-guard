@@ -1,6 +1,7 @@
 // Command-line entry point, used by the plugin's hooks and by CI.
 //   session-check                    SessionStart hook: never blocks a session, always exits 0.
 //   audit [options]                  Static config audit for CI. Exits 1 at or above --fail-on.
+//   audit-context [options]          Scan skills, commands, agents, CLAUDE.md and plugin hooks for injected instructions.
 //   analyze-tools <file> [options]   Tool-poisoning checks on a saved tools/list payload.
 //   scan <mcp.json> --confirm-launch Full audit (config + live tools/list) of servers you have not installed yet.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -9,6 +10,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { adversarialTest } from "./adversarial.js";
 import { auditConfig } from "./audit.js";
+import { auditContext, contextSummary } from "./context-audit.js";
 import { recommendPermissions } from "./capabilities.js";
 import { applyPlan, describePlan, planEnvRefs, planPermissions, planPinVersions, type FixPlan } from "./fixes.js";
 import { discoverServers, toServers } from "./config.js";
@@ -29,12 +31,16 @@ const USAGE = `mcp-security-guard ${VERSION}
 
 Usage:
   mcp-security-guard audit [--project DIR] [--project-only] [--supply-chain] [--scan-images] [--format markdown|json|sarif|html] [--output FILE] [--fail-on SEVERITY]
+  mcp-security-guard audit-context [--project DIR] [--project-only] [--format markdown|json|sarif|html] [--output FILE] [--fail-on SEVERITY]
   mcp-security-guard analyze-tools FILE [--name NAME] [--format markdown|json|sarif|html] [--output FILE] [--fail-on SEVERITY]
   mcp-security-guard adversarial FILE --server NAME --i-own-this-server --confirm-launch [--canary-dir DIR] [--host-canary-dir DIR] [--include-destructive]
   mcp-security-guard fix [--permissions --confirm-launch] [--pin-versions] [--env-refs] [--write] [--project DIR]
   mcp-security-guard policy-init [--project DIR] [--force]
   mcp-security-guard scan FILE --confirm-launch [--timeout SECONDS] [--format ...] [--output FILE] [--fail-on SEVERITY]
 
+  audit-context    scans skills, slash commands, subagents, rules, CLAUDE.md, plugin hooks and skill scripts
+                   (user, project and installed plugins) for injected instructions, hidden text and
+                   credential exfiltration. Reads files only; --project-only limits it to the repository
   scan             audits servers from any mcpServers JSON file *before* you install them. It launches
                    stdio servers and connects to remote ones (initialize + tools/list only, no tool calls)
 
@@ -183,6 +189,12 @@ async function main(): Promise<number> {
       supply ? `Supply chain: checked ${supply.checked.length} package(s) against npm/PyPI and OSV.${supply.errors.length ? ` Failed lookups: ${supply.errors.join("; ")}` : ""}` : "",
     ]);
     return exitCode(findings, values["fail-on"]!);
+  }
+
+  if (command === "audit-context") {
+    const a = auditContext(projectDir, { projectOnly: values["project-only"] });
+    emit("Agent context audit (skills, commands, agents, CLAUDE.md, hooks)", a.findings, projectDir, values.format!, values.output, contextSummary(a));
+    return exitCode(a.findings, values["fail-on"]!);
   }
 
   if (command === "analyze-tools") {

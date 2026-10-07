@@ -4,6 +4,7 @@ import { z } from "zod";
 import { adversarialTest } from "./adversarial.js";
 import { readFileSync } from "node:fs";
 import { auditConfig } from "./audit.js";
+import { auditContext, contextSummary } from "./context-audit.js";
 import { buildDashboard, dashboardText, DASHBOARD_MIME, DASHBOARD_URI } from "./dashboard.js";
 import { recommendPermissions } from "./capabilities.js";
 import { applyPlan, describePlan, planEnvRefs, planPermissions, planPinVersions, type FixPlan } from "./fixes.js";
@@ -74,6 +75,24 @@ server.registerTool(
         servers.length ? "Tool descriptions were not checked. Run `audit_server_tools` (launches the servers) for tool poisoning, shadowing and rug-pull detection." : "",
       ]),
     );
+  },
+);
+
+server.registerTool(
+  "audit_agent_context",
+  {
+    title: "Audit skills, commands, agents and CLAUDE.md",
+    description:
+      "Scans the text files Claude reads besides MCP tools: CLAUDE.md, skills (and their bundled scripts), slash commands, subagents, rules and the hook configs of installed plugins, from the user, the project and every enabled plugin. Flags instruction overrides, requests to hide things from the user, invisible text, HTML comments addressed to the model, directives to read credential files, commands that upload credentials, download-and-run and encoded execution, credential-stealing scripts, and pre-approved unrestricted shell access. Read-only; launches nothing and sends nothing.",
+    inputSchema: {
+      project_only: z.boolean().default(false).describe("Only the project's own files (CLAUDE.md, .claude/). Use for repositories you are about to trust."),
+      project_dir: z.string().optional().describe("Project directory. Defaults to the current project."),
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  },
+  async ({ project_only, project_dir }) => {
+    const a = auditContext(project_dir ?? projectDir(), { projectOnly: project_only });
+    return text(report("Agent context audit", a.findings, contextSummary(a)));
   },
 );
 

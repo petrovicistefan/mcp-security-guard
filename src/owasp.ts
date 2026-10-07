@@ -30,6 +30,12 @@ const BY_RULE: [RegExp, string[]][] = [
   [/^auth\//, ["MCP07"]],
   [/^config\/(duplicate-name|claude-ai-connector)$/, ["MCP09"]],
   [/^policy\//, ["MCP09"]],
+  // Skills, commands, CLAUDE.md and hooks are not MCP, but their risks map onto the same list.
+  [/^context\/(instruction-override|conceal-from-user|invisible-characters|ansi-escape|hidden-comment)$/, ["MCP03", "MCP06"]],
+  [/^context\/(exfil-command|credential-stealer)$/, ["MCP01", "MCP10"]],
+  [/^context\/(sensitive-path|markdown-exfiltration)$/, ["MCP10"]],
+  [/^context\/(pipe-to-shell|encoded-execution)$/, ["MCP05", "MCP04"]],
+  [/^context\/(overbroad-tools|permission-weakening)$/, ["MCP02"]],
   [/^tool\/(instruction-override|role-hijack)$/, ["MCP03", "MCP06"]],
   [/^runtime\/injection-in-output$/, ["MCP06"]],
   [/^tool\/(sensitive-path|context-harvesting|exfiltration-wording|markdown-exfiltration)$/, ["MCP03", "MCP10"]],

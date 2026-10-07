@@ -40,7 +40,7 @@ export function toSarif(findings: Finding[], projectDir: string, version: string
           ruleId: f.rule,
           level: LEVEL[f.severity],
           message: { text: `${f.title}${f.evidence ? ` (${f.evidence})` : ""}. ${f.remediation}` },
-          locations: [{ physicalLocation: { artifactLocation: { uri: artifactUri(f.file, projectDir) }, region: { startLine: lineOf(f.file, f.server) } } }],
+          locations: [{ physicalLocation: { artifactLocation: { uri: artifactUri(f.file, projectDir) }, region: { startLine: f.line ?? lineOf(f.file, f.server) } } }],
           properties: { severity: f.severity, "security-severity": SECURITY_SEVERITY[f.severity], where: f.location, owasp: owaspFor(f.rule) },
         })),
       },

@@ -18,11 +18,20 @@ inputs:
   sarif-file:
     description: "Where to write SARIF output (upload it with github/codeql-action/upload-sarif)"
     default: "mcp-security-guard.sarif"
+  context:
+    description: "Also scan the repository's skills, commands, subagents, rules and CLAUDE.md for injected instructions and credential exfiltration"
+    default: "false"
+  context-sarif-file:
+    description: "Where to write the SARIF output of the agent-context scan (only with context: true)"
+    default: "mcp-security-guard-context.sarif"
 
 outputs:
   sarif-file:
     description: "Path of the SARIF report"
     value: ${{ inputs.sarif-file }}
+  context-sarif-file:
+    description: "Path of the agent-context SARIF report (written only with context: true)"
+    value: ${{ inputs.context-sarif-file }}
 
 runs:
   using: "composite"
@@ -40,4 +49,16 @@ runs:
         [ "$SUPPLY_CHAIN" = "true" ] && extra+=(--supply-chain)
         node "$GITHUB_ACTION_PATH/plugin/dist/cli.mjs" audit --project "$PROJECT_DIR" --project-only "${extra[@]}" --format sarif --output "$SARIF_FILE" --fail-on none
         node "$GITHUB_ACTION_PATH/plugin/dist/cli.mjs" audit --project "$PROJECT_DIR" --project-only "${extra[@]}" --fail-on "$FAIL_ON" >> "$GITHUB_STEP_SUMMARY" || status=$?
+        exit $status
+    - name: Audit agent context (skills, commands, agents, CLAUDE.md)
+      if: ${{ inputs.context == 'true' }}
+      shell: bash
+      env:
+        PROJECT_DIR: ${{ inputs.project-dir }}
+        FAIL_ON: ${{ inputs.fail-on }}
+        CONTEXT_SARIF_FILE: ${{ inputs.context-sarif-file }}
+      run: |
+        status=0
+        node "$GITHUB_ACTION_PATH/plugin/dist/cli.mjs" audit-context --project "$PROJECT_DIR" --project-only --format sarif --output "$CONTEXT_SARIF_FILE" --fail-on none
+        node "$GITHUB_ACTION_PATH/plugin/dist/cli.mjs" audit-context --project "$PROJECT_DIR" --project-only --fail-on "$FAIL_ON" >> "$GITHUB_STEP_SUMMARY" || status=$?
         exit $status

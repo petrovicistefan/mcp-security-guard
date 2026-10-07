@@ -15,6 +15,7 @@ A Claude Code plugin that audits the **MCP servers you have installed**. Your co
 | Supply chain | OSV vulnerabilities and malicious versions, typosquats, missing or brand-new packages, install scripts, publisher changes (opt-in network check) |
 | Runtime | Hooks on every MCP call: ask before credentials are sent, warn on injected instructions or credentials in outputs, content-free audit log |
 | Policy | `.mcp-security.json` approved/blocked servers and hosts, enforced in audits, CI and at session start |
+| Agent context | The text Claude reads besides MCP tools: skills and their scripts, slash commands, subagents, rules, `CLAUDE.md` and plugin hooks. Instruction overrides, "don't tell the user", invisible text, HTML comments addressed to the model, directives to read credential files, commands that upload credentials, download-and-run, encoded execution, infostealer scripts, pre-approved unrestricted `Bash` |
 | Configuration | Plaintext secrets in env/headers/args/URLs, plain-HTTP remotes, unpinned `npx`/`uvx` packages, privileged or unpinned Docker images, pipe-to-shell launches, duplicate names across scopes |
 
 It discovers servers from every place Claude Code and Claude Desktop load them: user, local and project scope, **servers shipped inside installed plugins and plugins synced from your claude.ai account** (named `<plugin>:<server>`), `claude_desktop_config.json` and **Claude Desktop extensions**, the organisation-managed `managed-mcp.json`, other clients on the machine (**Cursor, VS Code, Windsurf**, user and project configs), and the **claude.ai connectors** you have used (names only: their configuration lives in your account).
@@ -71,6 +72,7 @@ The command line tool is the same package: `npx mcp-security-guard audit --proje
 | `audit_mcp_config` | No |
 | `audit_server_tools` | Yes, after explicit `confirm_launch: true`. Sends only `initialize` and list requests (tools, prompts, resources); never calls a tool, renders a prompt or reads a resource |
 | `pin_tools` | Yes (same as above). Writes `~/.claude/mcp-security/pins.json` |
+| `audit_agent_context` | No. Reads skills, commands, subagents, rules, `CLAUDE.md` and plugin hooks (user, project and installed plugins); `project_only` limits it to the repository |
 | `analyze_tool_definitions` | No. Offline analysis of a `tools/list` payload, for MCP server authors |
 | `check_supply_chain` | No. Sends package names and versions to npm, PyPI and OSV after `confirm_network: true` |
 | `apply_fixes` | Only for the `permissions` fix. Dry run by default; with `write: true` it edits the project's `.mcp.json` / `.claude/settings.json` after a backup to `~/.claude/mcp-security/backups/` |
@@ -112,12 +114,20 @@ jobs:
           sarif_file: ${{ steps.mcp.outputs.sarif-file }}
 ```
 
-The same checks run locally without Claude:
+To also fail pull requests that add a poisoned skill, command or `CLAUDE.md` to the repository, set `context: true` on the action (second SARIF file in `context-sarif-file`). The same checks run locally without Claude:
 
 ```
 node plugin/dist/cli.mjs audit --project-only --format sarif --output mcp.sarif
 node plugin/dist/cli.mjs analyze-tools tools.json --name my-server   # for MCP server authors: a saved tools/list result
 ```
+
+Scan the skills, commands, subagents and `CLAUDE.md` files next to your servers (add `--project-only` for a repository you are about to trust):
+
+```
+node plugin/dist/cli.mjs audit-context --project-only --fail-on high
+```
+
+Quoted attack phrases inside examples or fenced code are reported as `medium` (documentation), install snippets such as `curl … | sh` as `low`; the same patterns in scripts, hooks and inline `!` commands are `high`.
 
 Check a server **before installing it** (launches it, sends only `initialize` and `tools/list`):
 

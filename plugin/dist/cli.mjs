@@ -2990,7 +2990,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve5.call(this, root, ref);
+      let _sch = resolve6.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a3 = root.localRefs) === null || _a3 === void 0 ? void 0 : _a3[ref];
         const { schemaId } = this.opts;
@@ -3017,7 +3017,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve5(root, ref) {
+    function resolve6(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -3847,7 +3847,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve5(baseURI, relativeURI, options) {
+    function resolve6(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const {
         parsed: baseParsed,
@@ -3880,49 +3880,49 @@ var require_fast_uri = __commonJS({
       schemelessOptions.skipEscape = true;
       return serialize2(resolved, schemelessOptions);
     }
-    function resolveComponent(base, relative2, options, skipNormalization) {
+    function resolveComponent(base, relative3, options, skipNormalization) {
       const target = {};
       if (!skipNormalization) {
         base = parse3(serialize2(base, options), options);
-        relative2 = parse3(serialize2(relative2, options), options);
+        relative3 = parse3(serialize2(relative3, options), options);
       }
       options = options || {};
-      if (!options.tolerant && relative2.scheme) {
-        target.scheme = relative2.scheme;
-        target.userinfo = relative2.userinfo;
-        target.host = relative2.host;
-        target.port = relative2.port;
-        target.path = removeDotSegments(relative2.path || "");
-        target.query = relative2.query;
+      if (!options.tolerant && relative3.scheme) {
+        target.scheme = relative3.scheme;
+        target.userinfo = relative3.userinfo;
+        target.host = relative3.host;
+        target.port = relative3.port;
+        target.path = removeDotSegments(relative3.path || "");
+        target.query = relative3.query;
       } else {
-        if (relative2.userinfo !== void 0 || relative2.host !== void 0 || relative2.port !== void 0) {
-          target.userinfo = relative2.userinfo;
-          target.host = relative2.host;
-          target.port = relative2.port;
-          target.path = removeDotSegments(relative2.path || "");
-          target.query = relative2.query;
+        if (relative3.userinfo !== void 0 || relative3.host !== void 0 || relative3.port !== void 0) {
+          target.userinfo = relative3.userinfo;
+          target.host = relative3.host;
+          target.port = relative3.port;
+          target.path = removeDotSegments(relative3.path || "");
+          target.query = relative3.query;
         } else {
-          if (!relative2.path) {
+          if (!relative3.path) {
             target.path = base.path;
-            if (relative2.query !== void 0) {
-              target.query = relative2.query;
+            if (relative3.query !== void 0) {
+              target.query = relative3.query;
             } else {
               target.query = base.query;
             }
           } else {
-            if (relative2.path[0] === "/") {
-              target.path = removeDotSegments(relative2.path);
+            if (relative3.path[0] === "/") {
+              target.path = removeDotSegments(relative3.path);
             } else {
               if ((base.userinfo !== void 0 || base.host !== void 0 || base.port !== void 0) && !base.path) {
-                target.path = "/" + relative2.path;
+                target.path = "/" + relative3.path;
               } else if (!base.path) {
-                target.path = relative2.path;
+                target.path = relative3.path;
               } else {
-                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative2.path;
+                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative3.path;
               }
               target.path = removeDotSegments(target.path);
             }
-            target.query = relative2.query;
+            target.query = relative3.query;
           }
           target.userinfo = base.userinfo;
           target.host = base.host;
@@ -3930,7 +3930,7 @@ var require_fast_uri = __commonJS({
         }
         target.scheme = base.scheme;
       }
-      target.fragment = relative2.fragment;
+      target.fragment = relative3.fragment;
       return target;
     }
     function equal(uriA, uriB, options) {
@@ -4216,7 +4216,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve5,
+      resolve: resolve6,
       resolveComponent,
       equal,
       serialize: serialize2,
@@ -7299,12 +7299,12 @@ var require_isexe = __commonJS({
         if (typeof Promise !== "function") {
           throw new TypeError("callback not provided");
         }
-        return new Promise(function(resolve5, reject) {
+        return new Promise(function(resolve6, reject) {
           isexe(path, options || {}, function(er, is) {
             if (er) {
               reject(er);
             } else {
-              resolve5(is);
+              resolve6(is);
             }
           });
         });
@@ -7370,27 +7370,27 @@ var require_which = __commonJS({
         opt = {};
       const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt);
       const found = [];
-      const step = (i) => new Promise((resolve5, reject) => {
+      const step = (i) => new Promise((resolve6, reject) => {
         if (i === pathEnv.length)
-          return opt.all && found.length ? resolve5(found) : reject(getNotFoundError(cmd));
+          return opt.all && found.length ? resolve6(found) : reject(getNotFoundError(cmd));
         const ppRaw = pathEnv[i];
         const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw;
         const pCmd = path.join(pathPart, cmd);
         const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd : pCmd;
-        resolve5(subStep(p, i, 0));
+        resolve6(subStep(p, i, 0));
       });
-      const subStep = (p, i, ii) => new Promise((resolve5, reject) => {
+      const subStep = (p, i, ii) => new Promise((resolve6, reject) => {
         if (ii === pathExt.length)
-          return resolve5(step(i + 1));
+          return resolve6(step(i + 1));
         const ext = pathExt[ii];
         isexe(p + ext, { pathExt: pathExtExe }, (er, is) => {
           if (!er && is) {
             if (opt.all)
               found.push(p + ext);
             else
-              return resolve5(p + ext);
+              return resolve6(p + ext);
           }
-          return resolve5(subStep(p, i, ii + 1));
+          return resolve6(subStep(p, i, ii + 1));
         });
       });
       return cb ? step(0).then((res) => cb(null, res), cb) : step(0);
@@ -7807,9 +7807,9 @@ var require_content_type = __commonJS({
 });
 
 // src/cli.ts
-import { existsSync as existsSync7, mkdirSync as mkdirSync3, readFileSync as readFileSync6, writeFileSync as writeFileSync3 } from "node:fs";
-import { homedir as homedir5 } from "node:os";
-import { basename as basename2, dirname as dirname4, join as join6, resolve as resolve4 } from "node:path";
+import { existsSync as existsSync7, mkdirSync as mkdirSync3, readFileSync as readFileSync7, writeFileSync as writeFileSync3 } from "node:fs";
+import { homedir as homedir6 } from "node:os";
+import { basename as basename3, dirname as dirname4, join as join7, resolve as resolve5 } from "node:path";
 import { parseArgs } from "node:util";
 
 // src/adversarial.ts
@@ -11283,7 +11283,7 @@ var recursive = /* @__PURE__ */ new WeakMap();
 var NONE = 0;
 var ASSUMED = 1;
 var PROVEN = 2;
-function isRecursive(inst, stack, resolve5) {
+function isRecursive(inst, stack, resolve6) {
   const cached2 = recursive.get(inst);
   if (cached2 !== void 0)
     return cached2 ? PROVEN : NONE;
@@ -11293,7 +11293,7 @@ function isRecursive(inst, stack, resolve5) {
   let result = NONE;
   const check = (child) => {
     if (result !== PROVEN && child?._zod) {
-      const answer = isRecursive(child, stack, resolve5);
+      const answer = isRecursive(child, stack, resolve6);
       if (answer > result)
         result = answer;
     }
@@ -11304,7 +11304,7 @@ function isRecursive(inst, stack, resolve5) {
       const desc = Object.getOwnPropertyDescriptor(sh, key);
       if (spread && !desc.enumerable)
         continue;
-      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve5) : NONE;
+      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve6) : NONE;
       if (child > answer)
         answer = child;
     }
@@ -11368,7 +11368,7 @@ function isRecursive(inst, stack, resolve5) {
       break;
     // `$ZodLazy` caches its inner on the def, so a resolved edge is followed exactly
     case "lazy": {
-      const inner = def._cachedInner ?? (resolve5 ? inst._zod.innerType : void 0);
+      const inner = def._cachedInner ?? (resolve6 ? inst._zod.innerType : void 0);
       merge2(inner ? isRecursive(inner, stack, false) : ASSUMED);
       break;
     }
@@ -16635,7 +16635,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve5) => setTimeout(resolve5, pollInterval));
+        await new Promise((resolve6) => setTimeout(resolve6, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error2) {
@@ -16652,7 +16652,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve5, reject) => {
+    return new Promise((resolve6, reject) => {
       const earlyReject = (error2) => {
         reject(error2);
       };
@@ -16730,7 +16730,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve5(parseResult.data);
+            resolve6(parseResult.data);
           }
         } catch (error2) {
           reject(error2);
@@ -16992,12 +16992,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve5, reject) => {
+    return new Promise((resolve6, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve5, interval);
+      const timeoutId = setTimeout(resolve6, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -19395,7 +19395,7 @@ var SSEClientTransport = class {
     const baseFetch = this?._eventSourceInit?.fetch ?? this._fetch ?? fetch;
     const fetchImpl = this._followRedirects ? baseFetch : fetchWithinOrigin(baseFetch);
     let redirect;
-    return new Promise((resolve5, reject) => {
+    return new Promise((resolve6, reject) => {
       this._eventSource = new EventSource(this._url.href, {
         ...this._eventSourceInit,
         fetch: async (url2, init) => {
@@ -19417,7 +19417,7 @@ var SSEClientTransport = class {
       this._abortController = new AbortController();
       this._eventSource.onerror = (event) => {
         if (event.code === 401 && this._authProvider) {
-          this._authThenStart().then(resolve5, reject);
+          this._authThenStart().then(resolve6, reject);
           return;
         }
         const error2 = new SseError(event.code, redirect ?? event.message, event);
@@ -19439,7 +19439,7 @@ var SSEClientTransport = class {
           void this.close();
           return;
         }
-        resolve5();
+        resolve6();
       });
       this._eventSource.onmessage = (event) => {
         const messageEvent = event;
@@ -19618,7 +19618,7 @@ var StdioClientTransport = class {
     if (this._process) {
       throw new Error("StdioClientTransport already started! If using Client class, note that connect() calls start() automatically.");
     }
-    return new Promise((resolve5, reject) => {
+    return new Promise((resolve6, reject) => {
       this._process = (0, import_cross_spawn.default)(this._serverParams.command, this._serverParams.args ?? [], {
         // merge default env with server env because mcp server needs some env vars
         env: {
@@ -19635,7 +19635,7 @@ var StdioClientTransport = class {
         this.onerror?.(error2);
       });
       this._process.on("spawn", () => {
-        resolve5();
+        resolve6();
       });
       this._process.on("close", (_code) => {
         this._process = void 0;
@@ -19700,22 +19700,22 @@ var StdioClientTransport = class {
     if (this._process) {
       const processToClose = this._process;
       this._process = void 0;
-      const closePromise = new Promise((resolve5) => {
+      const closePromise = new Promise((resolve6) => {
         processToClose.once("close", () => {
-          resolve5();
+          resolve6();
         });
       });
       try {
         processToClose.stdin?.end();
       } catch {
       }
-      await Promise.race([closePromise, new Promise((resolve5) => setTimeout(resolve5, 2e3).unref())]);
+      await Promise.race([closePromise, new Promise((resolve6) => setTimeout(resolve6, 2e3).unref())]);
       if (processToClose.exitCode === null) {
         try {
           processToClose.kill("SIGTERM");
         } catch {
         }
-        await Promise.race([closePromise, new Promise((resolve5) => setTimeout(resolve5, 2e3).unref())]);
+        await Promise.race([closePromise, new Promise((resolve6) => setTimeout(resolve6, 2e3).unref())]);
       }
       if (processToClose.exitCode === null) {
         try {
@@ -19727,15 +19727,15 @@ var StdioClientTransport = class {
     this._readBuffer.clear();
   }
   send(message) {
-    return new Promise((resolve5) => {
+    return new Promise((resolve6) => {
       if (!this._process?.stdin) {
         throw new Error("Not connected");
       }
       const json = serializeMessage(message);
       if (this._process.stdin.write(json)) {
-        resolve5();
+        resolve6();
       } else {
-        this._process.stdin.once("drain", resolve5);
+        this._process.stdin.once("drain", resolve6);
       }
     });
   }
@@ -20368,6 +20368,15 @@ function pluginDirServers(root, pluginName, sources) {
   return blocks.flatMap(({ block, source }) => toServers(block, "plugin", source).map((sv) => substitutePluginRoot({ ...sv, name: `${pluginName}:${sv.name}` }, root)));
 }
 function discoverPluginServers(project, home, sources) {
+  const out = [];
+  for (const { name, root, synced } of pluginRoots(project, home, sources)) {
+    for (const sv of pluginDirServers(root, name, sources)) {
+      if (!synced || !out.some((o) => o.name === sv.name)) out.push(sv);
+    }
+  }
+  return out;
+}
+function pluginRoots(project, home, sources) {
   const enabled = enabledPlugins(project, home, sources);
   const out = [];
   const installedPath = join(home, ".claude", "plugins", "installed_plugins.json");
@@ -20375,11 +20384,11 @@ function discoverPluginServers(project, home, sources) {
   if (installed && typeof installed === "object") {
     for (const [key, entries] of Object.entries(installed)) {
       if (enabled[key] === false || !Array.isArray(entries)) continue;
-      const pluginName = key.split("@")[0];
+      const name = key.split("@")[0];
       for (const e of entries) {
         if (typeof e?.installPath !== "string") continue;
         if (e.scope && e.scope !== "user" && e.projectPath && resolve(e.projectPath) !== project) continue;
-        out.push(...pluginDirServers(e.installPath, pluginName, sources));
+        out.push({ name, root: e.installPath, synced: false });
       }
     }
   }
@@ -20389,12 +20398,10 @@ function discoverPluginServers(project, home, sources) {
       const root = join(syncedRoot, bucket, dir);
       const manifest = join(root, ".claude-plugin", "plugin.json");
       if (!existsSync(manifest)) continue;
-      const name = readJson(manifest, sources)?.name;
-      const pluginName = typeof name === "string" && name ? name : dir;
-      if (enabled[`${pluginName}@synced`] === false) continue;
-      for (const sv of pluginDirServers(root, pluginName, sources)) {
-        if (!out.some((o) => o.name === sv.name)) out.push(sv);
-      }
+      const manifestName = readJson(manifest, sources)?.name;
+      const name = typeof manifestName === "string" && manifestName ? manifestName : dir;
+      if (enabled[`${name}@synced`] === false) continue;
+      out.push({ name, root, synced: true });
     }
   }
   return out;
@@ -20920,531 +20927,97 @@ function auditConfig(projectDir, opts = {}) {
   return { ...discovered, servers, findings, policy };
 }
 
-// src/fixes.ts
-import { chmodSync, existsSync as existsSync4, mkdirSync, readFileSync as readFileSync3, renameSync, rmSync as rmSync2, writeFileSync } from "node:fs";
-import { createHash } from "node:crypto";
+// src/context-files.ts
+import { lstatSync, readFileSync as readFileSync3, readdirSync as readdirSync2 } from "node:fs";
 import { homedir as homedir3 } from "node:os";
-import { basename, dirname as dirname2, join as join4 } from "node:path";
-
-// src/supply-chain.ts
-var DAY = 864e5;
-var POPULAR_PACKAGES = {
-  npm: [
-    "@modelcontextprotocol/server-filesystem",
-    "@modelcontextprotocol/server-memory",
-    "@modelcontextprotocol/server-everything",
-    "@modelcontextprotocol/server-sequential-thinking",
-    "@modelcontextprotocol/server-github",
-    "@modelcontextprotocol/server-gitlab",
-    "@modelcontextprotocol/server-slack",
-    "@modelcontextprotocol/server-postgres",
-    "@modelcontextprotocol/server-puppeteer",
-    "@modelcontextprotocol/server-brave-search",
-    "@modelcontextprotocol/server-google-maps",
-    "@playwright/mcp",
-    "@upstash/context7-mcp",
-    "@notionhq/notion-mcp-server",
-    "@supabase/mcp-server-supabase",
-    "@stripe/mcp",
-    "@sentry/mcp-server",
-    "@browsermcp/mcp",
-    "mcp-remote",
-    "firebase-tools",
-    "figma-developer-mcp",
-    "exa-mcp-server",
-    "tavily-mcp"
-  ],
-  PyPI: ["mcp-server-git", "mcp-server-fetch", "mcp-server-time", "mcp-server-sqlite", "mcp", "fastmcp"]
-};
-function packagesOf(s) {
-  if (!s.command) return [];
-  const cmd = baseCommand(s.command);
-  const args = s.args ?? [];
-  const isNode = NODE_RUNNERS.has(cmd) || (cmd === "npm" || cmd === "pnpm") && (args[0] === "exec" || args[0] === "dlx");
-  const isPy = PY_RUNNERS.has(cmd);
-  const spec = (isNode || isPy) && packageSpec(args);
-  if (!spec || /^(git\+|https?:|ssh:|github:|file:|\.|\/)/.test(spec)) return [];
-  if (isNode) {
-    const m2 = /^(@[^/@]+\/[^@]+|[^@]+)(?:@(.+))?$/.exec(spec);
-    if (!m2) return [];
-    const v = m2[2];
-    return [{ server: s, ecosystem: "npm", name: m2[1], version: v && /^\d+\.\d+\.\d+/.test(v) ? v : void 0 }];
-  }
-  const m = /^([A-Za-z0-9._-]+)(?:\[[^\]]*\])?(?:(?:==|@)([0-9][^\s;]*))?$/.exec(spec);
-  return m ? [{ server: s, ecosystem: "PyPI", name: m[1], version: m[2] }] : [];
-}
-function editDistance(a, b) {
-  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
-  for (let j = 1; j <= b.length; j++) d[0][j] = j;
-  for (let i = 1; i <= a.length; i++)
-    for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
-  return d[a.length][b.length];
-}
-function typosquatOf(p) {
-  const name = p.name.toLowerCase();
-  const popular = POPULAR_PACKAGES[p.ecosystem];
-  if (popular.includes(name)) return void 0;
-  const unscoped = name.replace(/^@[^/]+\//, "");
-  return popular.find((q) => {
-    const dist = editDistance(name, q);
-    const qUnscoped = q.replace(/^@[^/]+\//, "");
-    return dist > 0 && dist <= (q.length > 12 ? 2 : 1) || q.startsWith("@") && name !== q && unscoped === qUnscoped;
-  });
-}
-function osvSeverity(vuln) {
-  if (String(vuln?.id ?? "").startsWith("MAL-")) return "critical";
-  const s = String(vuln?.database_specific?.severity ?? "").toUpperCase();
-  return s === "CRITICAL" ? "critical" : s === "HIGH" ? "high" : s === "LOW" ? "low" : "medium";
-}
-async function npmInfo(name, version2, fetcher) {
-  const r = await fetcher(`https://registry.npmjs.org/${name.replace("/", "%2f")}`);
-  if (r.status === 404) return { exists: false };
-  if (!r.ok) throw new Error(`npm registry HTTP ${r.status}`);
-  const d = await r.json();
-  const v = version2 ?? d["dist-tags"]?.latest;
-  const meta2 = d.versions?.[v] ?? {};
-  const scripts = Object.keys(meta2.scripts ?? {}).filter((k) => ["preinstall", "install", "postinstall"].includes(k));
-  const ordered = Object.keys(d.time ?? {}).filter((k) => d.versions?.[k] && !/-/.test(k)).sort((a, b) => Date.parse(d.time[a]) - Date.parse(d.time[b]));
-  const prev = ordered[ordered.indexOf(v) - 1];
-  const who = (x) => x ? d.versions?.[x]?._npmUser?.name : void 0;
-  const from = who(prev);
-  const to = who(v);
-  return {
-    exists: true,
-    version: v,
-    created: Date.parse(d.time?.created),
-    versionPublished: Date.parse(d.time?.[v]),
-    installScripts: scripts,
-    deprecated: typeof meta2.deprecated === "string" ? meta2.deprecated : void 0,
-    publisherChanged: from && to && from !== to ? { from, to } : void 0
-  };
-}
-async function pypiInfo(name, version2, fetcher) {
-  const r = await fetcher(`https://pypi.org/pypi/${encodeURIComponent(name)}/json`);
-  if (r.status === 404) return { exists: false };
-  if (!r.ok) throw new Error(`PyPI HTTP ${r.status}`);
-  const d = await r.json();
-  const v = version2 ?? d.info?.version;
-  const uploads = Object.values(d.releases ?? {}).flat().map((f) => Date.parse(f.upload_time_iso_8601));
-  const files = d.releases?.[v] ?? [];
-  return {
-    exists: true,
-    version: v,
-    created: uploads.length ? Math.min(...uploads) : void 0,
-    versionPublished: files.length ? Math.min(...files.map((f) => Date.parse(f.upload_time_iso_8601))) : void 0,
-    deprecated: files.some((f) => f.yanked) ? "yanked" : void 0
-  };
-}
-async function osvVulns(pkgs, fetcher) {
-  if (!pkgs.length) return [];
-  const r = await fetcher("https://api.osv.dev/v1/querybatch", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ queries: pkgs.map((p) => ({ package: { name: p.name, ecosystem: p.ecosystem }, version: p.version })) })
-  });
-  if (!r.ok) throw new Error(`OSV HTTP ${r.status}`);
-  const results = (await r.json()).results ?? [];
-  return Promise.all(
-    results.map(
-      async (res) => Promise.all(
-        (res.vulns ?? []).slice(0, 10).map(async (v) => {
-          const d = await fetcher(`https://api.osv.dev/v1/vulns/${encodeURIComponent(v.id)}`);
-          return d.ok ? d.json() : { id: v.id };
-        })
-      )
-    )
-  );
-}
-async function checkSupplyChain(servers, fetcher = fetch, now = Date.now()) {
-  const pkgs = servers.flatMap(packagesOf);
-  const findings = [];
-  const errors = [];
-  const add = (p, severity, rule, title, remediation, evidence) => findings.push({ severity, rule, title, location: `server "${p.server.name}" (${p.server.scope}) \u203A ${p.ecosystem} ${excerpt(p.name, 80)}`, evidence, remediation, file: p.server.source, server: p.server.name });
-  const infos = await Promise.all(
-    pkgs.map(async (p) => {
-      try {
-        return await (p.ecosystem === "npm" ? npmInfo(p.name, p.version, fetcher) : pypiInfo(p.name, p.version, fetcher));
-      } catch (e) {
-        errors.push(`${p.ecosystem} ${p.name}: ${excerpt(e instanceof Error ? e.message : String(e), 100)}`);
-        return void 0;
-      }
-    })
-  );
-  pkgs.forEach((p, i) => {
-    const squat = typosquatOf(p);
-    if (squat) add(p, "high", "supply-chain/typosquat", `Package name is suspiciously close to the popular "${squat}"`, `Check the name character by character. If you meant "${squat}", fix the config.`);
-    const info = infos[i];
-    if (!info) return;
-    if (!info.exists) {
-      add(p, "high", "supply-chain/package-not-found", "Package does not exist on the registry", "Anyone can register this name and get code execution on your machine at the next launch (name squatting / dependency confusion). Fix the name or remove the server.");
-      return;
-    }
-    if (info.created && now - info.created < 30 * DAY) add(p, "medium", "supply-chain/new-package", `Package was first published ${Math.max(1, Math.round((now - info.created) / DAY))} day(s) ago`, "Very new packages have no track record. Prefer established servers, or review the source first.");
-    if (info.versionPublished && now - info.versionPublished < 3 * DAY) add(p, "low", "supply-chain/fresh-release", `Version ${excerpt(info.version ?? "?", 30)} was published less than 3 days ago`, "Compromised releases are usually caught within days. Pin the previous version until this one has aged.");
-    if (info.installScripts?.length) add(p, "medium", "supply-chain/install-scripts", `Package runs install scripts (${info.installScripts.join(", ")})`, "Install scripts execute before any MCP check can run. Review them, or launch with --ignore-scripts.");
-    if (info.deprecated) add(p, "medium", "supply-chain/deprecated", `Version is ${info.deprecated === "yanked" ? "yanked" : "deprecated"}`, "Move to a maintained version or server.", info.deprecated === "yanked" ? void 0 : excerpt(info.deprecated, 120));
-    if (info.publisherChanged) add(p, "medium", "supply-chain/publisher-changed", `Published by a different npm account than the previous version ("${excerpt(info.publisherChanged.from, 40)}" \u2192 "${excerpt(info.publisherChanged.to, 40)}")`, "A new publisher is how account takeovers show up. Confirm the change with the project before upgrading.");
-  });
+import { basename, extname, join as join4, relative, resolve as resolve2, sep } from "node:path";
+var MAX_FILE_BYTES = 256 * 1024;
+var MAX_FILES = 2e3;
+var MAX_DEPTH = 4;
+var SKIP_DIRS = /* @__PURE__ */ new Set(["node_modules", ".git", "dist", "build", "__pycache__", ".venv", "venv"]);
+var SCRIPT_EXT = /* @__PURE__ */ new Set([".sh", ".bash", ".zsh", ".py", ".js", ".mjs", ".cjs", ".ts", ".ps1", ".rb", ".pl"]);
+function walk(dir, depth = 0) {
+  if (depth > MAX_DEPTH) return [];
+  let entries;
   try {
-    const versioned = pkgs.map((p, i) => ({ p, version: p.version ?? infos[i]?.version })).filter((x) => !!x.version && infos[pkgs.indexOf(x.p)]?.exists !== false);
-    const vulns = await osvVulns(versioned.map((x) => ({ ecosystem: x.p.ecosystem, name: x.p.name, version: x.version })), fetcher);
-    versioned.forEach(({ p, version: version2 }, i) => {
-      for (const v of vulns[i] ?? []) {
-        const malicious = String(v.id).startsWith("MAL-");
-        add(p, osvSeverity(v), malicious ? "supply-chain/malicious-package" : "supply-chain/known-vulnerability", malicious ? `Version ${excerpt(version2, 30)} is a known MALICIOUS package (${v.id})` : `Version ${excerpt(version2, 30)} has a known vulnerability: ${excerpt(v.id, 40)}${v.summary ? ` (${excerpt(v.summary, 100)})` : ""}`, malicious ? "Remove the server immediately and rotate every credential it could reach." : `Upgrade to a fixed version. Details: https://osv.dev/vulnerability/${encodeURIComponent(v.id)}`);
-      }
-    });
-  } catch (e) {
-    errors.push(`OSV: ${excerpt(e instanceof Error ? e.message : String(e), 100)}`);
+    entries = readdirSync2(dir, { withFileTypes: true });
+  } catch {
+    return [];
   }
-  return { findings, checked: pkgs, errors };
-}
-
-// src/fixes.ts
-function readJsonFile(path) {
-  return existsSync4(path) ? JSON.parse(readFileSync3(path, "utf8")) : {};
-}
-var serialize = (data) => JSON.stringify(data, null, 2) + "\n";
-function planPermissions(projectDir, ask) {
-  const path = join4(projectDir, ".claude", "settings.json");
-  const settings = readJsonFile(path);
-  const perms = settings.permissions ??= {};
-  const existing = /* @__PURE__ */ new Set([...perms.ask ?? [], ...perms.deny ?? []]);
-  const add = ask.filter((r) => !existing.has(r));
-  if (!add.length) return { changes: [], notes: ask.length ? ["All recommended permission rules are already present."] : ["No tools need an approval rule."] };
-  perms.ask = [...perms.ask ?? [], ...add];
-  return { changes: [{ path, edits: add.map((r) => `permissions.ask += "${r}"`), content: serialize(settings) }], notes: [] };
-}
-async function planPinVersions(projectDir, servers, fetcher = fetch) {
-  const path = join4(projectDir, ".mcp.json");
-  if (!existsSync4(path)) return { changes: [], notes: ["No project .mcp.json."] };
-  const data = readJsonFile(path);
-  const notes = [];
-  const edits = [];
-  for (const s of servers.filter((x) => x.source === path)) {
-    const [pkg] = packagesOf(s);
-    if (!pkg || pkg.version) continue;
-    const raw = data.mcpServers?.[s.name];
-    const args = raw?.args ?? [];
-    const idx = args.findIndex((a) => a === pkg.name || a.startsWith(`${pkg.name}@`) || a.startsWith(`${pkg.name}==`) || a.startsWith(`${pkg.name}[`));
-    if (idx < 0) continue;
-    let version2;
-    try {
-      const url2 = pkg.ecosystem === "npm" ? `https://registry.npmjs.org/${pkg.name.replace("/", "%2f")}` : `https://pypi.org/pypi/${encodeURIComponent(pkg.name)}/json`;
-      const r = await fetcher(url2);
-      const d = r.ok ? await r.json() : void 0;
-      version2 = pkg.ecosystem === "npm" ? d?.["dist-tags"]?.latest : d?.info?.version;
-    } catch {
-    }
-    if (!version2 || !/^[0-9][0-9A-Za-z.+-]*$/.test(version2)) {
-      notes.push(`Could not resolve the current version of ${pkg.ecosystem} ${excerpt(pkg.name, 60)} for server "${excerpt(s.name, 40)}"; pin it by hand.`);
-      continue;
-    }
-    const cmd = baseCommand(s.command ?? "");
-    const pinned = NODE_RUNNERS.has(cmd) || cmd === "npm" || cmd === "pnpm" ? `${pkg.name}@${version2}` : PY_RUNNERS.has(cmd) ? `${pkg.name}==${version2}` : void 0;
-    if (!pinned) continue;
-    edits.push(`server "${excerpt(s.name, 40)}": ${excerpt(args[idx], 60)} \u2192 ${pinned}`);
-    args[idx] = pinned;
-  }
-  return { changes: edits.length ? [{ path, edits, content: serialize(data) }] : [], notes: edits.length || notes.length ? notes : ["Every npx/uvx package in .mcp.json is already pinned."] };
-}
-function planEnvRefs(projectDir) {
-  const path = join4(projectDir, ".mcp.json");
-  if (!existsSync4(path)) return { changes: [], notes: ["No project .mcp.json."] };
-  const data = readJsonFile(path);
-  const edits = [];
-  const notes = [];
-  for (const [name, raw] of Object.entries(data.mcpServers ?? {})) {
-    for (const field of ["env", "headers"]) {
-      for (const [k, v] of Object.entries(raw?.[field] ?? {})) {
-        if (typeof v !== "string") continue;
-        const bare = field === "headers" ? v.replace(/^Bearer\s+/i, "") : v;
-        if (isEnvReference(bare) || !looksLikeSecretValue(k, bare)) continue;
-        const varName = `${name}_${k}`.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
-        raw[field][k] = field === "headers" && /^Bearer\s+/i.test(v) ? `Bearer \${${varName}}` : `\${${varName}}`;
-        edits.push(`server "${excerpt(name, 40)}": ${field}.${k} (${maskSecret(bare)}) \u2192 \${${varName}}`);
-        notes.push(`Set ${varName} in your shell or secret manager before starting Claude Code, e.g. \`export ${varName}=\u2026\`, then rotate the old key if this file was ever committed or shared.`);
-      }
-    }
-  }
-  return { changes: edits.length ? [{ path, edits, content: serialize(data), backupHoldsSecrets: true }] : [], notes: edits.length ? notes : ["No literal secrets in .mcp.json."] };
-}
-function backupPath(file) {
-  const dir = join4(process.env.MCP_SECURITY_HOME ?? join4(homedir3(), ".claude", "mcp-security"), "backups");
-  mkdirSync(dir, { recursive: true, mode: 448 });
-  const id = createHash("sha256").update(file).digest("hex").slice(0, 8);
-  return join4(dir, `${basename(file)}-${id}-${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-")}`);
-}
-function applyPlan(plan) {
-  const written = [];
-  const backups = [];
-  const backupOf = {};
-  for (const c of plan.changes) {
-    mkdirSync(dirname2(c.path), { recursive: true });
-    if (existsSync4(c.path)) {
-      const backup = backupPath(c.path);
-      rmSync2(backup, { force: true });
-      writeFileSync(backup, readFileSync3(c.path), { mode: c.backupHoldsSecrets ? 384 : 420, flag: "wx" });
-      if (c.backupHoldsSecrets) chmodSync(backup, 384);
-      backups.push(backup);
-      backupOf[c.path] = backup;
-    }
-    const tmp = `${c.path}.mcpsec-tmp`;
-    writeFileSync(tmp, c.content);
-    renameSync(tmp, c.path);
-    written.push(c.path);
-  }
-  return { written, backups, backupOf };
-}
-function describePlan(plan, applied) {
-  const lines = [];
-  for (const c of plan.changes) {
-    lines.push(`**${c.path}**`, ...c.edits.map((e) => `- ${e}`));
-    const backup = applied?.backupOf[c.path];
-    if (c.backupHoldsSecrets && backup) lines.push(`- \u26A0\uFE0F The backup \`${backup}\` still contains the secret (readable only by you): delete it once the variable is set.`);
-  }
-  if (plan.notes.length) lines.push("", ...plan.notes.map((n) => `- ${n}`));
-  if (!plan.changes.length && !plan.notes.length) lines.push("Nothing to fix.");
-  lines.unshift(applied ? `# Fixes applied (${applied.written.length} file(s))` : `# Proposed fixes (dry run, nothing written)`);
-  if (applied?.backups.length) lines.push("", `Backups: ${applied.backups.join(", ")}`);
-  return lines.join("\n");
-}
-
-// src/image-scan.ts
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-var defaultRunner = (cmd, args, timeoutMs) => promisify(execFile)(cmd, args, { timeout: timeoutMs, maxBuffer: 256 * 1024 * 1024 });
-async function detectScanner(run = defaultRunner) {
-  for (const s of ["trivy", "grype"]) {
-    try {
-      await run(s, ["--version"], 1e4);
-      return s;
-    } catch {
-    }
-  }
-  return void 0;
-}
-function countTrivy(json) {
-  const c = { critical: 0, high: 0, medium: 0, low: 0 };
-  for (const r of json?.Results ?? []) for (const v of r?.Vulnerabilities ?? []) {
-    const s = String(v?.Severity ?? "").toLowerCase();
-    if (s in c) c[s]++;
-  }
-  return c;
-}
-function countGrype(json) {
-  const c = { critical: 0, high: 0, medium: 0, low: 0 };
-  for (const m of json?.matches ?? []) {
-    const s = String(m?.vulnerability?.severity ?? "").toLowerCase();
-    if (s in c) c[s]++;
-  }
-  return c;
-}
-async function scanImages(servers, run = defaultRunner) {
-  const targets = servers.map((s) => ({ s, image: dockerImageOf(s) })).filter((x) => !!x.image);
-  if (!targets.length) return { findings: [], scanned: [], notes: [] };
-  const scanner = await detectScanner(run);
-  if (!scanner) return { findings: [], scanned: [], notes: [`${targets.length} server(s) run in containers, but neither Trivy nor Grype is installed, so their images were not checked for known vulnerabilities.`] };
-  const findings = [];
-  const scanned = [];
-  const notes = [];
-  for (const image of [...new Set(targets.map((t) => t.image))]) {
-    try {
-      const args = scanner === "trivy" ? ["image", "--quiet", "--format", "json", "--scanners", "vuln", image] : [image, "-o", "json", "-q"];
-      const { stdout } = await run(scanner, args, 10 * 6e4);
-      const counts = scanner === "trivy" ? countTrivy(JSON.parse(stdout)) : countGrype(JSON.parse(stdout));
-      scanned.push(image);
-      const severity = counts.critical ? "high" : counts.high ? "medium" : counts.medium || counts.low ? "low" : void 0;
-      if (!severity) continue;
-      for (const { s } of targets.filter((t) => t.image === image)) {
-        findings.push({
-          severity,
-          rule: "supply-chain/image-vulnerabilities",
-          title: `Image "${excerpt(image, 80)}" has known vulnerabilities: ${counts.critical} critical, ${counts.high} high, ${counts.medium} medium, ${counts.low} low`,
-          location: `server "${s.name}" (${s.scope}) \u203A image`,
-          remediation: `Update to a patched image tag or digest, then re-pin. Details: ${scanner} image ${image}`,
-          file: s.source,
-          server: s.name
-        });
-      }
-    } catch (e) {
-      notes.push(`${scanner} could not scan ${excerpt(image, 80)}: ${excerpt(e instanceof Error ? e.message : String(e), 120)}`);
-    }
-  }
-  return { findings, scanned, scanner, notes };
-}
-
-// src/pins.ts
-import { createHash as createHash2 } from "node:crypto";
-import { existsSync as existsSync5, mkdirSync as mkdirSync2, readFileSync as readFileSync4, renameSync as renameSync2, statSync, writeFileSync as writeFileSync2 } from "node:fs";
-import { homedir as homedir4 } from "node:os";
-import { dirname as dirname3, isAbsolute, join as join5, resolve as resolve2 } from "node:path";
-function pinsPath() {
-  return join5(process.env.MCP_SECURITY_HOME ?? join5(homedir4(), ".claude", "mcp-security"), "pins.json");
-}
-function stableStringify(v) {
-  if (Array.isArray(v)) return `[${v.map(stableStringify).join(",")}]`;
-  if (v && typeof v === "object") {
-    return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${stableStringify(v[k])}`).join(",")}}`;
-  }
-  return JSON.stringify(v ?? null);
-}
-function hashTool(t) {
-  return createHash2("sha256").update(stableStringify({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })).digest("hex");
-}
-var MAX_HASHED_FILE = 20 * 1024 * 1024;
-function localFileHashes(s) {
-  const out = {};
-  for (const a of [s.command, ...s.args ?? []]) {
-    if (!a || a.startsWith("-") || a.includes("${") || !/[\\/]|\.(m?[jt]s|cjs|py|rb|sh|php|jar)$/i.test(a)) continue;
-    const p = isAbsolute(a) ? a : resolve2(dirname3(s.source), a);
-    try {
-      const st = statSync(p);
-      if (st.isFile() && st.size <= MAX_HASHED_FILE) out[a] = createHash2("sha256").update(readFileSync4(p)).digest("hex");
-    } catch {
-    }
+  const out = [];
+  for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+    if (e.isSymbolicLink()) continue;
+    const p = join4(dir, e.name);
+    if (e.isDirectory()) {
+      if (!SKIP_DIRS.has(e.name) && !e.name.startsWith(".")) out.push(...walk(p, depth + 1));
+    } else if (e.isFile()) out.push(p);
   }
   return out;
 }
-function hashConfig(s) {
-  const files = localFileHashes(s);
-  return createHash2("sha256").update(stableStringify({ type: s.type, command: s.command, args: s.args, url: s.url, env: Object.keys(s.env ?? {}).sort(), headers: Object.keys(s.headers ?? {}).sort(), ...Object.keys(files).length ? { files } : {} })).digest("hex");
-}
-function loadPins(path = pinsPath()) {
-  if (!existsSync5(path)) return { version: 1, servers: {} };
+function isRegularFile(path) {
   try {
-    const data = JSON.parse(readFileSync4(path, "utf8"));
-    return data?.version === 1 && data.servers ? data : { version: 1, servers: {} };
-  } catch {
-    return { version: 1, servers: {} };
-  }
-}
-function pinKey(scope, name) {
-  return `${scope}:${name}`;
-}
-var NON_TOOL = /^(#instructions$|prompt:|resource:|template:)/;
-function computeDrift(pin, tools) {
-  const pinned = pin.tools;
-  const legacy = !pin.surface;
-  const current = Object.fromEntries(tools.filter((t) => !(legacy && NON_TOOL.test(t.name))).map((t) => [t.name, hashTool(t)]));
-  return {
-    added: Object.keys(current).filter((n) => !(n in pinned)),
-    removed: Object.keys(pinned).filter((n) => !(n in current)),
-    changed: Object.keys(current).filter((n) => n in pinned && pinned[n] !== current[n])
-  };
-}
-function hasDrift(d) {
-  return d.added.length + d.removed.length + d.changed.length > 0;
-}
-
-// src/cloud.ts
-var DEFAULT_ENDPOINT = "https://mcp-security-cloud.petrovicistefan.workers.dev";
-var MAX_PACKAGES = 500;
-var MAX_TOOL_HASHES = 5e3;
-var MAX_FINDINGS = 1e3;
-var DEFAULT_TIMEOUT_MS = 3e3;
-function pluginConfigKey(env) {
-  const v = env.MCP_SECURITY_GUARD_FEED_KEY?.trim();
-  return v && !v.startsWith("${") ? v : void 0;
-}
-function cloudOptionsFromEnv(env = process.env) {
-  return { apiKey: pluginConfigKey(env) ?? (env.MCP_SECURITY_API_KEY?.trim() || void 0), endpoint: env.MCP_SECURITY_API_URL?.trim() || DEFAULT_ENDPOINT };
-}
-function endpointAllowed(endpoint) {
-  try {
-    const u = new URL(endpoint);
-    return u.protocol === "https:" || u.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname);
+    return lstatSync(path).isFile();
   } catch {
     return false;
   }
 }
-var packageKey = (p) => `${p.ecosystem}:${p.name.toLowerCase()}@${p.version ?? ""}`;
-function buildCheckRequest(packages, servers) {
-  const pkgs = /* @__PURE__ */ new Map();
-  for (const p of packages) pkgs.set(packageKey(p), p.version ? { ecosystem: p.ecosystem, name: p.name, version: p.version } : { ecosystem: p.ecosystem, name: p.name });
-  const hashes = new Set(servers.flatMap((s) => s.tools.map(hashTool)));
-  return {
-    client: { name: "mcp-security-guard", version: VERSION },
-    packages: [...pkgs.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, p]) => p).slice(0, MAX_PACKAGES),
-    toolHashes: [...hashes].sort().slice(0, MAX_TOOL_HASHES)
-  };
-}
-var isSeverity = (v) => typeof v === "string" && SEVERITY_ORDER.includes(v);
-function parseCheckResponse(body) {
-  if (!body || typeof body !== "object" || !Array.isArray(body.findings)) return void 0;
-  const findings = [];
-  for (const raw of body.findings.slice(0, MAX_FINDINGS)) {
-    const m = raw?.match;
-    if (!isSeverity(raw?.severity) || typeof raw?.title !== "string") continue;
-    let match;
-    if (m?.kind === "tool" && typeof m.hash === "string" && /^[0-9a-f]{64}$/.test(m.hash)) match = { kind: "tool", hash: m.hash };
-    else if (m?.kind === "package" && (m.ecosystem === "npm" || m.ecosystem === "PyPI") && typeof m.name === "string")
-      match = { kind: "package", ecosystem: m.ecosystem, name: m.name, ...typeof m.version === "string" ? { version: m.version } : {} };
-    else continue;
-    const reference = typeof raw.reference === "string" && /^https:\/\/[^\s]+$/.test(raw.reference) ? excerpt(raw.reference, 200) : void 0;
-    findings.push({ match, severity: raw.severity, title: excerpt(raw.title, 160), ...reference ? { reference } : {} });
+function collectRoot(root, origin, add, opts) {
+  const skills = join4(root, "skills");
+  for (const f of walk(skills)) {
+    const rel = relative(skills, f).split(sep);
+    const skillName = rel[0];
+    const ext = extname(f).toLowerCase();
+    if (basename(f).toLowerCase() === "skill.md") add(f, "skill", skillName);
+    else if (ext === ".md" || ext === ".mdx" || ext === ".txt") add(f, "skill", skillName);
+    else if (SCRIPT_EXT.has(ext)) add(f, "script", skillName);
   }
-  const at = body.feedUpdatedAt;
-  return { findings, feedUpdatedAt: typeof at === "string" ? excerpt(at, 40) : "unknown" };
+  for (const [dir, kind] of [["commands", "command"], ["agents", "agent"], ["rules", "rule"]]) {
+    const base = join4(root, dir);
+    for (const f of walk(base)) if ([".md", ".mdx"].includes(extname(f).toLowerCase())) add(f, kind, relative(base, f).replace(/\.mdx?$/i, "").split(sep).join("/"));
+  }
+  if (opts.pluginLayout) {
+    for (const f of [join4(root, "hooks", "hooks.json"), join4(root, "hooks.json")]) add(f, "hooks", "hooks");
+    for (const f of walk(join4(root, "hooks"))) if (SCRIPT_EXT.has(extname(f).toLowerCase())) add(f, "script", "hooks");
+  }
 }
-function toFindings(entries, packages, servers) {
-  const out = [];
-  for (const e of entries) {
-    const remediation = `Remove or replace this server until the issue is resolved.${e.reference ? ` Details: ${e.reference}` : ""}`;
-    if (e.match.kind === "package") {
-      const m = e.match;
-      for (const p of packages) {
-        if (p.ecosystem !== m.ecosystem || p.name.toLowerCase() !== m.name.toLowerCase() || m.version && p.version !== m.version) continue;
-        out.push({ severity: e.severity, rule: "feed/package", title: e.title, location: `server "${p.server.name}" (${p.server.scope}) \u203A ${p.ecosystem} ${p.name}${p.version ? `@${p.version}` : ""}`, remediation, file: p.server.source, server: p.server.name });
+function discoverContext(projectDir, opts = {}) {
+  const home = opts.home ?? homedir3();
+  const project = resolve2(projectDir);
+  const files = [];
+  const skipped = [];
+  const seen = /* @__PURE__ */ new Set();
+  const add = (origin) => (file, kind, name) => {
+    const p = resolve2(file);
+    if (seen.has(p) || !isRegularFile(p)) return;
+    seen.add(p);
+    if (files.length >= MAX_FILES) {
+      skipped.push(`${p} (limit of ${MAX_FILES} files reached)`);
+      return;
+    }
+    try {
+      const buf = readFileSync3(p);
+      if (buf.length > MAX_FILE_BYTES) {
+        skipped.push(`${p} (larger than ${MAX_FILE_BYTES / 1024} KB)`);
+        return;
       }
-    } else {
-      const hash = e.match.hash;
-      for (const s of servers)
-        for (const t of s.tools)
-          if (hashTool(t) === hash)
-            out.push({ severity: e.severity, rule: "feed/tool", title: e.title, location: `server "${s.server.name}" (${s.server.scope}) \u203A tool "${excerpt(t.name, 60)}"`, remediation, file: s.server.source, server: s.server.name });
+      files.push({ path: p, kind, origin, name, text: buf.toString("utf8") });
+    } catch {
+      skipped.push(`${p} (unreadable)`);
+    }
+  };
+  const addProject = add("project");
+  for (const f of [join4(project, "CLAUDE.md"), join4(project, "CLAUDE.local.md"), join4(project, ".claude", "CLAUDE.md")]) addProject(f, "claude-md", basename(f));
+  collectRoot(join4(project, ".claude"), "project", addProject, { pluginLayout: false });
+  if (!opts.projectOnly) {
+    const addUser = add("user");
+    addUser(join4(home, ".claude", "CLAUDE.md"), "claude-md", "CLAUDE.md");
+    collectRoot(join4(home, ".claude"), "user", addUser, { pluginLayout: false });
+    const sources = [];
+    for (const { name, root } of pluginRoots(project, home, sources)) {
+      collectRoot(root, `plugin:${name}`, add(`plugin:${name}`), { pluginLayout: true });
     }
   }
-  return out;
-}
-var defaultFetcher = (url2, init) => fetch(url2, init);
-async function cloudCheck(packages, servers, opts = cloudOptionsFromEnv()) {
-  if (!opts.apiKey) return { status: "disabled", findings: [] };
-  if (!opts.endpoint) return { status: "skipped", findings: [], note: "Threat feed skipped: MCP_SECURITY_API_URL is not set." };
-  if (!endpointAllowed(opts.endpoint)) return { status: "skipped", findings: [], note: "Threat feed skipped: MCP_SECURITY_API_URL must be an https URL." };
-  const request = buildCheckRequest(packages, servers);
-  const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const controller = new AbortController();
-  let timer;
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => {
-      controller.abort();
-      reject(new Error("timeout"));
-    }, timeoutMs);
-  });
-  try {
-    const res = await Promise.race([
-      (opts.fetcher ?? defaultFetcher)(new URL("/v1/check", opts.endpoint).href, {
-        method: "POST",
-        body: JSON.stringify(request),
-        headers: { "content-type": "application/json", authorization: `Bearer ${opts.apiKey}` },
-        signal: controller.signal
-      }),
-      timeout
-    ]);
-    if (!res.ok) {
-      const why = res.status === 401 ? "the API key was rejected" : res.status === 402 ? "the subscription has expired" : `the service answered ${res.status}`;
-      return { status: "skipped", findings: [], note: `Threat feed skipped: ${why}.` };
-    }
-    const parsed = parseCheckResponse(await Promise.race([res.json(), timeout]));
-    if (!parsed) return { status: "skipped", findings: [], note: "Threat feed skipped: unexpected response from the service." };
-    return { status: "ok", findings: toFindings(parsed.findings, packages, servers), note: `Threat feed checked (updated ${parsed.feedUpdatedAt}).` };
-  } catch (err) {
-    const why = err?.message === "timeout" ? `no answer within ${timeoutMs / 1e3} s` : "the service could not be reached";
-    return { status: "skipped", findings: [], note: `Threat feed skipped: ${why}.` };
-  } finally {
-    clearTimeout(timer);
-  }
+  return { files, skipped };
 }
 
 // src/rules/tool-rules.ts
@@ -21452,21 +21025,21 @@ function collectText(tool) {
   const out = [{ path: "name", text: tool.name }];
   if (tool.title) out.push({ path: "title", text: tool.title });
   if (tool.description) out.push({ path: "description", text: tool.description });
-  const walk = (node2, path) => {
+  const walk2 = (node2, path) => {
     if (typeof node2 === "string") {
       out.push({ path, text: node2 });
     } else if (Array.isArray(node2)) {
-      node2.forEach((n, i) => walk(n, `${path}[${i}]`));
+      node2.forEach((n, i) => walk2(n, `${path}[${i}]`));
     } else if (node2 && typeof node2 === "object") {
       for (const [k, v] of Object.entries(node2)) {
         if (["$schema", "$ref", "pattern"].includes(k) && typeof v === "string") continue;
         if (path.endsWith(".properties")) out.push({ path: `${path}.${k} (name)`, text: k });
-        walk(v, `${path}.${k}`);
+        walk2(v, `${path}.${k}`);
       }
     }
   };
-  walk(tool.inputSchema, "inputSchema");
-  walk(tool.annotations, "annotations");
+  walk2(tool.inputSchema, "inputSchema");
+  walk2(tool.annotations, "annotations");
   return out;
 }
 var DIRECTIVE_RE = /\b(read|reading|cat|open|load|include|including|pass|send|upload|copy|attach|paste|append|put|provide|extract|forward|post|share|embed|add|insert|fill)\b/i;
@@ -21678,6 +21251,790 @@ function analyzeTools(serverName, tools, otherServersTools = {}) {
   return findings;
 }
 
+// src/rules/context-rules.ts
+import { sep as sep2 } from "node:path";
+var lineAt = (text, index) => text.slice(0, index).split("\n").length;
+function fenceRanges(text) {
+  const out = [];
+  const re = /^[ \t]*(```|~~~)[^\n]*$/gm;
+  let open2;
+  let marker = "";
+  for (let m = re.exec(text); m; m = re.exec(text)) {
+    if (open2 === void 0) {
+      open2 = m.index;
+      marker = m[1];
+    } else if (m[1] === marker) {
+      out.push([open2, m.index + m[0].length]);
+      open2 = void 0;
+    }
+  }
+  if (open2 !== void 0) out.push([open2, text.length]);
+  return out;
+}
+var inRanges = (ranges, index) => ranges.some(([a, b]) => index >= a && index < b);
+var ABOUT_ATTACKS_RE = /\b(?:attack(?:s|er|ers)?|malicious|payloads?|prompt[- ]injections?|jailbreak(?:s|ing)?|poison(?:ed|ing)?|red[- ]team(?:ing)?|untrusted|adversar\w+|exploit(?:s|ed)?)\b/i;
+function isQuoted(text, index) {
+  return /["'“‘`«]\s*$/.test(text.slice(Math.max(0, index - 3), index));
+}
+var STRONG_STORE = String.raw`\.ssh\b|\.aws\b|\.gnupg\b|\.kube\b|\.npmrc\b|\.netrc\b|\.pypirc\b|\.git-credentials\b|\bid_(?:rsa|ed25519|ecdsa)\b|credentials\.json\b|\bKeychains?\b|Login Data|\bwallet\.dat\b|\.config\/gcloud|\/etc\/(?:passwd|shadow)\b|(?:Chrome|Chromium|Firefox|BraveSoftware|Edge)\/[^\s"']*(?:Cookies|Login Data|key4\.db|logins\.json)`;
+var ENV_FILE = String.raw`(?:^|[\s/"'\x60=@<~])\.env(?!\.(?:example|sample|template|dist|defaults)\b)\b`;
+var NET_TOOLS = String.raw`(?:curl|wget|nc|ncat|netcat|scp|rsync|socat|Invoke-WebRequest|Invoke-RestMethod|iwr|irm)`;
+var EXFIL_RE = new RegExp(`\\b${NET_TOOLS}\\b[^\\n]*?(?:(${STRONG_STORE})|(${ENV_FILE}))|(?:(${STRONG_STORE})|(${ENV_FILE}))[^\\n]*?\\|\\s*(?:base64[^\\n]*\\|\\s*)?${NET_TOOLS}\\b`, "gim");
+var PIPE_TO_SHELL_RE = /\b(?:curl|wget)\b[^\n|]*\|\s*(?:sudo\s+(?:-\w+\s+)*)?(?:(?:ba|z|da|k)?sh|python3?|node|perl|ruby)\b|\b(?:ba|z)?sh\s+<\(\s*(?:curl|wget)\b|\b(?:iex|Invoke-Expression)\b[^\n]*\b(?:iwr|irm|Invoke-WebRequest|Invoke-RestMethod|DownloadString)\b|\b(?:iwr|irm|Invoke-WebRequest|Invoke-RestMethod)\b[^\n]*\|\s*(?:iex|Invoke-Expression)\b/gi;
+var SUSPICIOUS_HOST_RE = /https?:\/\/(?:\d{1,3}(?:\.\d{1,3}){3}|[^/\s"']*(?:pastebin\.com|paste\.ee|hastebin|bit\.ly|tinyurl\.com|is\.gd|webhook\.site|requestbin|pipedream\.net|ngrok(?:-free)?\.(?:io|app|dev)|trycloudflare\.com|transfer\.sh|interact\.sh|oast\.\w+|burpcollaborator|discord(?:app)?\.com\/api\/webhooks)[^\s"']*)/i;
+var ENCODED_EXEC_RE = /\bbase64\s+(?:-d|-D|--decode)\b[^\n]*\|\s*(?:sudo\s+)?(?:ba|z)?sh\b|\b(?:eval|exec)\b[^\n]*\bbase64\b[^\n]*(?:-d\b|--decode|b64decode|atob)|\bpowershell(?:\.exe)?\b[^\n]*\s-(?:e|enc|encodedcommand)\s+[A-Za-z0-9+/=]{20,}|\b(?:python3?|node)\s+-[ce]\s+["'][^\n]*(?:b64decode|atob)|\bxxd\s+-r[^\n]*\|\s*(?:ba)?sh\b/gi;
+var STEALER_STORE_RE = new RegExp(`(?:${STRONG_STORE})`, "i");
+var NETWORK_CODE_RE = /\b(?:requests\.(?:post|put|get)|urllib\.request|http\.client|httpx\.|aiohttp|fetch\s*\(|axios\.|XMLHttpRequest|net\.connect|socket\.(?:socket|create_connection)|https?\.request)\b|\b(?:curl|wget|nc|ncat|Invoke-WebRequest)\b/;
+function shellFindings(text, base, meta2, make) {
+  const out = [];
+  const push = (f, index) => {
+    const made = make(f, base + index);
+    if (made) out.push(made);
+  };
+  for (const m of text.matchAll(EXFIL_RE)) {
+    const strong = Boolean(m[1] ?? m[3]);
+    push(
+      {
+        severity: strong ? "critical" : "high",
+        rule: "context/exfil-command",
+        title: strong ? "Command sends credential files off the machine" : "Command sends an .env file off the machine",
+        evidence: excerptAround(text, m.index, m[0].length),
+        remediation: "No skill, command or hook needs to upload private keys or credential files. Treat the plugin or file as malicious, remove it and rotate the credentials it could reach."
+      },
+      m.index
+    );
+  }
+  for (const m of text.matchAll(PIPE_TO_SHELL_RE)) {
+    const suspicious = SUSPICIOUS_HOST_RE.test(text.slice(m.index, m.index + 400));
+    push(
+      {
+        severity: suspicious || meta2.executes ? "high" : "low",
+        rule: "context/pipe-to-shell",
+        title: suspicious ? "Downloads from a throwaway or anonymous host and runs it" : meta2.executes ? "Downloads and runs code in one step" : "Install snippet downloads and runs code in one step",
+        evidence: excerptAround(text, m.index, m[0].length),
+        remediation: "Content fetched at run time can change after you reviewed it. Pin a version or checksum, or download, read and then run it."
+      },
+      m.index
+    );
+  }
+  for (const m of text.matchAll(ENCODED_EXEC_RE)) {
+    push(
+      {
+        severity: "high",
+        rule: "context/encoded-execution",
+        title: "Decodes a hidden payload and runs it",
+        evidence: excerptAround(text, m.index, m[0].length),
+        remediation: "Decode and read the payload. Legitimate setup steps do not hide what they run."
+      },
+      m.index
+    );
+  }
+  return out;
+}
+var NEGATION_RE = /\b(?:never|do not|don't|dont|must not|should not|shouldn't|avoid|refuse|refrain|without|not to|no need to|instead of)\b/i;
+var EGRESS_RE = /\b(?:send|upload|post|email|e-mail|webhook|curl|wget|exfiltrate|transmit|forward|share|paste|submit)\b|https?:\/\//i;
+var HIDDEN_STRONG_RE = /[\u202A-\u202E\u2066-\u2069\u{E0000}-\u{E007F}\u{E0100}-\u{E01EF}]/u;
+var HIDDEN_WEAK_RE = /[\u200B\u2060-\u2064\u180E\u3164\uFFA0\u034F]/;
+var ESCAPE_RE2 = /\u001b[[\]PX^_]|\u009b/;
+var CONCEAL_RES = [
+  /\b(?:do not|don't|dont|never|must not|should not)\b[^.!?\n]{0,30}\b(?:tell|inform|mention|notify|reveal|disclose|alert|show)\b[^.!?\n]{0,15}\b(?:this|that|it|these|those|the above|the following|any of)\b[^.!?\n]{0,30}\b(?:to|from)\s+(?:the\s+)?user/i,
+  /\b(?:do not|don't|dont|never|must not|should not)\b[^.!?\n]{0,15}\b(?:tell|inform|notify|alert|warn|show)\s+(?:the\s+)?user\s+(?:about|of|that)\s+(?:this|it|these|the above|the following|the extra|the additional|any of)\b/i,
+  /\b(?:hide|conceal|withhold)\b[^.!?\n]{0,25}\b(?:this|that|it|these|the above)\b[^.!?\n]{0,25}\bfrom\s+(?:the\s+)?user/i,
+  /\bkeep\b[^.!?\n]{0,15}\b(?:this|that|it|these)\b[^.!?\n]{0,15}\b(?:secret|hidden|confidential|quiet)\b[^.!?\n]{0,20}\bfrom\s+(?:the\s+)?user/i,
+  /\bwithout\s+(?:the\s+)?user\s+(?:knowing|noticing|seeing|realizing|being\s+aware)\b|\b(?:don't|do not|never)\s+let\s+(?:the\s+)?user\s+(?:know|see|notice|find out)\b/i,
+  /\b(?:secretly|covertly|silently)\s+(?:send|upload|post|forward|exfiltrate|copy)\b/i
+];
+var OVERRIDE_PATTERNS = PATTERNS.filter((p) => p.rule === "tool/instruction-override");
+var CONCEAL_NON_EN = PATTERNS.filter((p) => p.rule === "tool/conceal-from-user" && p.title.includes("non-English"));
+var INSTRUCTION_PATTERNS = [
+  ...OVERRIDE_PATTERNS.map((p) => ({ rule: "context/instruction-override", re: p.re })),
+  ...CONCEAL_NON_EN.map((p) => ({ rule: "context/conceal-from-user", re: p.re })),
+  ...CONCEAL_RES.map((re) => ({ rule: "context/conceal-from-user", re }))
+];
+var PROSE_SECRET_RE = /\bid_(?:rsa|ed25519|ecdsa)\b(?!\.pub)|\.aws\/credentials|\.git-credentials|\.netrc\b|\.npmrc\b|\.pypirc\b|\.gnupg\b|\bcredentials\.json\b|\bKeychains?\b|\bLogin Data\b|\bwallet\.dat\b|\bprivate (?:ssh )?keys?\b|\.ssh\/(?!config\b|known_hosts\b|authorized_keys\b|[\w.-]*\.pub\b)/gi;
+var READ_OR_SEND_RE = /\b(?:read|reading|cat|open|load|include|send|upload|copy|attach|paste|extract|forward|post|share|embed|print|dump|output|exfiltrate)\b/i;
+var SETUP_RE = /\b(?:ssh-keygen|ssh-add|add-key|generate|create|chmod|chown|\.pub)\b/i;
+var MD_EXFIL_RE = /!\[[^\]]*\]\(\s*https?:\/\/[^)\s]*(?:[?&#][^)\s]*(?:\{|\$\{?|%s|<|\bdata=|\bq=|\bcontent=|\bprompt=|\bchat=|\bhistory=|\btoken=|\bsecret=)|\{[^})]*\})[^)]*\)|<img[^>]+src\s*=\s*["']?https?:\/\/[^"'\s>]*[?&][^"'\s>]*(?:\{|\$\{?|%s)/gi;
+var PERMISSION_WEAKENING_RE = /--dangerously-skip-permissions|["']?defaultMode["']?\s*[:=]\s*["']?bypassPermissions|\benableAllProjectMcpServers["']?\s*[:=]\s*true|--permission-mode[ =]bypassPermissions/gi;
+function parseFrontmatter(text) {
+  const m = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(text);
+  return m ? { block: m[1], end: m[0].length } : void 0;
+}
+function allowedTools(block) {
+  const lines = block.split(/\r?\n/);
+  const i = lines.findIndex((l) => /^allowed-tools[ \t]*:/i.test(l));
+  if (i < 0) return [];
+  const first = lines[i].replace(/^allowed-tools[ \t]*:/i, "").trim().replace(/^\[|\]$/g, "");
+  const items = first ? first.includes(",") || first.includes("(") ? first.split(/,(?![^(]*\))/) : first.split(/\s+/) : [];
+  for (let j = i + 1; j < lines.length && /^[ \t]*-[ \t]+/.test(lines[j]); j++) items.push(lines[j].replace(/^[ \t]*-[ \t]+/, ""));
+  return items.map((t) => t.trim().replace(/^["']|["']$/g, "")).filter(Boolean);
+}
+var shortPath = (p) => p.split(sep2).slice(-3).join("/");
+function analyzeContextFile(file) {
+  const { text, kind, origin, name, path } = file;
+  const findings = [];
+  const seen = /* @__PURE__ */ new Set();
+  const where = (index) => `${kind} "${excerpt(name, 50)}" (${origin}) \u203A ${excerpt(shortPath(path), 90)}:${lineAt(text, index)}`;
+  const make = (f, index) => {
+    const line = lineAt(text, index);
+    const key = `${f.rule}|${line}`;
+    if (seen.has(key)) return void 0;
+    seen.add(key);
+    return { ...f, location: where(index), file: path, line };
+  };
+  const add = (f, index) => {
+    const made = make(f, index);
+    if (made) findings.push(made);
+  };
+  const strong = HIDDEN_STRONG_RE.exec(text);
+  const weak = HIDDEN_WEAK_RE.exec(text);
+  const bom = text.indexOf("\uFEFF", 1);
+  if (strong || weak || bom > 0) {
+    const index = strong?.index ?? weak?.index ?? bom;
+    const count = [...text.matchAll(new RegExp(`${HIDDEN_STRONG_RE.source}|${HIDDEN_WEAK_RE.source}`, "gu"))].length || 1;
+    add({ severity: strong ? "critical" : "high", rule: "context/invisible-characters", title: `Contains ${count} invisible or bidi-control character(s)`, evidence: excerptAround(text, index, 1), remediation: "Invisible characters hide text from human reviewers while the model still reads it. Treat the file as malicious." }, index);
+  }
+  const esc3 = ESCAPE_RE2.exec(text);
+  if (esc3) add({ severity: "high", rule: "context/ansi-escape", title: "Contains terminal escape sequences", evidence: excerptAround(text, esc3.index, 1), remediation: "Escape sequences can hide or rewrite text in terminal UIs while the model still reads it." }, esc3.index);
+  if (kind === "script" || kind === "hooks") {
+    if (kind === "hooks") {
+      for (const m of text.matchAll(/"command"\s*:\s*"((?:[^"\\]|\\.)*)"/g)) {
+        let cmd = m[1];
+        try {
+          cmd = JSON.parse(`"${m[1]}"`);
+        } catch {
+        }
+        findings.push(...shellFindings(cmd, m.index, { executes: true }, make));
+      }
+      return findings;
+    }
+    findings.push(...shellFindings(text, 0, { executes: true }, make));
+    const store = STEALER_STORE_RE.exec(text);
+    if (store && NETWORK_CODE_RE.test(text) && !/\b(?:tests?|mocks?|fixtures?)\b/i.test(path)) {
+      add({ severity: "high", rule: "context/credential-stealer", title: "Script reads credential stores and also has network access", evidence: excerptAround(text, store.index, store[0].length), remediation: "A skill script that opens private keys, keychains, wallets or browser profiles and can reach the network matches the infostealer pattern seen in malicious skills. Read the script before running it." }, store.index);
+    }
+    return findings;
+  }
+  const fm = parseFrontmatter(text);
+  const fences = fenceRanges(text);
+  for (const p of INSTRUCTION_PATTERNS) {
+    const re = new RegExp(p.re.source, p.re.flags.includes("g") ? p.re.flags : `${p.re.flags}g`);
+    let count = 0;
+    for (let m = re.exec(text); m && count < 50; m = re.exec(text), count++) {
+      const sentence = sentenceAt(text, m.index);
+      const docs = inRanges(fences, m.index) || isQuoted(text, m.index) || ABOUT_ATTACKS_RE.test(sentence);
+      const override = p.rule === "context/instruction-override";
+      const severity = docs ? "medium" : override ? "critical" : "high";
+      add({
+        severity,
+        rule: p.rule,
+        title: `${override ? "Tries to override the model's instructions" : "Asks the model to hide something from the user"}${docs ? " (appears in an example or documentation)" : ""}`,
+        evidence: excerptAround(text, m.index, m[0].length),
+        remediation: docs ? "This looks like a quoted example. Read the surrounding text to confirm it is not an instruction the model will follow." : override ? "Skills, commands and CLAUDE.md files have no reason to tell the model to ignore its other instructions. Treat the file as malicious and find where it came from." : "Legitimate instructions do not ask for secrecy towards the user. Read the file and remove it unless this is a deliberate persona rule you wrote."
+      }, m.index);
+    }
+  }
+  for (const m of text.matchAll(/<!--([\s\S]*?)-->/g)) {
+    const body = m[1];
+    const toModel = /\b(?:assistant|claude|ai agent|ai assistant|the model|language model|llm)\b/i.test(body);
+    const override = INSTRUCTION_PATTERNS.some((p) => p.re.test(body));
+    const secrets = new RegExp(PROSE_SECRET_RE.source, "i").test(body) && READ_OR_SEND_RE.test(body);
+    if (toModel || override || secrets) {
+      add({ severity: "high", rule: "context/hidden-comment", title: "HTML comment addressed to the model (hidden from rendered views)", evidence: excerptAround(text, m.index, m[0].length), remediation: "Comments are invisible in rendered Markdown but fully visible to the model. Read the comment text and remove it if it is not yours." }, m.index);
+    }
+  }
+  for (const m of text.matchAll(PROSE_SECRET_RE)) {
+    if (inRanges(fences, m.index)) continue;
+    const sentence = sentenceAt(text, m.index);
+    if (!READ_OR_SEND_RE.test(sentence) || NEGATION_RE.test(sentence) || ABOUT_ATTACKS_RE.test(sentence) || SETUP_RE.test(sentence)) continue;
+    const egress = EGRESS_RE.test(sentence);
+    add({
+      severity: egress ? "high" : "medium",
+      rule: "context/sensitive-path",
+      title: egress ? "Tells the model to read credential files and send data out" : "Tells the model to read credential files",
+      evidence: excerptAround(text, m.index, m[0].length),
+      remediation: "A skill, command or CLAUDE.md file has no reason to direct the model at private keys or credential stores. Remove it unless the sentence is clearly documentation."
+    }, m.index);
+  }
+  for (const m of text.matchAll(MD_EXFIL_RE)) {
+    add({ severity: "high", rule: "context/markdown-exfiltration", title: "Embeds a remote image with data placeholders", evidence: excerptAround(text, m.index, m[0].length), remediation: "When the client renders this image, the query string is sent to the remote host. That is a zero-click exfiltration channel." }, m.index);
+  }
+  const shellBlocks = [];
+  for (const m of text.matchAll(/!`([^`\n]+)`/g)) shellBlocks.push({ text: m[1], base: m.index + 2, executes: kind === "command" || kind === "skill" });
+  for (const [start, end] of fences) shellBlocks.push({ text: text.slice(start, end), base: start, executes: false });
+  const proseOutsideFences = fences.reduce((t, [a, b]) => t.slice(0, a) + " ".repeat(b - a) + t.slice(b), text);
+  shellBlocks.push({ text: proseOutsideFences, base: 0, executes: false });
+  for (const b of shellBlocks) findings.push(...shellFindings(b.text, b.base, { executes: b.executes }, make));
+  for (const m of text.matchAll(PERMISSION_WEAKENING_RE)) {
+    add({ severity: "medium", rule: "context/permission-weakening", title: "Tells the model or the user to switch off Claude Code's permission checks", evidence: excerptAround(text, m.index, m[0].length), remediation: "Permission prompts are the safety net for every other finding. Do not follow instructions that disable them." }, m.index);
+  }
+  if (fm && (kind === "skill" || kind === "command")) {
+    const broad = allowedTools(fm.block).filter((t) => /^(?:\*|Bash|Bash\(\s*\*?\s*\)|Bash\(\*:\*\))$/.test(t));
+    if (broad.length) {
+      add({ severity: origin === "project" ? "medium" : origin === "user" ? "info" : "low", rule: "context/overbroad-tools", title: `Pre-approves unrestricted shell access (allowed-tools: ${excerpt(broad.join(", "), 60)})`, evidence: excerpt(fm.block.split("\n").find((l) => /^allowed-tools/i.test(l)) ?? "", 120), remediation: "Tools listed in allowed-tools run without asking. Restrict it to the commands this skill needs, e.g. Bash(git status:*)." }, text.indexOf("allowed-tools"));
+    }
+  }
+  return findings;
+}
+function analyzeContext(files) {
+  return files.flatMap(analyzeContextFile);
+}
+
+// src/context-audit.ts
+function auditContext(projectDir, opts = {}) {
+  const discovered = discoverContext(projectDir, opts);
+  return { ...discovered, findings: analyzeContext(discovered.files) };
+}
+var KIND_LABEL = {
+  "claude-md": "CLAUDE.md file(s)",
+  skill: "skill file(s)",
+  command: "command(s)",
+  agent: "subagent(s)",
+  rule: "rule file(s)",
+  hooks: "plugin hook config(s)",
+  script: "bundled script(s)"
+};
+function contextSummary(a) {
+  const count = (keys) => keys.reduce((m, k) => (m[k] = (m[k] ?? 0) + 1, m), {});
+  const kinds = count(a.files.map((f) => f.kind));
+  const origins = count(a.files.map((f) => f.origin.startsWith("plugin:") ? "plugins" : f.origin));
+  const pluginNames = new Set(a.files.filter((f) => f.origin.startsWith("plugin:")).map((f) => f.origin.slice(7)));
+  return [
+    `Scanned **${a.files.length}** file(s): ${Object.entries(kinds).map(([k, n]) => `${n} ${KIND_LABEL[k]}`).join(", ") || "none"}.`,
+    `Sources: ${Object.entries(origins).map(([k, n]) => `${k} (${n})`).join(", ") || "none"}${pluginNames.size ? `; ${pluginNames.size} plugin(s)` : ""}.`,
+    a.skipped.length ? `**Skipped:**
+${a.skipped.slice(0, 10).map((s) => `- ${s}`).join("\n")}${a.skipped.length > 10 ? `
+- \u2026 and ${a.skipped.length - 10} more` : ""}` : ""
+  ];
+}
+
+// src/fixes.ts
+import { chmodSync, existsSync as existsSync4, mkdirSync, readFileSync as readFileSync4, renameSync, rmSync as rmSync2, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { homedir as homedir4 } from "node:os";
+import { basename as basename2, dirname as dirname2, join as join5 } from "node:path";
+
+// src/supply-chain.ts
+var DAY = 864e5;
+var POPULAR_PACKAGES = {
+  npm: [
+    "@modelcontextprotocol/server-filesystem",
+    "@modelcontextprotocol/server-memory",
+    "@modelcontextprotocol/server-everything",
+    "@modelcontextprotocol/server-sequential-thinking",
+    "@modelcontextprotocol/server-github",
+    "@modelcontextprotocol/server-gitlab",
+    "@modelcontextprotocol/server-slack",
+    "@modelcontextprotocol/server-postgres",
+    "@modelcontextprotocol/server-puppeteer",
+    "@modelcontextprotocol/server-brave-search",
+    "@modelcontextprotocol/server-google-maps",
+    "@playwright/mcp",
+    "@upstash/context7-mcp",
+    "@notionhq/notion-mcp-server",
+    "@supabase/mcp-server-supabase",
+    "@stripe/mcp",
+    "@sentry/mcp-server",
+    "@browsermcp/mcp",
+    "mcp-remote",
+    "firebase-tools",
+    "figma-developer-mcp",
+    "exa-mcp-server",
+    "tavily-mcp"
+  ],
+  PyPI: ["mcp-server-git", "mcp-server-fetch", "mcp-server-time", "mcp-server-sqlite", "mcp", "fastmcp"]
+};
+function packagesOf(s) {
+  if (!s.command) return [];
+  const cmd = baseCommand(s.command);
+  const args = s.args ?? [];
+  const isNode = NODE_RUNNERS.has(cmd) || (cmd === "npm" || cmd === "pnpm") && (args[0] === "exec" || args[0] === "dlx");
+  const isPy = PY_RUNNERS.has(cmd);
+  const spec = (isNode || isPy) && packageSpec(args);
+  if (!spec || /^(git\+|https?:|ssh:|github:|file:|\.|\/)/.test(spec)) return [];
+  if (isNode) {
+    const m2 = /^(@[^/@]+\/[^@]+|[^@]+)(?:@(.+))?$/.exec(spec);
+    if (!m2) return [];
+    const v = m2[2];
+    return [{ server: s, ecosystem: "npm", name: m2[1], version: v && /^\d+\.\d+\.\d+/.test(v) ? v : void 0 }];
+  }
+  const m = /^([A-Za-z0-9._-]+)(?:\[[^\]]*\])?(?:(?:==|@)([0-9][^\s;]*))?$/.exec(spec);
+  return m ? [{ server: s, ecosystem: "PyPI", name: m[1], version: m[2] }] : [];
+}
+function editDistance(a, b) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+function typosquatOf(p) {
+  const name = p.name.toLowerCase();
+  const popular = POPULAR_PACKAGES[p.ecosystem];
+  if (popular.includes(name)) return void 0;
+  const unscoped = name.replace(/^@[^/]+\//, "");
+  return popular.find((q) => {
+    const dist = editDistance(name, q);
+    const qUnscoped = q.replace(/^@[^/]+\//, "");
+    return dist > 0 && dist <= (q.length > 12 ? 2 : 1) || q.startsWith("@") && name !== q && unscoped === qUnscoped;
+  });
+}
+function osvSeverity(vuln) {
+  if (String(vuln?.id ?? "").startsWith("MAL-")) return "critical";
+  const s = String(vuln?.database_specific?.severity ?? "").toUpperCase();
+  return s === "CRITICAL" ? "critical" : s === "HIGH" ? "high" : s === "LOW" ? "low" : "medium";
+}
+async function npmInfo(name, version2, fetcher) {
+  const r = await fetcher(`https://registry.npmjs.org/${name.replace("/", "%2f")}`);
+  if (r.status === 404) return { exists: false };
+  if (!r.ok) throw new Error(`npm registry HTTP ${r.status}`);
+  const d = await r.json();
+  const v = version2 ?? d["dist-tags"]?.latest;
+  const meta2 = d.versions?.[v] ?? {};
+  const scripts = Object.keys(meta2.scripts ?? {}).filter((k) => ["preinstall", "install", "postinstall"].includes(k));
+  const ordered = Object.keys(d.time ?? {}).filter((k) => d.versions?.[k] && !/-/.test(k)).sort((a, b) => Date.parse(d.time[a]) - Date.parse(d.time[b]));
+  const prev = ordered[ordered.indexOf(v) - 1];
+  const who = (x) => x ? d.versions?.[x]?._npmUser?.name : void 0;
+  const from = who(prev);
+  const to = who(v);
+  return {
+    exists: true,
+    version: v,
+    created: Date.parse(d.time?.created),
+    versionPublished: Date.parse(d.time?.[v]),
+    installScripts: scripts,
+    deprecated: typeof meta2.deprecated === "string" ? meta2.deprecated : void 0,
+    publisherChanged: from && to && from !== to ? { from, to } : void 0
+  };
+}
+async function pypiInfo(name, version2, fetcher) {
+  const r = await fetcher(`https://pypi.org/pypi/${encodeURIComponent(name)}/json`);
+  if (r.status === 404) return { exists: false };
+  if (!r.ok) throw new Error(`PyPI HTTP ${r.status}`);
+  const d = await r.json();
+  const v = version2 ?? d.info?.version;
+  const uploads = Object.values(d.releases ?? {}).flat().map((f) => Date.parse(f.upload_time_iso_8601));
+  const files = d.releases?.[v] ?? [];
+  return {
+    exists: true,
+    version: v,
+    created: uploads.length ? Math.min(...uploads) : void 0,
+    versionPublished: files.length ? Math.min(...files.map((f) => Date.parse(f.upload_time_iso_8601))) : void 0,
+    deprecated: files.some((f) => f.yanked) ? "yanked" : void 0
+  };
+}
+async function osvVulns(pkgs, fetcher) {
+  if (!pkgs.length) return [];
+  const r = await fetcher("https://api.osv.dev/v1/querybatch", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ queries: pkgs.map((p) => ({ package: { name: p.name, ecosystem: p.ecosystem }, version: p.version })) })
+  });
+  if (!r.ok) throw new Error(`OSV HTTP ${r.status}`);
+  const results = (await r.json()).results ?? [];
+  return Promise.all(
+    results.map(
+      async (res) => Promise.all(
+        (res.vulns ?? []).slice(0, 10).map(async (v) => {
+          const d = await fetcher(`https://api.osv.dev/v1/vulns/${encodeURIComponent(v.id)}`);
+          return d.ok ? d.json() : { id: v.id };
+        })
+      )
+    )
+  );
+}
+async function checkSupplyChain(servers, fetcher = fetch, now = Date.now()) {
+  const pkgs = servers.flatMap(packagesOf);
+  const findings = [];
+  const errors = [];
+  const add = (p, severity, rule, title, remediation, evidence) => findings.push({ severity, rule, title, location: `server "${p.server.name}" (${p.server.scope}) \u203A ${p.ecosystem} ${excerpt(p.name, 80)}`, evidence, remediation, file: p.server.source, server: p.server.name });
+  const infos = await Promise.all(
+    pkgs.map(async (p) => {
+      try {
+        return await (p.ecosystem === "npm" ? npmInfo(p.name, p.version, fetcher) : pypiInfo(p.name, p.version, fetcher));
+      } catch (e) {
+        errors.push(`${p.ecosystem} ${p.name}: ${excerpt(e instanceof Error ? e.message : String(e), 100)}`);
+        return void 0;
+      }
+    })
+  );
+  pkgs.forEach((p, i) => {
+    const squat = typosquatOf(p);
+    if (squat) add(p, "high", "supply-chain/typosquat", `Package name is suspiciously close to the popular "${squat}"`, `Check the name character by character. If you meant "${squat}", fix the config.`);
+    const info = infos[i];
+    if (!info) return;
+    if (!info.exists) {
+      add(p, "high", "supply-chain/package-not-found", "Package does not exist on the registry", "Anyone can register this name and get code execution on your machine at the next launch (name squatting / dependency confusion). Fix the name or remove the server.");
+      return;
+    }
+    if (info.created && now - info.created < 30 * DAY) add(p, "medium", "supply-chain/new-package", `Package was first published ${Math.max(1, Math.round((now - info.created) / DAY))} day(s) ago`, "Very new packages have no track record. Prefer established servers, or review the source first.");
+    if (info.versionPublished && now - info.versionPublished < 3 * DAY) add(p, "low", "supply-chain/fresh-release", `Version ${excerpt(info.version ?? "?", 30)} was published less than 3 days ago`, "Compromised releases are usually caught within days. Pin the previous version until this one has aged.");
+    if (info.installScripts?.length) add(p, "medium", "supply-chain/install-scripts", `Package runs install scripts (${info.installScripts.join(", ")})`, "Install scripts execute before any MCP check can run. Review them, or launch with --ignore-scripts.");
+    if (info.deprecated) add(p, "medium", "supply-chain/deprecated", `Version is ${info.deprecated === "yanked" ? "yanked" : "deprecated"}`, "Move to a maintained version or server.", info.deprecated === "yanked" ? void 0 : excerpt(info.deprecated, 120));
+    if (info.publisherChanged) add(p, "medium", "supply-chain/publisher-changed", `Published by a different npm account than the previous version ("${excerpt(info.publisherChanged.from, 40)}" \u2192 "${excerpt(info.publisherChanged.to, 40)}")`, "A new publisher is how account takeovers show up. Confirm the change with the project before upgrading.");
+  });
+  try {
+    const versioned = pkgs.map((p, i) => ({ p, version: p.version ?? infos[i]?.version })).filter((x) => !!x.version && infos[pkgs.indexOf(x.p)]?.exists !== false);
+    const vulns = await osvVulns(versioned.map((x) => ({ ecosystem: x.p.ecosystem, name: x.p.name, version: x.version })), fetcher);
+    versioned.forEach(({ p, version: version2 }, i) => {
+      for (const v of vulns[i] ?? []) {
+        const malicious = String(v.id).startsWith("MAL-");
+        add(p, osvSeverity(v), malicious ? "supply-chain/malicious-package" : "supply-chain/known-vulnerability", malicious ? `Version ${excerpt(version2, 30)} is a known MALICIOUS package (${v.id})` : `Version ${excerpt(version2, 30)} has a known vulnerability: ${excerpt(v.id, 40)}${v.summary ? ` (${excerpt(v.summary, 100)})` : ""}`, malicious ? "Remove the server immediately and rotate every credential it could reach." : `Upgrade to a fixed version. Details: https://osv.dev/vulnerability/${encodeURIComponent(v.id)}`);
+      }
+    });
+  } catch (e) {
+    errors.push(`OSV: ${excerpt(e instanceof Error ? e.message : String(e), 100)}`);
+  }
+  return { findings, checked: pkgs, errors };
+}
+
+// src/fixes.ts
+function readJsonFile(path) {
+  return existsSync4(path) ? JSON.parse(readFileSync4(path, "utf8")) : {};
+}
+var serialize = (data) => JSON.stringify(data, null, 2) + "\n";
+function planPermissions(projectDir, ask) {
+  const path = join5(projectDir, ".claude", "settings.json");
+  const settings = readJsonFile(path);
+  const perms = settings.permissions ??= {};
+  const existing = /* @__PURE__ */ new Set([...perms.ask ?? [], ...perms.deny ?? []]);
+  const add = ask.filter((r) => !existing.has(r));
+  if (!add.length) return { changes: [], notes: ask.length ? ["All recommended permission rules are already present."] : ["No tools need an approval rule."] };
+  perms.ask = [...perms.ask ?? [], ...add];
+  return { changes: [{ path, edits: add.map((r) => `permissions.ask += "${r}"`), content: serialize(settings) }], notes: [] };
+}
+async function planPinVersions(projectDir, servers, fetcher = fetch) {
+  const path = join5(projectDir, ".mcp.json");
+  if (!existsSync4(path)) return { changes: [], notes: ["No project .mcp.json."] };
+  const data = readJsonFile(path);
+  const notes = [];
+  const edits = [];
+  for (const s of servers.filter((x) => x.source === path)) {
+    const [pkg] = packagesOf(s);
+    if (!pkg || pkg.version) continue;
+    const raw = data.mcpServers?.[s.name];
+    const args = raw?.args ?? [];
+    const idx = args.findIndex((a) => a === pkg.name || a.startsWith(`${pkg.name}@`) || a.startsWith(`${pkg.name}==`) || a.startsWith(`${pkg.name}[`));
+    if (idx < 0) continue;
+    let version2;
+    try {
+      const url2 = pkg.ecosystem === "npm" ? `https://registry.npmjs.org/${pkg.name.replace("/", "%2f")}` : `https://pypi.org/pypi/${encodeURIComponent(pkg.name)}/json`;
+      const r = await fetcher(url2);
+      const d = r.ok ? await r.json() : void 0;
+      version2 = pkg.ecosystem === "npm" ? d?.["dist-tags"]?.latest : d?.info?.version;
+    } catch {
+    }
+    if (!version2 || !/^[0-9][0-9A-Za-z.+-]*$/.test(version2)) {
+      notes.push(`Could not resolve the current version of ${pkg.ecosystem} ${excerpt(pkg.name, 60)} for server "${excerpt(s.name, 40)}"; pin it by hand.`);
+      continue;
+    }
+    const cmd = baseCommand(s.command ?? "");
+    const pinned = NODE_RUNNERS.has(cmd) || cmd === "npm" || cmd === "pnpm" ? `${pkg.name}@${version2}` : PY_RUNNERS.has(cmd) ? `${pkg.name}==${version2}` : void 0;
+    if (!pinned) continue;
+    edits.push(`server "${excerpt(s.name, 40)}": ${excerpt(args[idx], 60)} \u2192 ${pinned}`);
+    args[idx] = pinned;
+  }
+  return { changes: edits.length ? [{ path, edits, content: serialize(data) }] : [], notes: edits.length || notes.length ? notes : ["Every npx/uvx package in .mcp.json is already pinned."] };
+}
+function planEnvRefs(projectDir) {
+  const path = join5(projectDir, ".mcp.json");
+  if (!existsSync4(path)) return { changes: [], notes: ["No project .mcp.json."] };
+  const data = readJsonFile(path);
+  const edits = [];
+  const notes = [];
+  for (const [name, raw] of Object.entries(data.mcpServers ?? {})) {
+    for (const field of ["env", "headers"]) {
+      for (const [k, v] of Object.entries(raw?.[field] ?? {})) {
+        if (typeof v !== "string") continue;
+        const bare = field === "headers" ? v.replace(/^Bearer\s+/i, "") : v;
+        if (isEnvReference(bare) || !looksLikeSecretValue(k, bare)) continue;
+        const varName = `${name}_${k}`.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+        raw[field][k] = field === "headers" && /^Bearer\s+/i.test(v) ? `Bearer \${${varName}}` : `\${${varName}}`;
+        edits.push(`server "${excerpt(name, 40)}": ${field}.${k} (${maskSecret(bare)}) \u2192 \${${varName}}`);
+        notes.push(`Set ${varName} in your shell or secret manager before starting Claude Code, e.g. \`export ${varName}=\u2026\`, then rotate the old key if this file was ever committed or shared.`);
+      }
+    }
+  }
+  return { changes: edits.length ? [{ path, edits, content: serialize(data), backupHoldsSecrets: true }] : [], notes: edits.length ? notes : ["No literal secrets in .mcp.json."] };
+}
+function backupPath(file) {
+  const dir = join5(process.env.MCP_SECURITY_HOME ?? join5(homedir4(), ".claude", "mcp-security"), "backups");
+  mkdirSync(dir, { recursive: true, mode: 448 });
+  const id = createHash("sha256").update(file).digest("hex").slice(0, 8);
+  return join5(dir, `${basename2(file)}-${id}-${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-")}`);
+}
+function applyPlan(plan) {
+  const written = [];
+  const backups = [];
+  const backupOf = {};
+  for (const c of plan.changes) {
+    mkdirSync(dirname2(c.path), { recursive: true });
+    if (existsSync4(c.path)) {
+      const backup = backupPath(c.path);
+      rmSync2(backup, { force: true });
+      writeFileSync(backup, readFileSync4(c.path), { mode: c.backupHoldsSecrets ? 384 : 420, flag: "wx" });
+      if (c.backupHoldsSecrets) chmodSync(backup, 384);
+      backups.push(backup);
+      backupOf[c.path] = backup;
+    }
+    const tmp = `${c.path}.mcpsec-tmp`;
+    writeFileSync(tmp, c.content);
+    renameSync(tmp, c.path);
+    written.push(c.path);
+  }
+  return { written, backups, backupOf };
+}
+function describePlan(plan, applied) {
+  const lines = [];
+  for (const c of plan.changes) {
+    lines.push(`**${c.path}**`, ...c.edits.map((e) => `- ${e}`));
+    const backup = applied?.backupOf[c.path];
+    if (c.backupHoldsSecrets && backup) lines.push(`- \u26A0\uFE0F The backup \`${backup}\` still contains the secret (readable only by you): delete it once the variable is set.`);
+  }
+  if (plan.notes.length) lines.push("", ...plan.notes.map((n) => `- ${n}`));
+  if (!plan.changes.length && !plan.notes.length) lines.push("Nothing to fix.");
+  lines.unshift(applied ? `# Fixes applied (${applied.written.length} file(s))` : `# Proposed fixes (dry run, nothing written)`);
+  if (applied?.backups.length) lines.push("", `Backups: ${applied.backups.join(", ")}`);
+  return lines.join("\n");
+}
+
+// src/image-scan.ts
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+var defaultRunner = (cmd, args, timeoutMs) => promisify(execFile)(cmd, args, { timeout: timeoutMs, maxBuffer: 256 * 1024 * 1024 });
+async function detectScanner(run = defaultRunner) {
+  for (const s of ["trivy", "grype"]) {
+    try {
+      await run(s, ["--version"], 1e4);
+      return s;
+    } catch {
+    }
+  }
+  return void 0;
+}
+function countTrivy(json) {
+  const c = { critical: 0, high: 0, medium: 0, low: 0 };
+  for (const r of json?.Results ?? []) for (const v of r?.Vulnerabilities ?? []) {
+    const s = String(v?.Severity ?? "").toLowerCase();
+    if (s in c) c[s]++;
+  }
+  return c;
+}
+function countGrype(json) {
+  const c = { critical: 0, high: 0, medium: 0, low: 0 };
+  for (const m of json?.matches ?? []) {
+    const s = String(m?.vulnerability?.severity ?? "").toLowerCase();
+    if (s in c) c[s]++;
+  }
+  return c;
+}
+async function scanImages(servers, run = defaultRunner) {
+  const targets = servers.map((s) => ({ s, image: dockerImageOf(s) })).filter((x) => !!x.image);
+  if (!targets.length) return { findings: [], scanned: [], notes: [] };
+  const scanner = await detectScanner(run);
+  if (!scanner) return { findings: [], scanned: [], notes: [`${targets.length} server(s) run in containers, but neither Trivy nor Grype is installed, so their images were not checked for known vulnerabilities.`] };
+  const findings = [];
+  const scanned = [];
+  const notes = [];
+  for (const image of [...new Set(targets.map((t) => t.image))]) {
+    try {
+      const args = scanner === "trivy" ? ["image", "--quiet", "--format", "json", "--scanners", "vuln", image] : [image, "-o", "json", "-q"];
+      const { stdout } = await run(scanner, args, 10 * 6e4);
+      const counts = scanner === "trivy" ? countTrivy(JSON.parse(stdout)) : countGrype(JSON.parse(stdout));
+      scanned.push(image);
+      const severity = counts.critical ? "high" : counts.high ? "medium" : counts.medium || counts.low ? "low" : void 0;
+      if (!severity) continue;
+      for (const { s } of targets.filter((t) => t.image === image)) {
+        findings.push({
+          severity,
+          rule: "supply-chain/image-vulnerabilities",
+          title: `Image "${excerpt(image, 80)}" has known vulnerabilities: ${counts.critical} critical, ${counts.high} high, ${counts.medium} medium, ${counts.low} low`,
+          location: `server "${s.name}" (${s.scope}) \u203A image`,
+          remediation: `Update to a patched image tag or digest, then re-pin. Details: ${scanner} image ${image}`,
+          file: s.source,
+          server: s.name
+        });
+      }
+    } catch (e) {
+      notes.push(`${scanner} could not scan ${excerpt(image, 80)}: ${excerpt(e instanceof Error ? e.message : String(e), 120)}`);
+    }
+  }
+  return { findings, scanned, scanner, notes };
+}
+
+// src/pins.ts
+import { createHash as createHash2 } from "node:crypto";
+import { existsSync as existsSync5, mkdirSync as mkdirSync2, readFileSync as readFileSync5, renameSync as renameSync2, statSync, writeFileSync as writeFileSync2 } from "node:fs";
+import { homedir as homedir5 } from "node:os";
+import { dirname as dirname3, isAbsolute, join as join6, resolve as resolve3 } from "node:path";
+function pinsPath() {
+  return join6(process.env.MCP_SECURITY_HOME ?? join6(homedir5(), ".claude", "mcp-security"), "pins.json");
+}
+function stableStringify(v) {
+  if (Array.isArray(v)) return `[${v.map(stableStringify).join(",")}]`;
+  if (v && typeof v === "object") {
+    return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${stableStringify(v[k])}`).join(",")}}`;
+  }
+  return JSON.stringify(v ?? null);
+}
+function hashTool(t) {
+  return createHash2("sha256").update(stableStringify({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })).digest("hex");
+}
+var MAX_HASHED_FILE = 20 * 1024 * 1024;
+function localFileHashes(s) {
+  const out = {};
+  for (const a of [s.command, ...s.args ?? []]) {
+    if (!a || a.startsWith("-") || a.includes("${") || !/[\\/]|\.(m?[jt]s|cjs|py|rb|sh|php|jar)$/i.test(a)) continue;
+    const p = isAbsolute(a) ? a : resolve3(dirname3(s.source), a);
+    try {
+      const st = statSync(p);
+      if (st.isFile() && st.size <= MAX_HASHED_FILE) out[a] = createHash2("sha256").update(readFileSync5(p)).digest("hex");
+    } catch {
+    }
+  }
+  return out;
+}
+function hashConfig(s) {
+  const files = localFileHashes(s);
+  return createHash2("sha256").update(stableStringify({ type: s.type, command: s.command, args: s.args, url: s.url, env: Object.keys(s.env ?? {}).sort(), headers: Object.keys(s.headers ?? {}).sort(), ...Object.keys(files).length ? { files } : {} })).digest("hex");
+}
+function loadPins(path = pinsPath()) {
+  if (!existsSync5(path)) return { version: 1, servers: {} };
+  try {
+    const data = JSON.parse(readFileSync5(path, "utf8"));
+    return data?.version === 1 && data.servers ? data : { version: 1, servers: {} };
+  } catch {
+    return { version: 1, servers: {} };
+  }
+}
+function pinKey(scope, name) {
+  return `${scope}:${name}`;
+}
+var NON_TOOL = /^(#instructions$|prompt:|resource:|template:)/;
+function computeDrift(pin, tools) {
+  const pinned = pin.tools;
+  const legacy = !pin.surface;
+  const current = Object.fromEntries(tools.filter((t) => !(legacy && NON_TOOL.test(t.name))).map((t) => [t.name, hashTool(t)]));
+  return {
+    added: Object.keys(current).filter((n) => !(n in pinned)),
+    removed: Object.keys(pinned).filter((n) => !(n in current)),
+    changed: Object.keys(current).filter((n) => n in pinned && pinned[n] !== current[n])
+  };
+}
+function hasDrift(d) {
+  return d.added.length + d.removed.length + d.changed.length > 0;
+}
+
+// src/cloud.ts
+var DEFAULT_ENDPOINT = "https://mcp-security-cloud.petrovicistefan.workers.dev";
+var MAX_PACKAGES = 500;
+var MAX_TOOL_HASHES = 5e3;
+var MAX_FINDINGS = 1e3;
+var DEFAULT_TIMEOUT_MS = 3e3;
+function pluginConfigKey(env) {
+  const v = env.MCP_SECURITY_GUARD_FEED_KEY?.trim();
+  return v && !v.startsWith("${") ? v : void 0;
+}
+function cloudOptionsFromEnv(env = process.env) {
+  return { apiKey: pluginConfigKey(env) ?? (env.MCP_SECURITY_API_KEY?.trim() || void 0), endpoint: env.MCP_SECURITY_API_URL?.trim() || DEFAULT_ENDPOINT };
+}
+function endpointAllowed(endpoint) {
+  try {
+    const u = new URL(endpoint);
+    return u.protocol === "https:" || u.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname);
+  } catch {
+    return false;
+  }
+}
+var packageKey = (p) => `${p.ecosystem}:${p.name.toLowerCase()}@${p.version ?? ""}`;
+function buildCheckRequest(packages, servers) {
+  const pkgs = /* @__PURE__ */ new Map();
+  for (const p of packages) pkgs.set(packageKey(p), p.version ? { ecosystem: p.ecosystem, name: p.name, version: p.version } : { ecosystem: p.ecosystem, name: p.name });
+  const hashes = new Set(servers.flatMap((s) => s.tools.map(hashTool)));
+  return {
+    client: { name: "mcp-security-guard", version: VERSION },
+    packages: [...pkgs.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, p]) => p).slice(0, MAX_PACKAGES),
+    toolHashes: [...hashes].sort().slice(0, MAX_TOOL_HASHES)
+  };
+}
+var isSeverity = (v) => typeof v === "string" && SEVERITY_ORDER.includes(v);
+function parseCheckResponse(body) {
+  if (!body || typeof body !== "object" || !Array.isArray(body.findings)) return void 0;
+  const findings = [];
+  for (const raw of body.findings.slice(0, MAX_FINDINGS)) {
+    const m = raw?.match;
+    if (!isSeverity(raw?.severity) || typeof raw?.title !== "string") continue;
+    let match;
+    if (m?.kind === "tool" && typeof m.hash === "string" && /^[0-9a-f]{64}$/.test(m.hash)) match = { kind: "tool", hash: m.hash };
+    else if (m?.kind === "package" && (m.ecosystem === "npm" || m.ecosystem === "PyPI") && typeof m.name === "string")
+      match = { kind: "package", ecosystem: m.ecosystem, name: m.name, ...typeof m.version === "string" ? { version: m.version } : {} };
+    else continue;
+    const reference = typeof raw.reference === "string" && /^https:\/\/[^\s]+$/.test(raw.reference) ? excerpt(raw.reference, 200) : void 0;
+    findings.push({ match, severity: raw.severity, title: excerpt(raw.title, 160), ...reference ? { reference } : {} });
+  }
+  const at = body.feedUpdatedAt;
+  return { findings, feedUpdatedAt: typeof at === "string" ? excerpt(at, 40) : "unknown" };
+}
+function toFindings(entries, packages, servers) {
+  const out = [];
+  for (const e of entries) {
+    const remediation = `Remove or replace this server until the issue is resolved.${e.reference ? ` Details: ${e.reference}` : ""}`;
+    if (e.match.kind === "package") {
+      const m = e.match;
+      for (const p of packages) {
+        if (p.ecosystem !== m.ecosystem || p.name.toLowerCase() !== m.name.toLowerCase() || m.version && p.version !== m.version) continue;
+        out.push({ severity: e.severity, rule: "feed/package", title: e.title, location: `server "${p.server.name}" (${p.server.scope}) \u203A ${p.ecosystem} ${p.name}${p.version ? `@${p.version}` : ""}`, remediation, file: p.server.source, server: p.server.name });
+      }
+    } else {
+      const hash = e.match.hash;
+      for (const s of servers)
+        for (const t of s.tools)
+          if (hashTool(t) === hash)
+            out.push({ severity: e.severity, rule: "feed/tool", title: e.title, location: `server "${s.server.name}" (${s.server.scope}) \u203A tool "${excerpt(t.name, 60)}"`, remediation, file: s.server.source, server: s.server.name });
+    }
+  }
+  return out;
+}
+var defaultFetcher = (url2, init) => fetch(url2, init);
+async function cloudCheck(packages, servers, opts = cloudOptionsFromEnv()) {
+  if (!opts.apiKey) return { status: "disabled", findings: [] };
+  if (!opts.endpoint) return { status: "skipped", findings: [], note: "Threat feed skipped: MCP_SECURITY_API_URL is not set." };
+  if (!endpointAllowed(opts.endpoint)) return { status: "skipped", findings: [], note: "Threat feed skipped: MCP_SECURITY_API_URL must be an https URL." };
+  const request = buildCheckRequest(packages, servers);
+  const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const controller = new AbortController();
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error("timeout"));
+    }, timeoutMs);
+  });
+  try {
+    const res = await Promise.race([
+      (opts.fetcher ?? defaultFetcher)(new URL("/v1/check", opts.endpoint).href, {
+        method: "POST",
+        body: JSON.stringify(request),
+        headers: { "content-type": "application/json", authorization: `Bearer ${opts.apiKey}` },
+        signal: controller.signal
+      }),
+      timeout
+    ]);
+    if (!res.ok) {
+      const why = res.status === 401 ? "the API key was rejected" : res.status === 402 ? "the subscription has expired" : `the service answered ${res.status}`;
+      return { status: "skipped", findings: [], note: `Threat feed skipped: ${why}.` };
+    }
+    const parsed = parseCheckResponse(await Promise.race([res.json(), timeout]));
+    if (!parsed) return { status: "skipped", findings: [], note: "Threat feed skipped: unexpected response from the service." };
+    return { status: "ok", findings: toFindings(parsed.findings, packages, servers), note: `Threat feed checked (updated ${parsed.feedUpdatedAt}).` };
+  } catch (err) {
+    const why = err?.message === "timeout" ? `no answer within ${timeoutMs / 1e3} s` : "the service could not be reached";
+    return { status: "skipped", findings: [], note: `Threat feed skipped: ${why}.` };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // src/score.ts
 var PENALTY = { critical: 45, high: 25, medium: 10, low: 3, info: 0 };
 var RULE_CAP = 50;
@@ -21813,6 +22170,12 @@ var BY_RULE = [
   [/^auth\//, ["MCP07"]],
   [/^config\/(duplicate-name|claude-ai-connector)$/, ["MCP09"]],
   [/^policy\//, ["MCP09"]],
+  // Skills, commands, CLAUDE.md and hooks are not MCP, but their risks map onto the same list.
+  [/^context\/(instruction-override|conceal-from-user|invisible-characters|ansi-escape|hidden-comment)$/, ["MCP03", "MCP06"]],
+  [/^context\/(exfil-command|credential-stealer)$/, ["MCP01", "MCP10"]],
+  [/^context\/(sensitive-path|markdown-exfiltration)$/, ["MCP10"]],
+  [/^context\/(pipe-to-shell|encoded-execution)$/, ["MCP05", "MCP04"]],
+  [/^context\/(overbroad-tools|permission-weakening)$/, ["MCP02"]],
   [/^tool\/(instruction-override|role-hijack)$/, ["MCP03", "MCP06"]],
   [/^runtime\/injection-in-output$/, ["MCP06"]],
   [/^tool\/(sensitive-path|context-harvesting|exfiltration-wording|markdown-exfiltration)$/, ["MCP03", "MCP10"]],
@@ -21951,21 +22314,21 @@ function report(title, findings, sections = []) {
 }
 
 // src/sarif.ts
-import { existsSync as existsSync6, readFileSync as readFileSync5 } from "node:fs";
-import { relative, resolve as resolve3, sep } from "node:path";
+import { existsSync as existsSync6, readFileSync as readFileSync6 } from "node:fs";
+import { relative as relative2, resolve as resolve4, sep as sep3 } from "node:path";
 var LEVEL = { critical: "error", high: "error", medium: "warning", low: "note", info: "note" };
 var SECURITY_SEVERITY = { critical: "9.5", high: "8.0", medium: "5.5", low: "3.0", info: "1.0" };
 function lineOf(file, server) {
   if (!file || !server || !existsSync6(file)) return 1;
   const key = server.split(":").pop();
-  const lines = readFileSync5(file, "utf8").split("\n");
+  const lines = readFileSync6(file, "utf8").split("\n");
   const idx = lines.findIndex((l) => l.includes(`"${key}"`) && /:\s*\{?\s*$/.test(l.split(`"${key}"`)[1] ?? ""));
   return idx >= 0 ? idx + 1 : 1;
 }
 function artifactUri(file, projectDir) {
   if (!file) return ".mcp.json";
-  const rel = relative(resolve3(projectDir), file);
-  return rel.startsWith("..") ? file : rel.split(sep).join("/");
+  const rel = relative2(resolve4(projectDir), file);
+  return rel.startsWith("..") ? file : rel.split(sep3).join("/");
 }
 function toSarif(findings, projectDir, version2) {
   const rules = [...new Map(findings.map((f) => [f.rule, f])).values()].map((f) => ({
@@ -21985,7 +22348,7 @@ function toSarif(findings, projectDir, version2) {
           ruleId: f.rule,
           level: LEVEL[f.severity],
           message: { text: `${f.title}${f.evidence ? ` (${f.evidence})` : ""}. ${f.remediation}` },
-          locations: [{ physicalLocation: { artifactLocation: { uri: artifactUri(f.file, projectDir) }, region: { startLine: lineOf(f.file, f.server) } } }],
+          locations: [{ physicalLocation: { artifactLocation: { uri: artifactUri(f.file, projectDir) }, region: { startLine: f.line ?? lineOf(f.file, f.server) } } }],
           properties: { severity: f.severity, "security-severity": SECURITY_SEVERITY[f.severity], where: f.location, owasp: owaspFor(f.rule) }
         }))
       }
@@ -22030,12 +22393,16 @@ var USAGE = `mcp-security-guard ${VERSION}
 
 Usage:
   mcp-security-guard audit [--project DIR] [--project-only] [--supply-chain] [--scan-images] [--format markdown|json|sarif|html] [--output FILE] [--fail-on SEVERITY]
+  mcp-security-guard audit-context [--project DIR] [--project-only] [--format markdown|json|sarif|html] [--output FILE] [--fail-on SEVERITY]
   mcp-security-guard analyze-tools FILE [--name NAME] [--format markdown|json|sarif|html] [--output FILE] [--fail-on SEVERITY]
   mcp-security-guard adversarial FILE --server NAME --i-own-this-server --confirm-launch [--canary-dir DIR] [--host-canary-dir DIR] [--include-destructive]
   mcp-security-guard fix [--permissions --confirm-launch] [--pin-versions] [--env-refs] [--write] [--project DIR]
   mcp-security-guard policy-init [--project DIR] [--force]
   mcp-security-guard scan FILE --confirm-launch [--timeout SECONDS] [--format ...] [--output FILE] [--fail-on SEVERITY]
 
+  audit-context    scans skills, slash commands, subagents, rules, CLAUDE.md, plugin hooks and skill scripts
+                   (user, project and installed plugins) for injected instructions, hidden text and
+                   credential exfiltration. Reads files only; --project-only limits it to the repository
   scan             audits servers from any mcpServers JSON file *before* you install them. It launches
                    stdio servers and connects to remote ones (initialize + tools/list only, no tool calls)
 
@@ -22057,7 +22424,7 @@ async function readStdin() {
   return data;
 }
 function firstRunMessage(projectDir) {
-  const marker = join6(process.env.MCP_SECURITY_HOME ?? join6(homedir5(), ".claude", "mcp-security"), "welcomed");
+  const marker = join7(process.env.MCP_SECURITY_HOME ?? join7(homedir6(), ".claude", "mcp-security"), "welcomed");
   if (existsSync7(marker)) return void 0;
   try {
     mkdirSync3(dirname4(marker), { recursive: true, mode: 448 });
@@ -22149,7 +22516,7 @@ async function main() {
     return 0;
   }
   if (!["markdown", "json", "sarif", "html"].includes(values.format)) throw new Error(`invalid --format: ${values.format}`);
-  const projectDir = resolve4(values.project);
+  const projectDir = resolve5(values.project);
   if (command === "audit") {
     const { findings, servers, sources } = auditConfig(projectDir, { projectOnly: values["project-only"] });
     const supply = values["supply-chain"] ? await checkSupplyChain(servers) : void 0;
@@ -22165,14 +22532,19 @@ async function main() {
     ]);
     return exitCode(findings, values["fail-on"]);
   }
+  if (command === "audit-context") {
+    const a = auditContext(projectDir, { projectOnly: values["project-only"] });
+    emit("Agent context audit (skills, commands, agents, CLAUDE.md, hooks)", a.findings, projectDir, values.format, values.output, contextSummary(a));
+    return exitCode(a.findings, values["fail-on"]);
+  }
   if (command === "analyze-tools") {
     const file = positionals[0];
     if (!file) throw new Error("analyze-tools needs a JSON file (a tools/list result or an array of tools)");
-    const data = JSON.parse(readFileSync6(file, "utf8"));
+    const data = JSON.parse(readFileSync7(file, "utf8"));
     const tools = Array.isArray(data) ? data : data.tools ?? data.result?.tools ?? [];
     if (!tools.length) throw new Error(`no tools found in ${file}`);
-    const name = values.name ?? basename2(file);
-    const findings = analyzeTools(name, tools).map((f) => ({ ...f, file: resolve4(file) }));
+    const name = values.name ?? basename3(file);
+    const findings = analyzeTools(name, tools).map((f) => ({ ...f, file: resolve5(file) }));
     emit(`Tool definition analysis: ${name}`, findings, projectDir, values.format, values.output, [`Analyzed **${tools.length}** tool(s).`]);
     return exitCode(findings, values["fail-on"]);
   }
@@ -22180,8 +22552,8 @@ async function main() {
     const file = positionals[0];
     if (!file || !values.server) throw new Error("adversarial needs a JSON file with mcpServers and --server NAME");
     if (!values["i-own-this-server"] || !values["confirm-launch"]) throw new Error("adversarial calls the server's tools with attack payloads; it needs --i-own-this-server and --confirm-launch");
-    const source = resolve4(file);
-    const data = JSON.parse(readFileSync6(source, "utf8"));
+    const source = resolve5(file);
+    const data = JSON.parse(readFileSync7(source, "utf8"));
     const target = toServers(data.mcpServers ?? data, "project", source).find((s) => s.name === values.server);
     if (!target) throw new Error(`server "${values.server}" not found in ${file}`);
     const r = await adversarialTest(target, { canaryDir: values["canary-dir"], hostCanaryDir: values["host-canary-dir"], includeDestructive: values["include-destructive"] });
@@ -22208,7 +22580,7 @@ ${r.skippedTools.map((t) => `- ${t.tool}: ${t.reason}`).join("\n")}` : ""
     return 0;
   }
   if (command === "policy-init") {
-    const target = resolve4(projectDir, ".mcp-security.json");
+    const target = resolve5(projectDir, ".mcp-security.json");
     if (existsSync7(target) && !values.force) throw new Error(`${target} already exists (use --force to overwrite)`);
     writeFileSync3(target, JSON.stringify(policyFromServers(discoverServers(projectDir).servers), null, 2) + "\n");
     process.stdout.write(`Wrote ${target}. Review allowedServers, then commit it.
@@ -22219,13 +22591,13 @@ ${r.skippedTools.map((t) => `- ${t.tool}: ${t.reason}`).join("\n")}` : ""
     const file = positionals[0];
     if (!file) throw new Error("scan needs a JSON file with an mcpServers object");
     if (!values["confirm-launch"]) throw new Error("scan launches the servers in the file; re-run with --confirm-launch once you are OK with that");
-    const source = resolve4(file);
-    const data = JSON.parse(readFileSync6(source, "utf8"));
+    const source = resolve5(file);
+    const data = JSON.parse(readFileSync7(source, "utf8"));
     const servers = toServers(data.mcpServers ?? data, "project", source);
     if (!servers.length) throw new Error(`no servers found in ${file}`);
     const audit = await auditTools(servers, Number(values.timeout) || 20, void 0, loadPolicy(projectDir));
     const findings = audit.findings;
-    emit(`MCP server scan: ${basename2(file)}`, findings, projectDir, values.format, values.output, toolAuditSections(audit));
+    emit(`MCP server scan: ${basename3(file)}`, findings, projectDir, values.format, values.output, toolAuditSections(audit));
     return exitCode(findings, values["fail-on"]);
   }
   process.stderr.write(`unknown command: ${command}

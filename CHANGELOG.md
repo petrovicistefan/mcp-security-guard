@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Agent-context scan** (`audit_agent_context`, `audit-context`): scans the text Claude reads besides MCP tools: skills and their bundled scripts, slash commands, subagents, rules, `CLAUDE.md` and the hook configs of installed plugins, from the user, the project and every enabled plugin (symlinks are never followed). Rules `context/*`: instruction override (English and 8 languages), concealment from the user, invisible and bidi text, HTML comments addressed to the model, directives to read credential files, commands that upload credentials, download-and-run, encoded execution, infostealer scripts, image exfiltration, switching off permission checks, pre-approved unrestricted `Bash`. Quoted examples and install snippets are downgraded (`medium` and `low`) so security skills and setup docs do not fail builds. Measured on 934 real files from 6 installed plugins: 0 critical or high findings. Findings carry file and line (SARIF too) and map to the OWASP MCP Top 10 ids
+- GitHub Action: `context: true` also scans the repository's skills, commands, subagents and CLAUDE.md (second SARIF file in `context-sarif-file`). Off by default
+
 ## 0.7.0
 
 - **Threat feed key via plugin settings**: the API key is a sensitive `userConfig` option kept in the system's secure storage and passed to the MCP server by Claude Code; `MCP_SECURITY_API_KEY` remains for the CLI and CI. Listing icon added

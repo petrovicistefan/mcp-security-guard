@@ -9,6 +9,7 @@ It runs locally, needs no account and has no telemetry.
 ## What you get
 
 - **`/mcp-audit`**: a guided audit with fixes. Claude asks before anything is started or sent over the network.
+- **Skills, commands and CLAUDE.md**: `audit_agent_context` scans the text Claude reads besides MCP tools (skills and their scripts, slash commands, subagents, rules, CLAUDE.md and the hooks of installed plugins) for injected instructions, hidden text, credential exfiltration, download-and-run and infostealer scripts. Read-only.
 - **Tools for Claude**: list and audit servers, scan tool, prompt and resource definitions, pin trusted servers, check packages on npm/PyPI/OSV, generate a team policy, apply fixes, query the audit log, open an interactive dashboard, and test your own server for command injection.
 - **Hooks that run automatically**:
   - at session start: a one-time welcome, re-verification of pinned servers, and the project policy check;
@@ -17,7 +18,7 @@ It runs locally, needs no account and has no telemetry.
 
 ## What it reads
 
-MCP configuration files: `~/.claude.json`, the project's `.mcp.json`, Claude Code settings, installed and account-synced plugins under `~/.claude/plugins/`, Claude Desktop's config and extensions, Cursor, VS Code and Windsurf MCP configs, and `managed-mcp.json`. Also its own files under `~/.claude/mcp-security/` and a project's `.mcp-security.json` policy.
+MCP configuration files: `~/.claude.json`, the project's `.mcp.json`, Claude Code settings, installed and account-synced plugins under `~/.claude/plugins/`, Claude Desktop's config and extensions, Cursor, VS Code and Windsurf MCP configs, and `managed-mcp.json`. For the agent-context scan, the text of `CLAUDE.md`, `.claude/` and `~/.claude/` skills, commands, agents and rules, and the same folders of installed plugins (symlinks are never followed). Also its own files under `~/.claude/mcp-security/` and a project's `.mcp-security.json` policy.
 
 ## What it writes
 

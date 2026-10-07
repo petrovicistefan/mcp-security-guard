@@ -15,6 +15,8 @@ export interface Finding {
   file?: string;
   /** Server the finding is about, used to locate the line in `file`. */
   server?: string;
+  /** 1-based line in `file`, when the finding comes from a text file (skills, commands, CLAUDE.md). */
+  line?: number;
 }
 
 export type ConfigScope =

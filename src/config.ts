@@ -227,19 +227,34 @@ function pluginDirServers(root: string, pluginName: string, sources: DiscoveryRe
  * (~/.claude/plugins/synced/<account>/<plugin>/). Names are `<plugin>:<server>`.
  */
 function discoverPluginServers(project: string, home: string, sources: DiscoveryResult["sources"]): ServerConfig[] {
-  const enabled = enabledPlugins(project, home, sources);
   const out: ServerConfig[] = [];
+  for (const { name, root, synced } of pluginRoots(project, home, sources)) {
+    for (const sv of pluginDirServers(root, name, sources)) {
+      if (!synced || !out.some((o) => o.name === sv.name)) out.push(sv);
+    }
+  }
+  return out;
+}
+
+/**
+ * Directories of the plugins Claude Code loads: installed ones (installed_plugins.json, honouring
+ * enabledPlugins and project-scoped installs) and plugins synced from the claude.ai account
+ * (~/.claude/plugins/synced/<account>/<plugin>/).
+ */
+export function pluginRoots(project: string, home: string, sources: DiscoveryResult["sources"]): { name: string; root: string; synced: boolean }[] {
+  const enabled = enabledPlugins(project, home, sources);
+  const out: { name: string; root: string; synced: boolean }[] = [];
 
   const installedPath = join(home, ".claude", "plugins", "installed_plugins.json");
   const installed = existsSync(installedPath) ? readJson(installedPath, sources)?.plugins : undefined;
   if (installed && typeof installed === "object") {
     for (const [key, entries] of Object.entries(installed as Record<string, any[]>)) {
       if (enabled[key] === false || !Array.isArray(entries)) continue;
-      const pluginName = key.split("@")[0];
+      const name = key.split("@")[0];
       for (const e of entries) {
         if (typeof e?.installPath !== "string") continue;
         if (e.scope && e.scope !== "user" && e.projectPath && resolve(e.projectPath) !== project) continue;
-        out.push(...pluginDirServers(e.installPath, pluginName, sources));
+        out.push({ name, root: e.installPath, synced: false });
       }
     }
   }
@@ -250,12 +265,10 @@ function discoverPluginServers(project: string, home: string, sources: Discovery
       const root = join(syncedRoot, bucket, dir);
       const manifest = join(root, ".claude-plugin", "plugin.json");
       if (!existsSync(manifest)) continue;
-      const name = readJson(manifest, sources)?.name;
-      const pluginName = typeof name === "string" && name ? name : dir;
-      if (enabled[`${pluginName}@synced`] === false) continue;
-      for (const sv of pluginDirServers(root, pluginName, sources)) {
-        if (!out.some((o) => o.name === sv.name)) out.push(sv);
-      }
+      const manifestName = readJson(manifest, sources)?.name;
+      const name = typeof manifestName === "string" && manifestName ? manifestName : dir;
+      if (enabled[`${name}@synced`] === false) continue;
+      out.push({ name, root, synced: true });
     }
   }
   return out;
