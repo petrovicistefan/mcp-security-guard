@@ -1,4 +1,5 @@
 import { discoverContext, type ContextDiscovery, type ContextFile } from "./context-files.js";
+import { cloudCheck, cloudOptionsFromEnv, type CloudOptions } from "./cloud.js";
 import { contextDrift, contextPinsPath, loadContextPins } from "./context-pins.js";
 import { analyzeContext } from "./rules/context-rules.js";
 import type { Finding } from "./types.js";
@@ -16,6 +17,16 @@ export function auditContext(projectDir: string, opts: { projectOnly?: boolean; 
   // Pin status is only reported once something was pinned, so a first scan is not buried in "not pinned" lines.
   const drift = Object.keys(pins.origins).length ? contextDrift(discovered, projectDir, pins) : { lines: [], findings: [] };
   return { ...discovered, findings: [...analyzeContext(discovered.files), ...drift.findings], driftLines: drift.lines };
+}
+
+/**
+ * Opt-in threat feed check of the scanned files and plugins (needs an API key; a no-op without one).
+ * Sends SHA-256 hashes of the files and plugin names and versions, nothing else; fails open.
+ */
+export async function feedCheckContext(a: ContextAudit, opts: CloudOptions = cloudOptionsFromEnv()): Promise<{ findings: Finding[]; note?: string }> {
+  if (!a.files.length) return { findings: [] };
+  const r = await cloudCheck([], [], opts, { files: a.files, versions: a.versions });
+  return { findings: r.findings, note: r.note };
 }
 
 const KIND_LABEL: Record<ContextFile["kind"], string> = {

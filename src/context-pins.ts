@@ -2,7 +2,6 @@
 // hook config and bundled script, grouped by origin (user, project, one plugin). A later scan reports
 // what changed since, which is how a plugin or repository that rewrites a skill after you approved it
 // (a rug pull) shows up. A plugin that changed under the same version is the dangerous case.
-import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -27,8 +26,6 @@ export interface ContextPinFile {
 export function contextPinsPath(): string {
   return join(process.env.MCP_SECURITY_HOME ?? join(homedir(), ".claude", "mcp-security"), "context-pins.json");
 }
-
-export const hashText = (text: string) => createHash("sha256").update(text).digest("hex");
 
 /** Plugins and the user's home are the same everywhere; a project is identified by its directory. */
 export const originKey = (origin: string, projectDir: string) => (origin === "project" ? `project:${resolve(projectDir)}` : origin);
@@ -63,7 +60,7 @@ export function snapshotContext(d: ContextDiscovery, projectDir: string): Snapsh
   for (const f of d.files) {
     const key = originKey(f.origin, projectDir);
     const snap = byOrigin.get(key) ?? { key, origin: f.origin, ...(d.versions[f.origin] ? { version: d.versions[f.origin] } : {}), files: {} };
-    snap.files[f.rel] = hashText(f.text);
+    snap.files[f.rel] = f.hash;
     byOrigin.set(key, snap);
   }
   return [...byOrigin.values()].sort((a, b) => a.key.localeCompare(b.key));

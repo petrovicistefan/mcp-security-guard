@@ -40952,6 +40952,7 @@ function auditConfig(projectDir2, opts = {}) {
 }
 
 // src/context-files.ts
+import { createHash } from "node:crypto";
 import { lstatSync, readFileSync as readFileSync3, readdirSync as readdirSync2 } from "node:fs";
 import { homedir as homedir3 } from "node:os";
 import { basename, extname, join as join4, relative, resolve as resolve2, sep } from "node:path";
@@ -41025,7 +41026,7 @@ function discoverContext(projectDir2, opts = {}) {
         skipped.push(`${p} (larger than ${MAX_FILE_BYTES / 1024} KB)`);
         return;
       }
-      files.push({ path: p, kind, origin, name, rel: relative(root, p).split(sep).join("/"), text: buf.toString("utf8") });
+      files.push({ path: p, kind, origin, name, rel: relative(root, p).split(sep).join("/"), hash: createHash("sha256").update(buf).digest("hex"), text: buf.toString("utf8") });
     } catch {
       skipped.push(`${p} (unreadable)`);
     }
@@ -41046,11 +41047,214 @@ function discoverContext(projectDir2, opts = {}) {
   return { files, versions, skipped };
 }
 
-// src/context-pins.ts
-import { createHash } from "node:crypto";
-import { existsSync as existsSync4, mkdirSync, readFileSync as readFileSync4, renameSync, writeFileSync } from "node:fs";
+// src/pins.ts
+import { createHash as createHash2 } from "node:crypto";
+import { existsSync as existsSync4, mkdirSync, readFileSync as readFileSync4, renameSync, statSync, writeFileSync } from "node:fs";
 import { homedir as homedir4 } from "node:os";
-import { dirname as dirname2, join as join5, resolve as resolve3 } from "node:path";
+import { dirname as dirname2, isAbsolute, join as join5, resolve as resolve3 } from "node:path";
+function pinsPath() {
+  return join5(process.env.MCP_SECURITY_HOME ?? join5(homedir4(), ".claude", "mcp-security"), "pins.json");
+}
+function stableStringify(v) {
+  if (Array.isArray(v)) return `[${v.map(stableStringify).join(",")}]`;
+  if (v && typeof v === "object") {
+    return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${stableStringify(v[k])}`).join(",")}}`;
+  }
+  return JSON.stringify(v ?? null);
+}
+function hashTool(t) {
+  return createHash2("sha256").update(stableStringify({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })).digest("hex");
+}
+var MAX_HASHED_FILE = 20 * 1024 * 1024;
+function localFileHashes(s) {
+  const out = {};
+  for (const a of [s.command, ...s.args ?? []]) {
+    if (!a || a.startsWith("-") || a.includes("${") || !/[\\/]|\.(m?[jt]s|cjs|py|rb|sh|php|jar)$/i.test(a)) continue;
+    const p = isAbsolute(a) ? a : resolve3(dirname2(s.source), a);
+    try {
+      const st = statSync(p);
+      if (st.isFile() && st.size <= MAX_HASHED_FILE) out[a] = createHash2("sha256").update(readFileSync4(p)).digest("hex");
+    } catch {
+    }
+  }
+  return out;
+}
+function hashConfig(s) {
+  const files = localFileHashes(s);
+  return createHash2("sha256").update(stableStringify({ type: s.type, command: s.command, args: s.args, url: s.url, env: Object.keys(s.env ?? {}).sort(), headers: Object.keys(s.headers ?? {}).sort(), ...Object.keys(files).length ? { files } : {} })).digest("hex");
+}
+function pinEntry(s, definitions) {
+  return { pinnedAt: (/* @__PURE__ */ new Date()).toISOString(), tools: Object.fromEntries(definitions.map((t) => [t.name, hashTool(t)])), config: hashConfig(s), surface: true };
+}
+function loadPins(path = pinsPath()) {
+  if (!existsSync4(path)) return { version: 1, servers: {} };
+  try {
+    const data = JSON.parse(readFileSync4(path, "utf8"));
+    return data?.version === 1 && data.servers ? data : { version: 1, servers: {} };
+  } catch {
+    return { version: 1, servers: {} };
+  }
+}
+function savePins(pins, path = pinsPath()) {
+  mkdirSync(dirname2(path), { recursive: true, mode: 448 });
+  const tmp = `${path}.tmp`;
+  writeFileSync(tmp, JSON.stringify(pins, null, 2), { mode: 384 });
+  renameSync(tmp, path);
+}
+function pinKey(scope, name) {
+  return `${scope}:${name}`;
+}
+var NON_TOOL = /^(#instructions$|prompt:|resource:|template:)/;
+function computeDrift(pin, tools) {
+  const pinned = pin.tools;
+  const legacy = !pin.surface;
+  const current = Object.fromEntries(tools.filter((t) => !(legacy && NON_TOOL.test(t.name))).map((t) => [t.name, hashTool(t)]));
+  return {
+    added: Object.keys(current).filter((n) => !(n in pinned)),
+    removed: Object.keys(pinned).filter((n) => !(n in current)),
+    changed: Object.keys(current).filter((n) => n in pinned && pinned[n] !== current[n])
+  };
+}
+function hasDrift(d) {
+  return d.added.length + d.removed.length + d.changed.length > 0;
+}
+
+// src/cloud.ts
+var DEFAULT_ENDPOINT = "https://mcp-security-cloud.petrovicistefan.workers.dev";
+var MAX_PACKAGES = 500;
+var MAX_TOOL_HASHES = 5e3;
+var MAX_CONTEXT_HASHES = 5e3;
+var MAX_PLUGINS = 500;
+var MAX_FINDINGS = 1e3;
+var DEFAULT_TIMEOUT_MS = 3e3;
+function pluginConfigKey(env) {
+  const v = env.MCP_SECURITY_GUARD_FEED_KEY?.trim();
+  return v && !v.startsWith("${") ? v : void 0;
+}
+function cloudOptionsFromEnv(env = process.env) {
+  return { apiKey: pluginConfigKey(env) ?? (env.MCP_SECURITY_API_KEY?.trim() || void 0), endpoint: env.MCP_SECURITY_API_URL?.trim() || DEFAULT_ENDPOINT };
+}
+function endpointAllowed(endpoint) {
+  try {
+    const u = new URL(endpoint);
+    return u.protocol === "https:" || u.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname);
+  } catch {
+    return false;
+  }
+}
+var packageKey = (p) => `${p.ecosystem}:${p.name.toLowerCase()}@${p.version ?? ""}`;
+function buildCheckRequest(packages, servers, context) {
+  const pkgs = /* @__PURE__ */ new Map();
+  for (const p of packages) pkgs.set(packageKey(p), p.version ? { ecosystem: p.ecosystem, name: p.name, version: p.version } : { ecosystem: p.ecosystem, name: p.name });
+  const hashes = new Set(servers.flatMap((s) => s.tools.map(hashTool)));
+  return {
+    client: { name: "mcp-security-guard", version: VERSION },
+    packages: [...pkgs.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, p]) => p).slice(0, MAX_PACKAGES),
+    toolHashes: [...hashes].sort().slice(0, MAX_TOOL_HASHES),
+    ...context ? { contextHashes: [...new Set(context.files.map((f) => f.hash))].sort().slice(0, MAX_CONTEXT_HASHES), plugins: contextPlugins(context).slice(0, MAX_PLUGINS) } : {}
+  };
+}
+function contextPlugins(context) {
+  const names = [...new Set(context.files.filter((f) => f.origin.startsWith("plugin:")).map((f) => f.origin))].sort();
+  return names.map((origin) => ({ name: origin.slice(7), ...context.versions[origin] ? { version: context.versions[origin] } : {} }));
+}
+var isSeverity = (v) => typeof v === "string" && SEVERITY_ORDER.includes(v);
+function parseCheckResponse(body) {
+  if (!body || typeof body !== "object" || !Array.isArray(body.findings)) return void 0;
+  const findings = [];
+  for (const raw of body.findings.slice(0, MAX_FINDINGS)) {
+    const m = raw?.match;
+    if (!isSeverity(raw?.severity) || typeof raw?.title !== "string") continue;
+    let match;
+    if (m?.kind === "tool" && typeof m.hash === "string" && /^[0-9a-f]{64}$/.test(m.hash)) match = { kind: "tool", hash: m.hash };
+    else if (m?.kind === "context" && typeof m.hash === "string" && /^[0-9a-f]{64}$/.test(m.hash)) match = { kind: "context", hash: m.hash };
+    else if (m?.kind === "plugin" && typeof m.name === "string") match = { kind: "plugin", name: m.name, ...typeof m.version === "string" ? { version: m.version } : {} };
+    else if (m?.kind === "package" && (m.ecosystem === "npm" || m.ecosystem === "PyPI") && typeof m.name === "string")
+      match = { kind: "package", ecosystem: m.ecosystem, name: m.name, ...typeof m.version === "string" ? { version: m.version } : {} };
+    else continue;
+    const reference = typeof raw.reference === "string" && /^https:\/\/[^\s]+$/.test(raw.reference) ? excerpt(raw.reference, 200) : void 0;
+    findings.push({ match, severity: raw.severity, title: excerpt(raw.title, 160), ...reference ? { reference } : {} });
+  }
+  const at = body.feedUpdatedAt;
+  return { findings, feedUpdatedAt: typeof at === "string" ? excerpt(at, 40) : "unknown" };
+}
+function toFindings(entries, packages, servers, context) {
+  const out = [];
+  for (const e of entries) {
+    const remediation = `Remove or replace this server until the issue is resolved.${e.reference ? ` Details: ${e.reference}` : ""}`;
+    if (e.match.kind === "context" || e.match.kind === "plugin") {
+      const m = e.match;
+      const fileRemediation = `Remove this file or plugin and rotate any credentials it could have reached.${e.reference ? ` Details: ${e.reference}` : ""}`;
+      if (m.kind === "context") {
+        for (const f of context?.files ?? [])
+          if (f.hash === m.hash) out.push({ severity: e.severity, rule: "feed/context", title: e.title, location: `${f.kind} "${excerpt(f.name, 50)}" (${f.origin}) \u203A ${excerpt(f.rel, 90)}`, remediation: fileRemediation, file: f.path, line: 1 });
+      } else {
+        for (const p of contextPlugins(context ?? { files: [], versions: {} }))
+          if (p.name.toLowerCase() === m.name.toLowerCase() && (!m.version || p.version === m.version))
+            out.push({ severity: e.severity, rule: "feed/plugin", title: e.title, location: `plugin "${excerpt(p.name, 60)}"${p.version ? ` ${excerpt(p.version, 30)}` : ""}`, remediation: fileRemediation });
+      }
+      continue;
+    }
+    if (e.match.kind === "package") {
+      const m = e.match;
+      for (const p of packages) {
+        if (p.ecosystem !== m.ecosystem || p.name.toLowerCase() !== m.name.toLowerCase() || m.version && p.version !== m.version) continue;
+        out.push({ severity: e.severity, rule: "feed/package", title: e.title, location: `server "${p.server.name}" (${p.server.scope}) \u203A ${p.ecosystem} ${p.name}${p.version ? `@${p.version}` : ""}`, remediation, file: p.server.source, server: p.server.name });
+      }
+    } else {
+      const hash2 = e.match.hash;
+      for (const s of servers)
+        for (const t of s.tools)
+          if (hashTool(t) === hash2)
+            out.push({ severity: e.severity, rule: "feed/tool", title: e.title, location: `server "${s.server.name}" (${s.server.scope}) \u203A tool "${excerpt(t.name, 60)}"`, remediation, file: s.server.source, server: s.server.name });
+    }
+  }
+  return out;
+}
+var defaultFetcher = (url2, init) => fetch(url2, init);
+async function cloudCheck(packages, servers, opts = cloudOptionsFromEnv(), context) {
+  if (!opts.apiKey) return { status: "disabled", findings: [] };
+  if (!opts.endpoint) return { status: "skipped", findings: [], note: "Threat feed skipped: MCP_SECURITY_API_URL is not set." };
+  if (!endpointAllowed(opts.endpoint)) return { status: "skipped", findings: [], note: "Threat feed skipped: MCP_SECURITY_API_URL must be an https URL." };
+  const request = buildCheckRequest(packages, servers, context);
+  const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const controller = new AbortController();
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error("timeout"));
+    }, timeoutMs);
+  });
+  try {
+    const res = await Promise.race([
+      (opts.fetcher ?? defaultFetcher)(new URL("/v1/check", opts.endpoint).href, {
+        method: "POST",
+        body: JSON.stringify(request),
+        headers: { "content-type": "application/json", authorization: `Bearer ${opts.apiKey}` },
+        signal: controller.signal
+      }),
+      timeout
+    ]);
+    if (!res.ok) {
+      const why = res.status === 401 ? "the API key was rejected" : res.status === 402 ? "the subscription has expired" : `the service answered ${res.status}`;
+      return { status: "skipped", findings: [], note: `Threat feed skipped: ${why}.` };
+    }
+    const parsed = parseCheckResponse(await Promise.race([res.json(), timeout]));
+    if (!parsed) return { status: "skipped", findings: [], note: "Threat feed skipped: unexpected response from the service." };
+    return { status: "ok", findings: toFindings(parsed.findings, packages, servers, context), note: `Threat feed checked (updated ${parsed.feedUpdatedAt}).` };
+  } catch (err) {
+    const why = err?.message === "timeout" ? `no answer within ${timeoutMs / 1e3} s` : "the service could not be reached";
+    return { status: "skipped", findings: [], note: `Threat feed skipped: ${why}.` };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// src/context-pins.ts
+import { existsSync as existsSync5, mkdirSync as mkdirSync2, readFileSync as readFileSync5, renameSync as renameSync2, writeFileSync as writeFileSync2 } from "node:fs";
+import { homedir as homedir5 } from "node:os";
+import { dirname as dirname3, join as join6, resolve as resolve4 } from "node:path";
 
 // src/rules/tool-rules.ts
 function collectText(tool) {
@@ -41514,31 +41718,30 @@ function analyzeContext(files) {
 
 // src/context-pins.ts
 function contextPinsPath() {
-  return join5(process.env.MCP_SECURITY_HOME ?? join5(homedir4(), ".claude", "mcp-security"), "context-pins.json");
+  return join6(process.env.MCP_SECURITY_HOME ?? join6(homedir5(), ".claude", "mcp-security"), "context-pins.json");
 }
-var hashText = (text2) => createHash("sha256").update(text2).digest("hex");
-var originKey = (origin, projectDir2) => origin === "project" ? `project:${resolve3(projectDir2)}` : origin;
+var originKey = (origin, projectDir2) => origin === "project" ? `project:${resolve4(projectDir2)}` : origin;
 function loadContextPins(path = contextPinsPath()) {
-  if (!existsSync4(path)) return { version: 1, origins: {} };
+  if (!existsSync5(path)) return { version: 1, origins: {} };
   try {
-    const data = JSON.parse(readFileSync4(path, "utf8"));
+    const data = JSON.parse(readFileSync5(path, "utf8"));
     return data?.version === 1 && data.origins && typeof data.origins === "object" ? data : { version: 1, origins: {} };
   } catch {
     return { version: 1, origins: {} };
   }
 }
 function saveContextPins(pins, path = contextPinsPath()) {
-  mkdirSync(dirname2(path), { recursive: true, mode: 448 });
+  mkdirSync2(dirname3(path), { recursive: true, mode: 448 });
   const tmp = `${path}.tmp`;
-  writeFileSync(tmp, JSON.stringify(pins, null, 2), { mode: 384 });
-  renameSync(tmp, path);
+  writeFileSync2(tmp, JSON.stringify(pins, null, 2), { mode: 384 });
+  renameSync2(tmp, path);
 }
 function snapshotContext(d, projectDir2) {
   const byOrigin = /* @__PURE__ */ new Map();
   for (const f of d.files) {
     const key = originKey(f.origin, projectDir2);
     const snap = byOrigin.get(key) ?? { key, origin: f.origin, ...d.versions[f.origin] ? { version: d.versions[f.origin] } : {}, files: {} };
-    snap.files[f.rel] = hashText(f.text);
+    snap.files[f.rel] = f.hash;
     byOrigin.set(key, snap);
   }
   return [...byOrigin.values()].sort((a, b) => a.key.localeCompare(b.key));
@@ -41603,7 +41806,7 @@ function contextDrift(d, projectDir2, pins = loadContextPins()) {
     });
   }
   for (const key of Object.keys(pins.origins)) {
-    const belongs = !key.startsWith("project:") || key === `project:${resolve3(projectDir2)}`;
+    const belongs = !key.startsWith("project:") || key === `project:${resolve4(projectDir2)}`;
     if (belongs && !present.has(key)) lines.push(`- **${excerpt(key.startsWith("project:") ? "project" : key, 60)}**: pinned, but no files found now`);
   }
   return { lines, findings };
@@ -41615,6 +41818,11 @@ function auditContext(projectDir2, opts = {}) {
   const pins = loadContextPins();
   const drift = Object.keys(pins.origins).length ? contextDrift(discovered, projectDir2, pins) : { lines: [], findings: [] };
   return { ...discovered, findings: [...analyzeContext(discovered.files), ...drift.findings], driftLines: drift.lines };
+}
+async function feedCheckContext(a, opts = cloudOptionsFromEnv()) {
+  if (!a.files.length) return { findings: [] };
+  const r = await cloudCheck([], [], opts, { files: a.files, versions: a.versions });
+  return { findings: r.findings, note: r.note };
 }
 var KIND_LABEL = {
   "claude-md": "CLAUDE.md file(s)",
@@ -41666,6 +41874,8 @@ var BY_RULE = [
   [/^supply-chain\//, ["MCP04"]],
   [/^feed\/package$/, ["MCP04"]],
   [/^feed\/tool$/, ["MCP03", "MCP04"]],
+  [/^feed\/context$/, ["MCP03", "MCP04"]],
+  [/^feed\/plugin$/, ["MCP04"]],
   [/^drift\/config-changed$/, ["MCP04"]],
   [/^drift\/tool-/, ["MCP03", "MCP04"]],
   [/^drift\/context-/, ["MCP03", "MCP04"]],
@@ -41694,78 +41904,6 @@ function owaspLabel(rule) {
   return owaspFor(rule).map((id) => `${id} ${OWASP_MCP[id]}`).join("; ");
 }
 
-// src/pins.ts
-import { createHash as createHash2 } from "node:crypto";
-import { existsSync as existsSync5, mkdirSync as mkdirSync2, readFileSync as readFileSync5, renameSync as renameSync2, statSync, writeFileSync as writeFileSync2 } from "node:fs";
-import { homedir as homedir5 } from "node:os";
-import { dirname as dirname3, isAbsolute, join as join6, resolve as resolve4 } from "node:path";
-function pinsPath() {
-  return join6(process.env.MCP_SECURITY_HOME ?? join6(homedir5(), ".claude", "mcp-security"), "pins.json");
-}
-function stableStringify(v) {
-  if (Array.isArray(v)) return `[${v.map(stableStringify).join(",")}]`;
-  if (v && typeof v === "object") {
-    return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${stableStringify(v[k])}`).join(",")}}`;
-  }
-  return JSON.stringify(v ?? null);
-}
-function hashTool(t) {
-  return createHash2("sha256").update(stableStringify({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })).digest("hex");
-}
-var MAX_HASHED_FILE = 20 * 1024 * 1024;
-function localFileHashes(s) {
-  const out = {};
-  for (const a of [s.command, ...s.args ?? []]) {
-    if (!a || a.startsWith("-") || a.includes("${") || !/[\\/]|\.(m?[jt]s|cjs|py|rb|sh|php|jar)$/i.test(a)) continue;
-    const p = isAbsolute(a) ? a : resolve4(dirname3(s.source), a);
-    try {
-      const st = statSync(p);
-      if (st.isFile() && st.size <= MAX_HASHED_FILE) out[a] = createHash2("sha256").update(readFileSync5(p)).digest("hex");
-    } catch {
-    }
-  }
-  return out;
-}
-function hashConfig(s) {
-  const files = localFileHashes(s);
-  return createHash2("sha256").update(stableStringify({ type: s.type, command: s.command, args: s.args, url: s.url, env: Object.keys(s.env ?? {}).sort(), headers: Object.keys(s.headers ?? {}).sort(), ...Object.keys(files).length ? { files } : {} })).digest("hex");
-}
-function pinEntry(s, definitions) {
-  return { pinnedAt: (/* @__PURE__ */ new Date()).toISOString(), tools: Object.fromEntries(definitions.map((t) => [t.name, hashTool(t)])), config: hashConfig(s), surface: true };
-}
-function loadPins(path = pinsPath()) {
-  if (!existsSync5(path)) return { version: 1, servers: {} };
-  try {
-    const data = JSON.parse(readFileSync5(path, "utf8"));
-    return data?.version === 1 && data.servers ? data : { version: 1, servers: {} };
-  } catch {
-    return { version: 1, servers: {} };
-  }
-}
-function savePins(pins, path = pinsPath()) {
-  mkdirSync2(dirname3(path), { recursive: true, mode: 448 });
-  const tmp = `${path}.tmp`;
-  writeFileSync2(tmp, JSON.stringify(pins, null, 2), { mode: 384 });
-  renameSync2(tmp, path);
-}
-function pinKey(scope, name) {
-  return `${scope}:${name}`;
-}
-var NON_TOOL = /^(#instructions$|prompt:|resource:|template:)/;
-function computeDrift(pin, tools) {
-  const pinned = pin.tools;
-  const legacy = !pin.surface;
-  const current = Object.fromEntries(tools.filter((t) => !(legacy && NON_TOOL.test(t.name))).map((t) => [t.name, hashTool(t)]));
-  return {
-    added: Object.keys(current).filter((n) => !(n in pinned)),
-    removed: Object.keys(pinned).filter((n) => !(n in current)),
-    changed: Object.keys(current).filter((n) => n in pinned && pinned[n] !== current[n])
-  };
-}
-function hasDrift(d) {
-  return d.added.length + d.removed.length + d.changed.length > 0;
-}
-
 // src/score.ts
 var PENALTY = { critical: 45, high: 25, medium: 10, low: 3, info: 0 };
 var RULE_CAP = 50;
@@ -41786,116 +41924,6 @@ function scoreTable(scores) {
   if (!scores.length) return "";
   const rows = [...scores].sort((a, b) => a.score - b.score).map((s) => `| ${excerpt(s.server.name, 50)} | ${s.server.scope} | **${s.score}** | ${s.grade} | ${s.basis === "config" ? "config only" : "config + tools"} |`);
   return ["**Security score per server** (100 = no findings; any critical caps at F, any high at D):", "", "| Server | Scope | Score | Grade | Basis |", "|---|---|---|---|---|", ...rows].join("\n");
-}
-
-// src/cloud.ts
-var DEFAULT_ENDPOINT = "https://mcp-security-cloud.petrovicistefan.workers.dev";
-var MAX_PACKAGES = 500;
-var MAX_TOOL_HASHES = 5e3;
-var MAX_FINDINGS = 1e3;
-var DEFAULT_TIMEOUT_MS = 3e3;
-function pluginConfigKey(env) {
-  const v = env.MCP_SECURITY_GUARD_FEED_KEY?.trim();
-  return v && !v.startsWith("${") ? v : void 0;
-}
-function cloudOptionsFromEnv(env = process.env) {
-  return { apiKey: pluginConfigKey(env) ?? (env.MCP_SECURITY_API_KEY?.trim() || void 0), endpoint: env.MCP_SECURITY_API_URL?.trim() || DEFAULT_ENDPOINT };
-}
-function endpointAllowed(endpoint) {
-  try {
-    const u = new URL(endpoint);
-    return u.protocol === "https:" || u.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname);
-  } catch {
-    return false;
-  }
-}
-var packageKey = (p) => `${p.ecosystem}:${p.name.toLowerCase()}@${p.version ?? ""}`;
-function buildCheckRequest(packages, servers) {
-  const pkgs = /* @__PURE__ */ new Map();
-  for (const p of packages) pkgs.set(packageKey(p), p.version ? { ecosystem: p.ecosystem, name: p.name, version: p.version } : { ecosystem: p.ecosystem, name: p.name });
-  const hashes = new Set(servers.flatMap((s) => s.tools.map(hashTool)));
-  return {
-    client: { name: "mcp-security-guard", version: VERSION },
-    packages: [...pkgs.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, p]) => p).slice(0, MAX_PACKAGES),
-    toolHashes: [...hashes].sort().slice(0, MAX_TOOL_HASHES)
-  };
-}
-var isSeverity = (v) => typeof v === "string" && SEVERITY_ORDER.includes(v);
-function parseCheckResponse(body) {
-  if (!body || typeof body !== "object" || !Array.isArray(body.findings)) return void 0;
-  const findings = [];
-  for (const raw of body.findings.slice(0, MAX_FINDINGS)) {
-    const m = raw?.match;
-    if (!isSeverity(raw?.severity) || typeof raw?.title !== "string") continue;
-    let match;
-    if (m?.kind === "tool" && typeof m.hash === "string" && /^[0-9a-f]{64}$/.test(m.hash)) match = { kind: "tool", hash: m.hash };
-    else if (m?.kind === "package" && (m.ecosystem === "npm" || m.ecosystem === "PyPI") && typeof m.name === "string")
-      match = { kind: "package", ecosystem: m.ecosystem, name: m.name, ...typeof m.version === "string" ? { version: m.version } : {} };
-    else continue;
-    const reference = typeof raw.reference === "string" && /^https:\/\/[^\s]+$/.test(raw.reference) ? excerpt(raw.reference, 200) : void 0;
-    findings.push({ match, severity: raw.severity, title: excerpt(raw.title, 160), ...reference ? { reference } : {} });
-  }
-  const at = body.feedUpdatedAt;
-  return { findings, feedUpdatedAt: typeof at === "string" ? excerpt(at, 40) : "unknown" };
-}
-function toFindings(entries, packages, servers) {
-  const out = [];
-  for (const e of entries) {
-    const remediation = `Remove or replace this server until the issue is resolved.${e.reference ? ` Details: ${e.reference}` : ""}`;
-    if (e.match.kind === "package") {
-      const m = e.match;
-      for (const p of packages) {
-        if (p.ecosystem !== m.ecosystem || p.name.toLowerCase() !== m.name.toLowerCase() || m.version && p.version !== m.version) continue;
-        out.push({ severity: e.severity, rule: "feed/package", title: e.title, location: `server "${p.server.name}" (${p.server.scope}) \u203A ${p.ecosystem} ${p.name}${p.version ? `@${p.version}` : ""}`, remediation, file: p.server.source, server: p.server.name });
-      }
-    } else {
-      const hash2 = e.match.hash;
-      for (const s of servers)
-        for (const t of s.tools)
-          if (hashTool(t) === hash2)
-            out.push({ severity: e.severity, rule: "feed/tool", title: e.title, location: `server "${s.server.name}" (${s.server.scope}) \u203A tool "${excerpt(t.name, 60)}"`, remediation, file: s.server.source, server: s.server.name });
-    }
-  }
-  return out;
-}
-var defaultFetcher = (url2, init) => fetch(url2, init);
-async function cloudCheck(packages, servers, opts = cloudOptionsFromEnv()) {
-  if (!opts.apiKey) return { status: "disabled", findings: [] };
-  if (!opts.endpoint) return { status: "skipped", findings: [], note: "Threat feed skipped: MCP_SECURITY_API_URL is not set." };
-  if (!endpointAllowed(opts.endpoint)) return { status: "skipped", findings: [], note: "Threat feed skipped: MCP_SECURITY_API_URL must be an https URL." };
-  const request = buildCheckRequest(packages, servers);
-  const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const controller = new AbortController();
-  let timer;
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => {
-      controller.abort();
-      reject(new Error("timeout"));
-    }, timeoutMs);
-  });
-  try {
-    const res = await Promise.race([
-      (opts.fetcher ?? defaultFetcher)(new URL("/v1/check", opts.endpoint).href, {
-        method: "POST",
-        body: JSON.stringify(request),
-        headers: { "content-type": "application/json", authorization: `Bearer ${opts.apiKey}` },
-        signal: controller.signal
-      }),
-      timeout
-    ]);
-    if (!res.ok) {
-      const why = res.status === 401 ? "the API key was rejected" : res.status === 402 ? "the subscription has expired" : `the service answered ${res.status}`;
-      return { status: "skipped", findings: [], note: `Threat feed skipped: ${why}.` };
-    }
-    const parsed = parseCheckResponse(await Promise.race([res.json(), timeout]));
-    if (!parsed) return { status: "skipped", findings: [], note: "Threat feed skipped: unexpected response from the service." };
-    return { status: "ok", findings: toFindings(parsed.findings, packages, servers), note: `Threat feed checked (updated ${parsed.feedUpdatedAt}).` };
-  } catch (err) {
-    const why = err?.message === "timeout" ? `no answer within ${timeoutMs / 1e3} s` : "the service could not be reached";
-    return { status: "skipped", findings: [], note: `Threat feed skipped: ${why}.` };
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 // src/toxic-flow.ts
@@ -42621,7 +42649,9 @@ server.registerTool(
   },
   async ({ project_only, project_dir }) => {
     const a = auditContext(project_dir ?? projectDir(), { projectOnly: project_only });
-    return text(report("Agent context audit", a.findings, contextSummary(a)));
+    const feed = await feedCheckContext(a);
+    a.findings.push(...feed.findings);
+    return text(report("Agent context audit", a.findings, [...contextSummary(a), feed.note ?? ""]));
   }
 );
 server.registerTool(

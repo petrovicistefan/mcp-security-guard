@@ -45,7 +45,7 @@ Nothing without your consent:
 Only when you opt in:
 
 - **Supply-chain check**: package names and versions go to `registry.npmjs.org`, `pypi.org` and `api.osv.dev`.
-- **Threat feed (paid plan)**: only if you enter an API key in the plugin's settings (it is stored in your system's secure storage). Package names and versions, plus SHA-256 hashes of tool definitions (never the definitions themselves), go to `mcp-security-cloud.petrovicistefan.workers.dev` over https. If the service is unreachable, the audit continues without it. The service stores no request data: it reads your key's hash and the feed, and Cloudflare, its host, uses your IP only for rate limiting.
+- **Threat feed (paid plan)**: only if you enter an API key in the plugin's settings (it is stored in your system's secure storage). Package names and versions, SHA-256 hashes of tool definitions and (in an agent-context scan) of skill, command, subagent, CLAUDE.md, hook and script files, and the names and versions of installed plugins (never definitions, file content or paths), go to `mcp-security-cloud.petrovicistefan.workers.dev` over https. If the service is unreachable, the audit continues without it. The service stores no request data: it reads your key's hash and the feed, and Cloudflare, its host, uses your IP only for rate limiting.
 
 Nothing else leaves your machine. Secrets found in configs or traffic are masked in every output and never logged.
 

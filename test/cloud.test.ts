@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildCheckRequest, cloudCheck, cloudOptionsFromEnv, endpointAllowed, parseCheckResponse, type CloudFetcher } from "../src/cloud.js";
+import { feedCheckContext } from "../src/context-audit.js";
+import type { ContextFile } from "../src/context-files.js";
 import { hashTool } from "../src/pins.js";
 import type { PackageRef } from "../src/supply-chain.js";
 import type { ServerConfig, ToolDefinition } from "../src/types.js";
@@ -109,5 +111,55 @@ describe("cloud response", () => {
     expect((await cloudCheck(packages, servers, { apiKey: "k" })).note).toContain("MCP_SECURITY_API_URL");
     expect((await cloudCheck(packages, servers, { apiKey: "k", endpoint: "http://evil.test" })).note).toContain("https");
     expect((await cloudCheck(packages, servers, opts(answer({ unexpected: true })))).note).toContain("unexpected response");
+  });
+});
+
+describe("cloud request for skills and plugins", () => {
+  const file = (over: Partial<ContextFile>): ContextFile => ({ path: "/home/me/secret-project/.claude/skills/x/SKILL.md", kind: "skill", origin: "plugin:tools", name: "x", rel: "skills/x/SKILL.md", hash: "a".repeat(64), text: "private text", ...over });
+  const surface = (files: ContextFile[]) => ({ files, versions: { "plugin:tools": "1.2.0" } });
+
+  it("sends only file hashes and plugin names and versions", () => {
+    const req = buildCheckRequest([], [], surface([file({}), file({ hash: "b".repeat(64), origin: "user", name: "mine" }), file({ hash: "a".repeat(64), rel: "skills/y/SKILL.md" })]));
+    expect(req.contextHashes).toEqual(["a".repeat(64), "b".repeat(64)]);
+    expect(req.plugins).toEqual([{ name: "tools", version: "1.2.0" }]);
+    const wire = JSON.stringify(req);
+    for (const leak of ["secret-project", "private text", "SKILL.md", "mine", "/home/me"]) expect(wire).not.toContain(leak);
+  });
+
+  it("leaves the new fields out of ordinary MCP checks", () => {
+    const req = buildCheckRequest(packages, servers);
+    expect(req).not.toHaveProperty("contextHashes");
+    expect(req).not.toHaveProperty("plugins");
+  });
+
+  it("maps context and plugin matches back to the files and plugins", async () => {
+    const files = [file({}), file({ hash: "c".repeat(64), name: "other", rel: "skills/other/SKILL.md" })];
+    const fetcher = answer({
+      findings: [
+        { match: { kind: "context", hash: "a".repeat(64) }, severity: "critical", title: "Known infostealer skill", reference: "https://example.test/s" },
+        { match: { kind: "plugin", name: "Tools", version: "1.2.0" }, severity: "high", title: "Compromised release" },
+        { match: { kind: "plugin", name: "tools", version: "9.9.9" }, severity: "high", title: "Other release" },
+      ],
+      feedUpdatedAt: "2026-10-07T00:00:00Z",
+    });
+    const r = await cloudCheck([], [], opts(fetcher), surface(files));
+    expect(r.status).toBe("ok");
+    expect(r.findings.map((f) => [f.rule, f.severity])).toEqual([
+      ["feed/context", "critical"],
+      ["feed/plugin", "high"],
+    ]);
+    expect(r.findings[0].location).toContain("skills/x/SKILL.md");
+    expect(r.findings[0].file).toBe(files[0].path);
+    expect(r.findings[0].remediation).toContain("https://example.test/s");
+  });
+
+  it("drops malformed new-style entries and fails open", () => {
+    const parsed = parseCheckResponse({ findings: [{ match: { kind: "context", hash: "nope" }, severity: "high", title: "x" }, { match: { kind: "plugin" }, severity: "high", title: "x" }, { match: { kind: "plugin", name: "ok" }, severity: "high", title: "fine" }], feedUpdatedAt: "now" });
+    expect(parsed?.findings.map((f) => f.match)).toEqual([{ kind: "plugin", name: "ok" }]);
+  });
+
+  it("is a no-op without a key", async () => {
+    const a = { files: [file({})], versions: {}, findings: [], driftLines: [], skipped: [] };
+    expect(await feedCheckContext(a, {})).toEqual({ findings: [], note: undefined });
   });
 });

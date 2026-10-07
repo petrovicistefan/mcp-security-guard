@@ -1,6 +1,7 @@
 // Discovery of the text files that end up in Claude's context besides MCP tool definitions: CLAUDE.md,
 // skills, slash commands, subagents, rules, plugin hook configs and the scripts bundled with skills.
 // Read-only; never follows symlinks, so a link cannot make the scan read files outside the folders below.
+import { createHash } from "node:crypto";
 import { lstatSync, readFileSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, extname, join, relative, resolve, sep } from "node:path";
@@ -17,6 +18,8 @@ export interface ContextFile {
   name: string;
   /** Path inside its root (`skills/x/SKILL.md`, `CLAUDE.md`) with `/` separators; stable across plugin versions, unlike `path`. */
   rel: string;
+  /** SHA-256 of the file's bytes: what pins store and what the threat feed matches. */
+  hash: string;
   text: string;
 }
 
@@ -108,7 +111,7 @@ export function discoverContext(projectDir: string, opts: { home?: string; proje
         skipped.push(`${p} (larger than ${MAX_FILE_BYTES / 1024} KB)`);
         return;
       }
-      files.push({ path: p, kind, origin, name, rel: relative(root, p).split(sep).join("/"), text: buf.toString("utf8") });
+      files.push({ path: p, kind, origin, name, rel: relative(root, p).split(sep).join("/"), hash: createHash("sha256").update(buf).digest("hex"), text: buf.toString("utf8") });
     } catch {
       skipped.push(`${p} (unreadable)`);
     }

@@ -25,6 +25,8 @@ const BY_RULE: [RegExp, string[]][] = [
   [/^supply-chain\//, ["MCP04"]],
   [/^feed\/package$/, ["MCP04"]],
   [/^feed\/tool$/, ["MCP03", "MCP04"]],
+  [/^feed\/context$/, ["MCP03", "MCP04"]],
+  [/^feed\/plugin$/, ["MCP04"]],
   [/^drift\/config-changed$/, ["MCP04"]],
   [/^drift\/tool-/, ["MCP03", "MCP04"]],
   [/^drift\/context-/, ["MCP03", "MCP04"]],

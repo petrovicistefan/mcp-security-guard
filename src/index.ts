@@ -4,7 +4,7 @@ import { z } from "zod";
 import { adversarialTest } from "./adversarial.js";
 import { readFileSync } from "node:fs";
 import { auditConfig } from "./audit.js";
-import { auditContext, contextSummary } from "./context-audit.js";
+import { auditContext, contextSummary, feedCheckContext } from "./context-audit.js";
 import { discoverContext } from "./context-files.js";
 import { contextPinsPath, pinContext } from "./context-pins.js";
 import { buildDashboard, dashboardText, DASHBOARD_MIME, DASHBOARD_URI } from "./dashboard.js";
@@ -94,7 +94,9 @@ server.registerTool(
   },
   async ({ project_only, project_dir }) => {
     const a = auditContext(project_dir ?? projectDir(), { projectOnly: project_only });
-    return text(report("Agent context audit", a.findings, contextSummary(a)));
+    const feed = await feedCheckContext(a);
+    a.findings.push(...feed.findings);
+    return text(report("Agent context audit", a.findings, [...contextSummary(a), feed.note ?? ""]));
   },
 );
 

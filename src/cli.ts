@@ -10,7 +10,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { adversarialTest } from "./adversarial.js";
 import { auditConfig } from "./audit.js";
-import { auditContext, contextSummary } from "./context-audit.js";
+import { auditContext, contextSummary, feedCheckContext } from "./context-audit.js";
 import { discoverContext } from "./context-files.js";
 import { contextPinsPath, pinContext } from "./context-pins.js";
 import { recommendPermissions } from "./capabilities.js";
@@ -201,7 +201,9 @@ async function main(): Promise<number> {
 
   if (command === "audit-context") {
     const a = auditContext(projectDir, { projectOnly: values["project-only"] });
-    emit("Agent context audit (skills, commands, agents, CLAUDE.md, hooks)", a.findings, projectDir, values.format!, values.output, contextSummary(a));
+    const feed = await feedCheckContext(a);
+    a.findings.push(...feed.findings);
+    emit("Agent context audit (skills, commands, agents, CLAUDE.md, hooks)", a.findings, projectDir, values.format!, values.output, [...contextSummary(a), feed.note ?? ""]);
     return exitCode(a.findings, values["fail-on"]!);
   }
 
