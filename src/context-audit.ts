@@ -1,15 +1,21 @@
 import { discoverContext, type ContextDiscovery, type ContextFile } from "./context-files.js";
+import { contextDrift, contextPinsPath, loadContextPins } from "./context-pins.js";
 import { analyzeContext } from "./rules/context-rules.js";
 import type { Finding } from "./types.js";
 
 export interface ContextAudit extends ContextDiscovery {
   findings: Finding[];
+  /** Pin status per origin; empty when nothing was ever pinned. */
+  driftLines: string[];
 }
 
 /** Static scan of skills, commands, subagents, rules, CLAUDE.md, plugin hooks and bundled scripts. Read-only. */
 export function auditContext(projectDir: string, opts: { projectOnly?: boolean; home?: string } = {}): ContextAudit {
   const discovered = discoverContext(projectDir, opts);
-  return { ...discovered, findings: analyzeContext(discovered.files) };
+  const pins = loadContextPins();
+  // Pin status is only reported once something was pinned, so a first scan is not buried in "not pinned" lines.
+  const drift = Object.keys(pins.origins).length ? contextDrift(discovered, projectDir, pins) : { lines: [], findings: [] };
+  return { ...discovered, findings: [...analyzeContext(discovered.files), ...drift.findings], driftLines: drift.lines };
 }
 
 const KIND_LABEL: Record<ContextFile["kind"], string> = {
@@ -31,6 +37,7 @@ export function contextSummary(a: ContextAudit): string[] {
   return [
     `Scanned **${a.files.length}** file(s): ${Object.entries(kinds).map(([k, n]) => `${n} ${KIND_LABEL[k as ContextFile["kind"]]}`).join(", ") || "none"}.`,
     `Sources: ${Object.entries(origins).map(([k, n]) => `${k} (${n})`).join(", ") || "none"}${pluginNames.size ? `; ${pluginNames.size} plugin(s)` : ""}.`,
+    a.driftLines.length ? `**Pinning status** (${contextPinsPath()}):\n${a.driftLines.join("\n")}` : "",
     a.skipped.length ? `**Skipped:**\n${a.skipped.slice(0, 10).map((s) => `- ${s}`).join("\n")}${a.skipped.length > 10 ? `\n- … and ${a.skipped.length - 10} more` : ""}` : "",
   ];
 }

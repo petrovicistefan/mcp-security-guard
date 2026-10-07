@@ -10,7 +10,7 @@ A Claude Code plugin that audits the **MCP servers you have installed**. Your co
 | Full-schema poisoning | The same checks on parameter names, descriptions, defaults, enums, `required`, plus non-schema text in `type` |
 | Hidden text | Zero-width, bidi-control and Unicode-tag characters, ANSI terminal escapes, homoglyph tool names |
 | Tool shadowing | A server whose descriptions reference another server's tools, and tool-name collisions between servers |
-| Rug pulls | Tool definitions or launch commands that changed after you pinned them (SHA-256 per tool). Re-checked automatically at every session start |
+| Rug pulls | Tool definitions or launch commands that changed after you pinned them (SHA-256 per tool), and skills, commands, subagents, CLAUDE.md and hooks of a plugin or repository that changed after you pinned them (a plugin that changes files under the same version is flagged `high`). Re-checked automatically at every session start |
 | Capabilities & score | Per-tool classification (execute, delete, write, egress), unauthenticated remote write access, 0–100 score and A–F grade per server, recommended permission rules |
 | Supply chain | OSV vulnerabilities and malicious versions, typosquats, missing or brand-new packages, install scripts, publisher changes (opt-in network check) |
 | Runtime | Hooks on every MCP call: ask before credentials are sent, warn on injected instructions or credentials in outputs, content-free audit log |
@@ -74,6 +74,7 @@ The command line tool is the same package: `npx mcp-security-guard audit --proje
 | `audit_server_tools` | Yes, after explicit `confirm_launch: true`. Sends only `initialize` and list requests (tools, prompts, resources); never calls a tool, renders a prompt or reads a resource |
 | `pin_tools` | Yes (same as above). Writes `~/.claude/mcp-security/pins.json` |
 | `audit_agent_context` | No. Reads skills, commands, subagents, rules, `CLAUDE.md` and plugin hooks (user, project and installed plugins); `project_only` limits it to the repository |
+| `pin_context` | No. Writes `~/.claude/mcp-security/context-pins.json` (SHA-256 per skill, command, subagent, rule, CLAUDE.md, hook config and script, per origin). Skips origins with critical or high findings unless `force` |
 | `analyze_tool_definitions` | No. Offline analysis of a `tools/list` payload, for MCP server authors |
 | `check_supply_chain` | No. Sends package names and versions to npm, PyPI and OSV after `confirm_network: true` |
 | `apply_fixes` | Only for the `permissions` fix. Dry run by default; with `write: true` it edits the project's `.mcp.json` / `.claude/settings.json` after a backup to `~/.claude/mcp-security/backups/` |
@@ -127,6 +128,8 @@ Scan the skills, commands, subagents and `CLAUDE.md` files next to your servers 
 ```
 node plugin/dist/cli.mjs audit-context --project-only --fail-on high
 ```
+
+Pin what you have reviewed with `node plugin/dist/cli.mjs pin-context` (or ask Claude to run `pin_context`); from then on `audit-context` and the session-start check report any pinned plugin, skill, command or `CLAUDE.md` that changed.
 
 Quoted attack phrases inside examples or fenced code are reported as `medium` (documentation), install snippets such as `curl … | sh` as `low`; the same patterns in scripts, hooks and inline `!` commands are `high`.
 

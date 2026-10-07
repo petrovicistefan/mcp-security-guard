@@ -5,6 +5,8 @@ import { adversarialTest } from "./adversarial.js";
 import { readFileSync } from "node:fs";
 import { auditConfig } from "./audit.js";
 import { auditContext, contextSummary } from "./context-audit.js";
+import { discoverContext } from "./context-files.js";
+import { contextPinsPath, pinContext } from "./context-pins.js";
 import { buildDashboard, dashboardText, DASHBOARD_MIME, DASHBOARD_URI } from "./dashboard.js";
 import { recommendPermissions } from "./capabilities.js";
 import { applyPlan, describePlan, planEnvRefs, planPermissions, planPinVersions, type FixPlan } from "./fixes.js";
@@ -93,6 +95,33 @@ server.registerTool(
   async ({ project_only, project_dir }) => {
     const a = auditContext(project_dir ?? projectDir(), { projectOnly: project_only });
     return text(report("Agent context audit", a.findings, contextSummary(a)));
+  },
+);
+
+server.registerTool(
+  "pin_context",
+  {
+    title: "Pin skills, commands, agents and CLAUDE.md",
+    description:
+      "Records a SHA-256 of every skill, command, subagent, rule, CLAUDE.md, plugin hook config and bundled script (user, project and each installed plugin) in ~/.claude/mcp-security/context-pins.json, so later scans and the session-start check report anything that changed after you approved it. A plugin that changes files without a new version is the rug-pull pattern. Pin only after the user has reviewed an audit_agent_context report; origins with critical or high findings are skipped unless force is true. Reads files only; launches nothing.",
+    inputSchema: {
+      origins: z.array(z.string()).optional().describe('Only these origins: "user", "project", "plugin:<name>". Default: all.'),
+      force: z.boolean().default(false).describe("Pin origins that still have critical or high findings. Only when the user explicitly accepts them."),
+      project_dir: z.string().optional(),
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  },
+  async ({ origins, force, project_dir }) => {
+    const dir = project_dir ?? projectDir();
+    const r = pinContext(discoverContext(dir), dir, { only: origins, force });
+    return text(
+      [
+        "# Pinned agent context",
+        ...r.pinned.map((p) => `- 📌 **${excerpt(p.key.startsWith("project:") ? "project" : p.key, 60)}**: ${p.files} file(s)${p.version ? `, version ${excerpt(p.version, 20)}` : ""}`),
+        ...r.skipped.map((s) => `- ⏭️ **${excerpt(s.key.startsWith("project:") ? "project" : s.key, 60)}**: ${s.reason}`),
+        r.pinned.length ? `Saved to ${contextPinsPath()}` : "Nothing was pinned.",
+      ].join("\n"),
+    );
   },
 );
 

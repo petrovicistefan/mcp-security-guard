@@ -241,9 +241,9 @@ function discoverPluginServers(project: string, home: string, sources: Discovery
  * enabledPlugins and project-scoped installs) and plugins synced from the claude.ai account
  * (~/.claude/plugins/synced/<account>/<plugin>/).
  */
-export function pluginRoots(project: string, home: string, sources: DiscoveryResult["sources"]): { name: string; root: string; synced: boolean }[] {
+export function pluginRoots(project: string, home: string, sources: DiscoveryResult["sources"]): { name: string; root: string; synced: boolean; version?: string }[] {
   const enabled = enabledPlugins(project, home, sources);
-  const out: { name: string; root: string; synced: boolean }[] = [];
+  const out: { name: string; root: string; synced: boolean; version?: string }[] = [];
 
   const installedPath = join(home, ".claude", "plugins", "installed_plugins.json");
   const installed = existsSync(installedPath) ? readJson(installedPath, sources)?.plugins : undefined;
@@ -254,7 +254,7 @@ export function pluginRoots(project: string, home: string, sources: DiscoveryRes
       for (const e of entries) {
         if (typeof e?.installPath !== "string") continue;
         if (e.scope && e.scope !== "user" && e.projectPath && resolve(e.projectPath) !== project) continue;
-        out.push({ name, root: e.installPath, synced: false });
+        out.push({ name, root: e.installPath, synced: false, ...(typeof e.version === "string" ? { version: e.version } : {}) });
       }
     }
   }
@@ -265,10 +265,10 @@ export function pluginRoots(project: string, home: string, sources: DiscoveryRes
       const root = join(syncedRoot, bucket, dir);
       const manifest = join(root, ".claude-plugin", "plugin.json");
       if (!existsSync(manifest)) continue;
-      const manifestName = readJson(manifest, sources)?.name;
-      const name = typeof manifestName === "string" && manifestName ? manifestName : dir;
+      const meta = readJson(manifest, sources);
+      const name = typeof meta?.name === "string" && meta.name ? meta.name : dir;
       if (enabled[`${name}@synced`] === false) continue;
-      out.push({ name, root, synced: true });
+      out.push({ name, root, synced: true, ...(typeof meta?.version === "string" ? { version: meta.version } : {}) });
     }
   }
   return out;

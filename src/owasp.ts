@@ -27,6 +27,7 @@ const BY_RULE: [RegExp, string[]][] = [
   [/^feed\/tool$/, ["MCP03", "MCP04"]],
   [/^drift\/config-changed$/, ["MCP04"]],
   [/^drift\/tool-/, ["MCP03", "MCP04"]],
+  [/^drift\/context-/, ["MCP03", "MCP04"]],
   [/^config\/(insecure-transport|invalid-url)$/, ["MCP07"]],
   [/^auth\//, ["MCP07"]],
   [/^config\/(duplicate-name|claude-ai-connector)$/, ["MCP09"]],

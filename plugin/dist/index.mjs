@@ -2990,7 +2990,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve4.call(this, root, ref);
+      let _sch = resolve5.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a3 = root.localRefs) === null || _a3 === void 0 ? void 0 : _a3[ref];
         const { schemaId } = this.opts;
@@ -3017,7 +3017,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve4(root, ref) {
+    function resolve5(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -3847,7 +3847,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve4(baseURI, relativeURI, options) {
+    function resolve5(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const {
         parsed: baseParsed,
@@ -4216,7 +4216,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve4,
+      resolve: resolve5,
       resolveComponent,
       equal,
       serialize: serialize2,
@@ -7179,8 +7179,8 @@ var require_dist = __commonJS({
         return ajv;
       }
       const [formats, exportName] = opts.mode === "fast" ? [formats_1.fastFormats, fastName] : [formats_1.fullFormats, fullName];
-      const list3 = opts.formats || formats_1.formatNames;
-      addFormats(ajv, list3, formats, exportName);
+      const list4 = opts.formats || formats_1.formatNames;
+      addFormats(ajv, list4, formats, exportName);
       if (opts.keywords)
         (0, limit_1.default)(ajv);
       return ajv;
@@ -7192,11 +7192,11 @@ var require_dist = __commonJS({
         throw new Error(`Unknown format "${name}"`);
       return f;
     };
-    function addFormats(ajv, list3, fs, exportName) {
+    function addFormats(ajv, list4, fs, exportName) {
       var _a3;
       var _b;
       (_a3 = (_b = ajv.opts.code).formats) !== null && _a3 !== void 0 ? _a3 : _b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`;
-      for (const f of list3)
+      for (const f of list4)
         ajv.addFormat(f, fs[f]);
     }
     module.exports = exports = formatsPlugin;
@@ -7299,12 +7299,12 @@ var require_isexe = __commonJS({
         if (typeof Promise !== "function") {
           throw new TypeError("callback not provided");
         }
-        return new Promise(function(resolve4, reject) {
+        return new Promise(function(resolve5, reject) {
           isexe(path, options || {}, function(er, is) {
             if (er) {
               reject(er);
             } else {
-              resolve4(is);
+              resolve5(is);
             }
           });
         });
@@ -7370,27 +7370,27 @@ var require_which = __commonJS({
         opt = {};
       const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt);
       const found = [];
-      const step = (i) => new Promise((resolve4, reject) => {
+      const step = (i) => new Promise((resolve5, reject) => {
         if (i === pathEnv.length)
-          return opt.all && found.length ? resolve4(found) : reject(getNotFoundError(cmd));
+          return opt.all && found.length ? resolve5(found) : reject(getNotFoundError(cmd));
         const ppRaw = pathEnv[i];
         const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw;
         const pCmd = path.join(pathPart, cmd);
         const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd : pCmd;
-        resolve4(subStep(p, i, 0));
+        resolve5(subStep(p, i, 0));
       });
-      const subStep = (p, i, ii) => new Promise((resolve4, reject) => {
+      const subStep = (p, i, ii) => new Promise((resolve5, reject) => {
         if (ii === pathExt.length)
-          return resolve4(step(i + 1));
+          return resolve5(step(i + 1));
         const ext = pathExt[ii];
         isexe(p + ext, { pathExt: pathExtExe }, (er, is) => {
           if (!er && is) {
             if (opt.all)
               found.push(p + ext);
             else
-              return resolve4(p + ext);
+              return resolve5(p + ext);
           }
-          return resolve4(subStep(p, i, ii + 1));
+          return resolve5(subStep(p, i, ii + 1));
         });
       });
       return cb ? step(0).then((res) => cb(null, res), cb) : step(0);
@@ -16464,7 +16464,7 @@ var recursive = /* @__PURE__ */ new WeakMap();
 var NONE = 0;
 var ASSUMED = 1;
 var PROVEN = 2;
-function isRecursive(inst, stack, resolve4) {
+function isRecursive(inst, stack, resolve5) {
   const cached2 = recursive.get(inst);
   if (cached2 !== void 0)
     return cached2 ? PROVEN : NONE;
@@ -16474,7 +16474,7 @@ function isRecursive(inst, stack, resolve4) {
   let result = NONE;
   const check2 = (child) => {
     if (result !== PROVEN && child?._zod) {
-      const answer = isRecursive(child, stack, resolve4);
+      const answer = isRecursive(child, stack, resolve5);
       if (answer > result)
         result = answer;
     }
@@ -16485,7 +16485,7 @@ function isRecursive(inst, stack, resolve4) {
       const desc = Object.getOwnPropertyDescriptor(sh, key);
       if (spread && !desc.enumerable)
         continue;
-      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve4) : NONE;
+      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve5) : NONE;
       if (child > answer)
         answer = child;
     }
@@ -16549,7 +16549,7 @@ function isRecursive(inst, stack, resolve4) {
       break;
     // `$ZodLazy` caches its inner on the def, so a resolved edge is followed exactly
     case "lazy": {
-      const inner = def._cachedInner ?? (resolve4 ? inst._zod.innerType : void 0);
+      const inner = def._cachedInner ?? (resolve5 ? inst._zod.innerType : void 0);
       merge2(inner ? isRecursive(inner, stack, false) : ASSUMED);
       break;
     }
@@ -27594,8 +27594,8 @@ var contributors = {
 function aggregateChecks(schema) {
   const agg = {};
   const def = schema._zod.def;
-  const list3 = schema._zod.traits.has("$ZodCheck") ? [schema, ...def.checks ?? []] : def.checks ?? [];
-  for (const ch of list3)
+  const list4 = schema._zod.traits.has("$ZodCheck") ? [schema, ...def.checks ?? []] : def.checks ?? [];
+  for (const ch of list4)
     contributors[ch._zod.def.check]?.(agg, ch._zod.def);
   const bag = schema._zod.bag;
   if (bag.minimum !== void 0)
@@ -34980,7 +34980,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve4) => setTimeout(resolve4, pollInterval));
+        await new Promise((resolve5) => setTimeout(resolve5, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error62) {
@@ -34997,7 +34997,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve4, reject) => {
+    return new Promise((resolve5, reject) => {
       const earlyReject = (error62) => {
         reject(error62);
       };
@@ -35075,7 +35075,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve4(parseResult.data);
+            resolve5(parseResult.data);
           }
         } catch (error62) {
           reject(error62);
@@ -35337,12 +35337,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve4, reject) => {
+    return new Promise((resolve5, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve4, interval);
+      const timeoutId = setTimeout(resolve5, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -36473,7 +36473,7 @@ var McpServer = class {
     let task = createTaskResult.task;
     const pollInterval = task.pollInterval ?? 5e3;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve4) => setTimeout(resolve4, pollInterval));
+      await new Promise((resolve5) => setTimeout(resolve5, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -37137,12 +37137,12 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve4) => {
+    return new Promise((resolve5) => {
       const json2 = serializeMessage(message);
       if (this._stdout.write(json2)) {
-        resolve4();
+        resolve5();
       } else {
-        this._stdout.once("drain", resolve4);
+        this._stdout.once("drain", resolve5);
       }
     });
   }
@@ -39455,7 +39455,7 @@ var SSEClientTransport = class {
     const baseFetch = this?._eventSourceInit?.fetch ?? this._fetch ?? fetch;
     const fetchImpl = this._followRedirects ? baseFetch : fetchWithinOrigin(baseFetch);
     let redirect;
-    return new Promise((resolve4, reject) => {
+    return new Promise((resolve5, reject) => {
       this._eventSource = new EventSource(this._url.href, {
         ...this._eventSourceInit,
         fetch: async (url2, init) => {
@@ -39477,7 +39477,7 @@ var SSEClientTransport = class {
       this._abortController = new AbortController();
       this._eventSource.onerror = (event) => {
         if (event.code === 401 && this._authProvider) {
-          this._authThenStart().then(resolve4, reject);
+          this._authThenStart().then(resolve5, reject);
           return;
         }
         const error62 = new SseError(event.code, redirect ?? event.message, event);
@@ -39499,7 +39499,7 @@ var SSEClientTransport = class {
           void this.close();
           return;
         }
-        resolve4();
+        resolve5();
       });
       this._eventSource.onmessage = (event) => {
         const messageEvent = event;
@@ -39639,7 +39639,7 @@ var StdioClientTransport = class {
     if (this._process) {
       throw new Error("StdioClientTransport already started! If using Client class, note that connect() calls start() automatically.");
     }
-    return new Promise((resolve4, reject) => {
+    return new Promise((resolve5, reject) => {
       this._process = (0, import_cross_spawn.default)(this._serverParams.command, this._serverParams.args ?? [], {
         // merge default env with server env because mcp server needs some env vars
         env: {
@@ -39656,7 +39656,7 @@ var StdioClientTransport = class {
         this.onerror?.(error62);
       });
       this._process.on("spawn", () => {
-        resolve4();
+        resolve5();
       });
       this._process.on("close", (_code) => {
         this._process = void 0;
@@ -39721,22 +39721,22 @@ var StdioClientTransport = class {
     if (this._process) {
       const processToClose = this._process;
       this._process = void 0;
-      const closePromise = new Promise((resolve4) => {
+      const closePromise = new Promise((resolve5) => {
         processToClose.once("close", () => {
-          resolve4();
+          resolve5();
         });
       });
       try {
         processToClose.stdin?.end();
       } catch {
       }
-      await Promise.race([closePromise, new Promise((resolve4) => setTimeout(resolve4, 2e3).unref())]);
+      await Promise.race([closePromise, new Promise((resolve5) => setTimeout(resolve5, 2e3).unref())]);
       if (processToClose.exitCode === null) {
         try {
           processToClose.kill("SIGTERM");
         } catch {
         }
-        await Promise.race([closePromise, new Promise((resolve4) => setTimeout(resolve4, 2e3).unref())]);
+        await Promise.race([closePromise, new Promise((resolve5) => setTimeout(resolve5, 2e3).unref())]);
       }
       if (processToClose.exitCode === null) {
         try {
@@ -39748,15 +39748,15 @@ var StdioClientTransport = class {
     this._readBuffer.clear();
   }
   send(message) {
-    return new Promise((resolve4) => {
+    return new Promise((resolve5) => {
       if (!this._process?.stdin) {
         throw new Error("Not connected");
       }
       const json2 = serializeMessage(message);
       if (this._process.stdin.write(json2)) {
-        resolve4();
+        resolve5();
       } else {
-        this._process.stdin.once("drain", resolve4);
+        this._process.stdin.once("drain", resolve5);
       }
     });
   }
@@ -40409,7 +40409,7 @@ function pluginRoots(project, home, sources) {
       for (const e of entries) {
         if (typeof e?.installPath !== "string") continue;
         if (e.scope && e.scope !== "user" && e.projectPath && resolve(e.projectPath) !== project) continue;
-        out.push({ name, root: e.installPath, synced: false });
+        out.push({ name, root: e.installPath, synced: false, ...typeof e.version === "string" ? { version: e.version } : {} });
       }
     }
   }
@@ -40419,10 +40419,10 @@ function pluginRoots(project, home, sources) {
       const root = join(syncedRoot, bucket, dir);
       const manifest = join(root, ".claude-plugin", "plugin.json");
       if (!existsSync(manifest)) continue;
-      const manifestName = readJson(manifest, sources)?.name;
-      const name = typeof manifestName === "string" && manifestName ? manifestName : dir;
+      const meta3 = readJson(manifest, sources);
+      const name = typeof meta3?.name === "string" && meta3.name ? meta3.name : dir;
       if (enabled[`${name}@synced`] === false) continue;
-      out.push({ name, root, synced: true });
+      out.push({ name, root, synced: true, ...typeof meta3?.version === "string" ? { version: meta3.version } : {} });
     }
   }
   return out;
@@ -40646,7 +40646,7 @@ async function adversarialTest(s, opts = {}) {
 }
 
 // src/index.ts
-import { readFileSync as readFileSync7 } from "node:fs";
+import { readFileSync as readFileSync8 } from "node:fs";
 
 // src/policy.ts
 import { existsSync as existsSync3, readFileSync as readFileSync2 } from "node:fs";
@@ -40931,12 +40931,12 @@ function auditServerConfig(s) {
 function auditDuplicates(servers) {
   const byName = /* @__PURE__ */ new Map();
   for (const s of servers.filter((s2) => s2.scope !== "claude-desktop" && s2.scope !== "claude-ai")) byName.set(s.name, [...byName.get(s.name) ?? [], s]);
-  return [...byName.entries()].filter(([, list3]) => list3.length > 1).map(([name, list3]) => ({
+  return [...byName.entries()].filter(([, list4]) => list4.length > 1).map(([name, list4]) => ({
     severity: "low",
     rule: "config/duplicate-name",
-    title: `Server name "${name}" is defined in ${list3.length} scopes (${list3.map((s) => s.scope).join(", ")})`,
-    location: list3.map((s) => s.source).join(", "),
-    file: list3[0].source,
+    title: `Server name "${name}" is defined in ${list4.length} scopes (${list4.map((s) => s.scope).join(", ")})`,
+    location: list4.map((s) => s.source).join(", "),
+    file: list4[0].source,
     server: name,
     remediation: "Keep one definition. Claude Code picks one by scope precedence (local > project > user), so a project .mcp.json can silently replace a server you trust."
   }));
@@ -40985,23 +40985,23 @@ function isRegularFile(path) {
     return false;
   }
 }
-function collectRoot(root, origin, add, opts) {
+function collectRoot(root, add, opts) {
   const skills = join4(root, "skills");
   for (const f of walk(skills)) {
     const rel = relative(skills, f).split(sep);
     const skillName = rel[0];
     const ext = extname(f).toLowerCase();
-    if (basename(f).toLowerCase() === "skill.md") add(f, "skill", skillName);
-    else if (ext === ".md" || ext === ".mdx" || ext === ".txt") add(f, "skill", skillName);
-    else if (SCRIPT_EXT.has(ext)) add(f, "script", skillName);
+    if (basename(f).toLowerCase() === "skill.md") add(f, "skill", skillName, root);
+    else if (ext === ".md" || ext === ".mdx" || ext === ".txt") add(f, "skill", skillName, root);
+    else if (SCRIPT_EXT.has(ext)) add(f, "script", skillName, root);
   }
   for (const [dir, kind] of [["commands", "command"], ["agents", "agent"], ["rules", "rule"]]) {
     const base = join4(root, dir);
-    for (const f of walk(base)) if ([".md", ".mdx"].includes(extname(f).toLowerCase())) add(f, kind, relative(base, f).replace(/\.mdx?$/i, "").split(sep).join("/"));
+    for (const f of walk(base)) if ([".md", ".mdx"].includes(extname(f).toLowerCase())) add(f, kind, relative(base, f).replace(/\.mdx?$/i, "").split(sep).join("/"), root);
   }
   if (opts.pluginLayout) {
-    for (const f of [join4(root, "hooks", "hooks.json"), join4(root, "hooks.json")]) add(f, "hooks", "hooks");
-    for (const f of walk(join4(root, "hooks"))) if (SCRIPT_EXT.has(extname(f).toLowerCase())) add(f, "script", "hooks");
+    for (const f of [join4(root, "hooks", "hooks.json"), join4(root, "hooks.json")]) add(f, "hooks", "hooks", root);
+    for (const f of walk(join4(root, "hooks"))) if (SCRIPT_EXT.has(extname(f).toLowerCase())) add(f, "script", "hooks", root);
   }
 }
 function discoverContext(projectDir2, opts = {}) {
@@ -41009,8 +41009,9 @@ function discoverContext(projectDir2, opts = {}) {
   const project = resolve2(projectDir2);
   const files = [];
   const skipped = [];
+  const versions = {};
   const seen = /* @__PURE__ */ new Set();
-  const add = (origin) => (file2, kind, name) => {
+  const add = (origin) => (file2, kind, name, root) => {
     const p = resolve2(file2);
     if (seen.has(p) || !isRegularFile(p)) return;
     seen.add(p);
@@ -41024,25 +41025,32 @@ function discoverContext(projectDir2, opts = {}) {
         skipped.push(`${p} (larger than ${MAX_FILE_BYTES / 1024} KB)`);
         return;
       }
-      files.push({ path: p, kind, origin, name, text: buf.toString("utf8") });
+      files.push({ path: p, kind, origin, name, rel: relative(root, p).split(sep).join("/"), text: buf.toString("utf8") });
     } catch {
       skipped.push(`${p} (unreadable)`);
     }
   };
   const addProject = add("project");
-  for (const f of [join4(project, "CLAUDE.md"), join4(project, "CLAUDE.local.md"), join4(project, ".claude", "CLAUDE.md")]) addProject(f, "claude-md", basename(f));
-  collectRoot(join4(project, ".claude"), "project", addProject, { pluginLayout: false });
+  for (const f of [join4(project, "CLAUDE.md"), join4(project, "CLAUDE.local.md"), join4(project, ".claude", "CLAUDE.md")]) addProject(f, "claude-md", basename(f), project);
+  collectRoot(join4(project, ".claude"), addProject, { pluginLayout: false });
   if (!opts.projectOnly) {
     const addUser = add("user");
-    addUser(join4(home, ".claude", "CLAUDE.md"), "claude-md", "CLAUDE.md");
-    collectRoot(join4(home, ".claude"), "user", addUser, { pluginLayout: false });
+    addUser(join4(home, ".claude", "CLAUDE.md"), "claude-md", "CLAUDE.md", join4(home, ".claude"));
+    collectRoot(join4(home, ".claude"), addUser, { pluginLayout: false });
     const sources = [];
-    for (const { name, root } of pluginRoots(project, home, sources)) {
-      collectRoot(root, `plugin:${name}`, add(`plugin:${name}`), { pluginLayout: true });
+    for (const { name, root, version: version2 } of pluginRoots(project, home, sources)) {
+      if (version2 && !versions[`plugin:${name}`]) versions[`plugin:${name}`] = version2;
+      collectRoot(root, add(`plugin:${name}`), { pluginLayout: true });
     }
   }
-  return { files, skipped };
+  return { files, versions, skipped };
 }
+
+// src/context-pins.ts
+import { createHash } from "node:crypto";
+import { existsSync as existsSync4, mkdirSync, readFileSync as readFileSync4, renameSync, writeFileSync } from "node:fs";
+import { homedir as homedir4 } from "node:os";
+import { dirname as dirname2, join as join5, resolve as resolve3 } from "node:path";
 
 // src/rules/tool-rules.ts
 function collectText(tool) {
@@ -41504,10 +41512,109 @@ function analyzeContext(files) {
   return files.flatMap(analyzeContextFile);
 }
 
+// src/context-pins.ts
+function contextPinsPath() {
+  return join5(process.env.MCP_SECURITY_HOME ?? join5(homedir4(), ".claude", "mcp-security"), "context-pins.json");
+}
+var hashText = (text2) => createHash("sha256").update(text2).digest("hex");
+var originKey = (origin, projectDir2) => origin === "project" ? `project:${resolve3(projectDir2)}` : origin;
+function loadContextPins(path = contextPinsPath()) {
+  if (!existsSync4(path)) return { version: 1, origins: {} };
+  try {
+    const data = JSON.parse(readFileSync4(path, "utf8"));
+    return data?.version === 1 && data.origins && typeof data.origins === "object" ? data : { version: 1, origins: {} };
+  } catch {
+    return { version: 1, origins: {} };
+  }
+}
+function saveContextPins(pins, path = contextPinsPath()) {
+  mkdirSync(dirname2(path), { recursive: true, mode: 448 });
+  const tmp = `${path}.tmp`;
+  writeFileSync(tmp, JSON.stringify(pins, null, 2), { mode: 384 });
+  renameSync(tmp, path);
+}
+function snapshotContext(d, projectDir2) {
+  const byOrigin = /* @__PURE__ */ new Map();
+  for (const f of d.files) {
+    const key = originKey(f.origin, projectDir2);
+    const snap = byOrigin.get(key) ?? { key, origin: f.origin, ...d.versions[f.origin] ? { version: d.versions[f.origin] } : {}, files: {} };
+    snap.files[f.rel] = hashText(f.text);
+    byOrigin.set(key, snap);
+  }
+  return [...byOrigin.values()].sort((a, b) => a.key.localeCompare(b.key));
+}
+function flaggedOrigins(files, projectDir2) {
+  const out = /* @__PURE__ */ new Set();
+  for (const f of files) if (analyzeContextFile(f).some((x) => x.severity === "critical" || x.severity === "high")) out.add(originKey(f.origin, projectDir2));
+  return out;
+}
+function pinContext(d, projectDir2, opts = {}, path = contextPinsPath()) {
+  const pins = loadContextPins(path);
+  const flagged = opts.force ? /* @__PURE__ */ new Set() : flaggedOrigins(d.files, projectDir2);
+  const result = { pinned: [], skipped: [] };
+  for (const snap of snapshotContext(d, projectDir2)) {
+    if (opts.only?.length && !opts.only.includes(snap.origin) && !opts.only.includes(snap.key)) continue;
+    if (flagged.has(snap.key)) {
+      result.skipped.push({ key: snap.key, reason: "has critical or high findings; review them, or pin with force" });
+      continue;
+    }
+    pins.origins[snap.key] = { pinnedAt: (/* @__PURE__ */ new Date()).toISOString(), ...snap.version ? { version: snap.version } : {}, files: snap.files };
+    result.pinned.push({ key: snap.key, files: Object.keys(snap.files).length, ...snap.version ? { version: snap.version } : {} });
+  }
+  saveContextPins(pins, path);
+  return result;
+}
+var list2 = (xs, max = 4) => xs.slice(0, max).map((x) => `"${excerpt(x, 60)}"`).join(", ") + (xs.length > max ? ` (+${xs.length - max} more)` : "");
+function contextDrift(d, projectDir2, pins = loadContextPins()) {
+  const lines = [];
+  const findings = [];
+  const present = /* @__PURE__ */ new Set();
+  for (const snap of snapshotContext(d, projectDir2)) {
+    present.add(snap.key);
+    const label = snap.key.startsWith("project:") ? "project" : snap.key;
+    const pin = pins.origins[snap.key];
+    if (!pin) {
+      lines.push(`- **${excerpt(label, 60)}**: not pinned yet`);
+      continue;
+    }
+    const changed = Object.keys(snap.files).filter((r) => r in pin.files && pin.files[r] !== snap.files[r]);
+    const added = Object.keys(snap.files).filter((r) => !(r in pin.files));
+    const removed = Object.keys(pin.files).filter((r) => !(r in snap.files));
+    if (!changed.length && !added.length && !removed.length) {
+      lines.push(`- **${excerpt(label, 60)}**: unchanged since ${pin.pinnedAt}`);
+      continue;
+    }
+    lines.push(`- **${excerpt(label, 60)}**: \u26A0\uFE0F changed since ${pin.pinnedAt}`);
+    const versionBump = !!(pin.version && snap.version && pin.version !== snap.version);
+    const isPlugin = snap.origin.startsWith("plugin:");
+    const touched = /* @__PURE__ */ new Set([...changed, ...added]);
+    const serious = d.files.filter((f) => originKey(f.origin, projectDir2) === snap.key && touched.has(f.rel)).flatMap(analyzeContextFile).filter((f) => f.severity === "critical" || f.severity === "high");
+    let severity = isPlugin ? versionBump ? "low" : "high" : snap.origin === "project" ? "medium" : "low";
+    if (serious.length) severity = "high";
+    const parts = [changed.length && `${changed.length} changed`, added.length && `${added.length} added`, removed.length && `${removed.length} removed`].filter(Boolean).join(", ");
+    const what = isPlugin && versionBump ? `Plugin updated ${excerpt(pin.version, 20)} \u2192 ${excerpt(snap.version, 20)}` : isPlugin ? "Plugin files changed without a version change" : snap.origin === "project" ? "Project skills, commands or CLAUDE.md changed since pinning" : "Your skills, commands or CLAUDE.md changed since pinning";
+    findings.push({
+      severity,
+      rule: isPlugin && versionBump ? "drift/context-updated" : "drift/context-changed",
+      title: `${what}: ${parts}${serious.length ? `, ${serious.length} critical/high finding(s) in them` : ""}`,
+      location: `${label} \u203A ${[...changed, ...added].slice(0, 4).map((r) => excerpt(r, 50)).join(", ") || "removed files only"}`,
+      evidence: [changed.length && `changed: ${list2(changed)}`, added.length && `added: ${list2(added)}`, removed.length && `removed: ${list2(removed)}`].filter(Boolean).join("; "),
+      remediation: isPlugin && !versionBump ? "A plugin that rewrites files without a new version is the rug-pull pattern. Read the changed files, or reinstall the plugin from its source, then re-pin." : "Read what changed (git diff for a repository, the plugin's changelog for an update). If you expected it, run pin_context to accept it."
+    });
+  }
+  for (const key of Object.keys(pins.origins)) {
+    const belongs = !key.startsWith("project:") || key === `project:${resolve3(projectDir2)}`;
+    if (belongs && !present.has(key)) lines.push(`- **${excerpt(key.startsWith("project:") ? "project" : key, 60)}**: pinned, but no files found now`);
+  }
+  return { lines, findings };
+}
+
 // src/context-audit.ts
 function auditContext(projectDir2, opts = {}) {
   const discovered = discoverContext(projectDir2, opts);
-  return { ...discovered, findings: analyzeContext(discovered.files) };
+  const pins = loadContextPins();
+  const drift = Object.keys(pins.origins).length ? contextDrift(discovered, projectDir2, pins) : { lines: [], findings: [] };
+  return { ...discovered, findings: [...analyzeContext(discovered.files), ...drift.findings], driftLines: drift.lines };
 }
 var KIND_LABEL = {
   "claude-md": "CLAUDE.md file(s)",
@@ -41526,6 +41633,8 @@ function contextSummary(a) {
   return [
     `Scanned **${a.files.length}** file(s): ${Object.entries(kinds).map(([k, n]) => `${n} ${KIND_LABEL[k]}`).join(", ") || "none"}.`,
     `Sources: ${Object.entries(origins).map(([k, n]) => `${k} (${n})`).join(", ") || "none"}${pluginNames.size ? `; ${pluginNames.size} plugin(s)` : ""}.`,
+    a.driftLines.length ? `**Pinning status** (${contextPinsPath()}):
+${a.driftLines.join("\n")}` : "",
     a.skipped.length ? `**Skipped:**
 ${a.skipped.slice(0, 10).map((s) => `- ${s}`).join("\n")}${a.skipped.length > 10 ? `
 - \u2026 and ${a.skipped.length - 10} more` : ""}` : ""
@@ -41559,6 +41668,7 @@ var BY_RULE = [
   [/^feed\/tool$/, ["MCP03", "MCP04"]],
   [/^drift\/config-changed$/, ["MCP04"]],
   [/^drift\/tool-/, ["MCP03", "MCP04"]],
+  [/^drift\/context-/, ["MCP03", "MCP04"]],
   [/^config\/(insecure-transport|invalid-url)$/, ["MCP07"]],
   [/^auth\//, ["MCP07"]],
   [/^config\/(duplicate-name|claude-ai-connector)$/, ["MCP09"]],
@@ -41585,12 +41695,12 @@ function owaspLabel(rule) {
 }
 
 // src/pins.ts
-import { createHash } from "node:crypto";
-import { existsSync as existsSync4, mkdirSync, readFileSync as readFileSync4, renameSync, statSync, writeFileSync } from "node:fs";
-import { homedir as homedir4 } from "node:os";
-import { dirname as dirname2, isAbsolute, join as join5, resolve as resolve3 } from "node:path";
+import { createHash as createHash2 } from "node:crypto";
+import { existsSync as existsSync5, mkdirSync as mkdirSync2, readFileSync as readFileSync5, renameSync as renameSync2, statSync, writeFileSync as writeFileSync2 } from "node:fs";
+import { homedir as homedir5 } from "node:os";
+import { dirname as dirname3, isAbsolute, join as join6, resolve as resolve4 } from "node:path";
 function pinsPath() {
-  return join5(process.env.MCP_SECURITY_HOME ?? join5(homedir4(), ".claude", "mcp-security"), "pins.json");
+  return join6(process.env.MCP_SECURITY_HOME ?? join6(homedir5(), ".claude", "mcp-security"), "pins.json");
 }
 function stableStringify(v) {
   if (Array.isArray(v)) return `[${v.map(stableStringify).join(",")}]`;
@@ -41600,17 +41710,17 @@ function stableStringify(v) {
   return JSON.stringify(v ?? null);
 }
 function hashTool(t) {
-  return createHash("sha256").update(stableStringify({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })).digest("hex");
+  return createHash2("sha256").update(stableStringify({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })).digest("hex");
 }
 var MAX_HASHED_FILE = 20 * 1024 * 1024;
 function localFileHashes(s) {
   const out = {};
   for (const a of [s.command, ...s.args ?? []]) {
     if (!a || a.startsWith("-") || a.includes("${") || !/[\\/]|\.(m?[jt]s|cjs|py|rb|sh|php|jar)$/i.test(a)) continue;
-    const p = isAbsolute(a) ? a : resolve3(dirname2(s.source), a);
+    const p = isAbsolute(a) ? a : resolve4(dirname3(s.source), a);
     try {
       const st = statSync(p);
-      if (st.isFile() && st.size <= MAX_HASHED_FILE) out[a] = createHash("sha256").update(readFileSync4(p)).digest("hex");
+      if (st.isFile() && st.size <= MAX_HASHED_FILE) out[a] = createHash2("sha256").update(readFileSync5(p)).digest("hex");
     } catch {
     }
   }
@@ -41618,25 +41728,25 @@ function localFileHashes(s) {
 }
 function hashConfig(s) {
   const files = localFileHashes(s);
-  return createHash("sha256").update(stableStringify({ type: s.type, command: s.command, args: s.args, url: s.url, env: Object.keys(s.env ?? {}).sort(), headers: Object.keys(s.headers ?? {}).sort(), ...Object.keys(files).length ? { files } : {} })).digest("hex");
+  return createHash2("sha256").update(stableStringify({ type: s.type, command: s.command, args: s.args, url: s.url, env: Object.keys(s.env ?? {}).sort(), headers: Object.keys(s.headers ?? {}).sort(), ...Object.keys(files).length ? { files } : {} })).digest("hex");
 }
 function pinEntry(s, definitions) {
   return { pinnedAt: (/* @__PURE__ */ new Date()).toISOString(), tools: Object.fromEntries(definitions.map((t) => [t.name, hashTool(t)])), config: hashConfig(s), surface: true };
 }
 function loadPins(path = pinsPath()) {
-  if (!existsSync4(path)) return { version: 1, servers: {} };
+  if (!existsSync5(path)) return { version: 1, servers: {} };
   try {
-    const data = JSON.parse(readFileSync4(path, "utf8"));
+    const data = JSON.parse(readFileSync5(path, "utf8"));
     return data?.version === 1 && data.servers ? data : { version: 1, servers: {} };
   } catch {
     return { version: 1, servers: {} };
   }
 }
 function savePins(pins, path = pinsPath()) {
-  mkdirSync(dirname2(path), { recursive: true, mode: 448 });
+  mkdirSync2(dirname3(path), { recursive: true, mode: 448 });
   const tmp = `${path}.tmp`;
-  writeFileSync(tmp, JSON.stringify(pins, null, 2), { mode: 384 });
-  renameSync(tmp, path);
+  writeFileSync2(tmp, JSON.stringify(pins, null, 2), { mode: 384 });
+  renameSync2(tmp, path);
 }
 function pinKey(scope, name) {
   return `${scope}:${name}`;
@@ -41825,7 +41935,7 @@ function legsOf(tool) {
   }
   return [...legs];
 }
-var list2 = (xs, max = 5) => xs.slice(0, max).map((x) => `"${excerpt(x, 40)}"`).join(", ") + (xs.length > max ? ` (+${xs.length - max} more)` : "");
+var list3 = (xs, max = 5) => xs.slice(0, max).map((x) => `"${excerpt(x, 40)}"`).join(", ") + (xs.length > max ? ` (+${xs.length - max} more)` : "");
 var REMEDIATION = "Injected text in the untrusted source can tell the model to read private data and send it out. Put the send-out tools behind approval (permissions.ask), keep untrusted sources and private data out of the same session where you can, and pin the servers involved.";
 function toxicFlowFindings(surfaces) {
   const perServer = surfaces.map((s) => {
@@ -41841,7 +41951,7 @@ function toxicFlowFindings(surfaces) {
     out.push({
       severity: "low",
       rule: "flow/single-server-trifecta",
-      title: `One server combines untrusted input, private data and a way to send data out (untrusted: ${list2(s.legs.untrusted)}; private: ${list2(s.legs.private)}; send out: ${list2(s.legs.egress)})`,
+      title: `One server combines untrusted input, private data and a way to send data out (untrusted: ${list3(s.legs.untrusted)}; private: ${list3(s.legs.private)}; send out: ${list3(s.legs.egress)})`,
       location: `server "${s.server.name}" (${s.server.scope})`,
       remediation: `${REMEDIATION}${ask.length ? ` Suggested permissions.ask entries: ${ask.slice(0, 6).map((n) => `"${excerpt(n, 80)}"`).join(", ")}${ask.length > 6 ? ", \u2026" : ""}.` : ""}`,
       file: s.server.source,
@@ -41853,7 +41963,7 @@ function toxicFlowFindings(surfaces) {
   const involved = new Set(Object.values(merged).flat().map((x) => x.server));
   const alone = perServer.some((s) => has(s.legs));
   if (!alone && merged.untrusted.length && merged.private.length && merged.egress.length && involved.size >= 2) {
-    const who = (l) => merged[l].map((x) => `${excerpt(x.server.name, 40)}: ${list2(x.tools, 3)}`).join("; ");
+    const who = (l) => merged[l].map((x) => `${excerpt(x.server.name, 40)}: ${list3(x.tools, 3)}`).join("; ");
     const ask = merged.egress.flatMap((x) => x.tools.map((t) => permissionName(x.server, t))).filter((n) => !!n);
     out.push({
       severity: "info",
@@ -42095,10 +42205,10 @@ async function auditTools(servers, timeoutSeconds, pins, policy) {
       }
       const d = computeDrift(pinned, r.definitions);
       driftLines.push(hasDrift(d) ? `- ${label}: \u26A0\uFE0F changed since ${pinned.pinnedAt}` : `- ${label}: unchanged since ${pinned.pinnedAt}`);
-      const list3 = (xs) => xs.map((x) => `"${excerpt(x, 50)}"`).join(", ");
-      if (d.changed.length) own2.push({ severity: "high", rule: "drift/tool-changed", title: `${d.changed.length} tool definition(s) changed since pinning: ${list3(d.changed)}`, location: where, remediation: "A server that rewrites tool descriptions after approval is the rug-pull pattern. Review the findings for these tools, and re-pin only once you trust the new wording." });
-      if (d.added.length) own2.push({ severity: "medium", rule: "drift/tool-added", title: `${d.added.length} new tool(s) since pinning: ${list3(d.added)}`, location: where, remediation: "Check that the new tools match a release you expected, then re-pin." });
-      if (d.removed.length) own2.push({ severity: "low", rule: "drift/tool-removed", title: `${d.removed.length} tool(s) removed since pinning: ${list3(d.removed)}`, location: where, remediation: "Usually a normal upgrade. Re-pin after reviewing." });
+      const list4 = (xs) => xs.map((x) => `"${excerpt(x, 50)}"`).join(", ");
+      if (d.changed.length) own2.push({ severity: "high", rule: "drift/tool-changed", title: `${d.changed.length} tool definition(s) changed since pinning: ${list4(d.changed)}`, location: where, remediation: "A server that rewrites tool descriptions after approval is the rug-pull pattern. Review the findings for these tools, and re-pin only once you trust the new wording." });
+      if (d.added.length) own2.push({ severity: "medium", rule: "drift/tool-added", title: `${d.added.length} new tool(s) since pinning: ${list4(d.added)}`, location: where, remediation: "Check that the new tools match a release you expected, then re-pin." });
+      if (d.removed.length) own2.push({ severity: "low", rule: "drift/tool-removed", title: `${d.removed.length} tool(s) removed since pinning: ${list4(d.removed)}`, location: where, remediation: "Usually a normal upgrade. Re-pin after reviewing." });
     }
     findings.push(...own2.map((f) => ({ ...f, file: r.server.source, server: r.server.name })));
   }
@@ -42208,16 +42318,16 @@ function dashboardText(d) {
 }
 
 // src/fixes.ts
-import { chmodSync, existsSync as existsSync5, mkdirSync as mkdirSync2, readFileSync as readFileSync5, renameSync as renameSync2, rmSync as rmSync2, writeFileSync as writeFileSync2 } from "node:fs";
-import { createHash as createHash2 } from "node:crypto";
-import { homedir as homedir5 } from "node:os";
-import { basename as basename2, dirname as dirname3, join as join6 } from "node:path";
+import { chmodSync, existsSync as existsSync6, mkdirSync as mkdirSync3, readFileSync as readFileSync6, renameSync as renameSync3, rmSync as rmSync2, writeFileSync as writeFileSync3 } from "node:fs";
+import { createHash as createHash3 } from "node:crypto";
+import { homedir as homedir6 } from "node:os";
+import { basename as basename2, dirname as dirname4, join as join7 } from "node:path";
 function readJsonFile(path) {
-  return existsSync5(path) ? JSON.parse(readFileSync5(path, "utf8")) : {};
+  return existsSync6(path) ? JSON.parse(readFileSync6(path, "utf8")) : {};
 }
 var serialize = (data) => JSON.stringify(data, null, 2) + "\n";
 function planPermissions(projectDir2, ask) {
-  const path = join6(projectDir2, ".claude", "settings.json");
+  const path = join7(projectDir2, ".claude", "settings.json");
   const settings = readJsonFile(path);
   const perms = settings.permissions ??= {};
   const existing = /* @__PURE__ */ new Set([...perms.ask ?? [], ...perms.deny ?? []]);
@@ -42227,8 +42337,8 @@ function planPermissions(projectDir2, ask) {
   return { changes: [{ path, edits: add.map((r) => `permissions.ask += "${r}"`), content: serialize(settings) }], notes: [] };
 }
 async function planPinVersions(projectDir2, servers, fetcher = fetch) {
-  const path = join6(projectDir2, ".mcp.json");
-  if (!existsSync5(path)) return { changes: [], notes: ["No project .mcp.json."] };
+  const path = join7(projectDir2, ".mcp.json");
+  if (!existsSync6(path)) return { changes: [], notes: ["No project .mcp.json."] };
   const data = readJsonFile(path);
   const notes = [];
   const edits = [];
@@ -42260,8 +42370,8 @@ async function planPinVersions(projectDir2, servers, fetcher = fetch) {
   return { changes: edits.length ? [{ path, edits, content: serialize(data) }] : [], notes: edits.length || notes.length ? notes : ["Every npx/uvx package in .mcp.json is already pinned."] };
 }
 function planEnvRefs(projectDir2) {
-  const path = join6(projectDir2, ".mcp.json");
-  if (!existsSync5(path)) return { changes: [], notes: ["No project .mcp.json."] };
+  const path = join7(projectDir2, ".mcp.json");
+  if (!existsSync6(path)) return { changes: [], notes: ["No project .mcp.json."] };
   const data = readJsonFile(path);
   const edits = [];
   const notes = [];
@@ -42281,28 +42391,28 @@ function planEnvRefs(projectDir2) {
   return { changes: edits.length ? [{ path, edits, content: serialize(data), backupHoldsSecrets: true }] : [], notes: edits.length ? notes : ["No literal secrets in .mcp.json."] };
 }
 function backupPath(file2) {
-  const dir = join6(process.env.MCP_SECURITY_HOME ?? join6(homedir5(), ".claude", "mcp-security"), "backups");
-  mkdirSync2(dir, { recursive: true, mode: 448 });
-  const id = createHash2("sha256").update(file2).digest("hex").slice(0, 8);
-  return join6(dir, `${basename2(file2)}-${id}-${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-")}`);
+  const dir = join7(process.env.MCP_SECURITY_HOME ?? join7(homedir6(), ".claude", "mcp-security"), "backups");
+  mkdirSync3(dir, { recursive: true, mode: 448 });
+  const id = createHash3("sha256").update(file2).digest("hex").slice(0, 8);
+  return join7(dir, `${basename2(file2)}-${id}-${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-")}`);
 }
 function applyPlan(plan) {
   const written = [];
   const backups = [];
   const backupOf = {};
   for (const c of plan.changes) {
-    mkdirSync2(dirname3(c.path), { recursive: true });
-    if (existsSync5(c.path)) {
+    mkdirSync3(dirname4(c.path), { recursive: true });
+    if (existsSync6(c.path)) {
       const backup = backupPath(c.path);
       rmSync2(backup, { force: true });
-      writeFileSync2(backup, readFileSync5(c.path), { mode: c.backupHoldsSecrets ? 384 : 420, flag: "wx" });
+      writeFileSync3(backup, readFileSync6(c.path), { mode: c.backupHoldsSecrets ? 384 : 420, flag: "wx" });
       if (c.backupHoldsSecrets) chmodSync(backup, 384);
       backups.push(backup);
       backupOf[c.path] = backup;
     }
     const tmp = `${c.path}.mcpsec-tmp`;
-    writeFileSync2(tmp, c.content);
-    renameSync2(tmp, c.path);
+    writeFileSync3(tmp, c.content);
+    renameSync3(tmp, c.path);
     written.push(c.path);
   }
   return { written, backups, backupOf };
@@ -42410,17 +42520,17 @@ async function scanImages(servers, run = defaultRunner) {
 }
 
 // src/runtime.ts
-import { appendFileSync, existsSync as existsSync6, mkdirSync as mkdirSync3, readFileSync as readFileSync6, renameSync as renameSync3, statSync as statSync2 } from "node:fs";
-import { homedir as homedir6 } from "node:os";
-import { dirname as dirname4, join as join7 } from "node:path";
+import { appendFileSync, existsSync as existsSync7, mkdirSync as mkdirSync4, readFileSync as readFileSync7, renameSync as renameSync4, statSync as statSync2 } from "node:fs";
+import { homedir as homedir7 } from "node:os";
+import { dirname as dirname5, join as join8 } from "node:path";
 var MAX_SCAN_BYTES = 256 * 1024;
 var MAX_LOG_BYTES = 10 * 1024 * 1024;
 function auditLogPath() {
-  return join7(process.env.MCP_SECURITY_HOME ?? join7(homedir6(), ".claude", "mcp-security"), "audit.jsonl");
+  return join8(process.env.MCP_SECURITY_HOME ?? join8(homedir7(), ".claude", "mcp-security"), "audit.jsonl");
 }
 function readAudit(path = auditLogPath()) {
-  if (!existsSync6(path)) return [];
-  return readFileSync6(path, "utf8").split("\n").filter(Boolean).flatMap((l) => {
+  if (!existsSync7(path)) return [];
+  return readFileSync7(path, "utf8").split("\n").filter(Boolean).flatMap((l) => {
     try {
       return [JSON.parse(l)];
     } catch {
@@ -42512,6 +42622,31 @@ server.registerTool(
   async ({ project_only, project_dir }) => {
     const a = auditContext(project_dir ?? projectDir(), { projectOnly: project_only });
     return text(report("Agent context audit", a.findings, contextSummary(a)));
+  }
+);
+server.registerTool(
+  "pin_context",
+  {
+    title: "Pin skills, commands, agents and CLAUDE.md",
+    description: "Records a SHA-256 of every skill, command, subagent, rule, CLAUDE.md, plugin hook config and bundled script (user, project and each installed plugin) in ~/.claude/mcp-security/context-pins.json, so later scans and the session-start check report anything that changed after you approved it. A plugin that changes files without a new version is the rug-pull pattern. Pin only after the user has reviewed an audit_agent_context report; origins with critical or high findings are skipped unless force is true. Reads files only; launches nothing.",
+    inputSchema: {
+      origins: external_exports.array(external_exports.string()).optional().describe('Only these origins: "user", "project", "plugin:<name>". Default: all.'),
+      force: external_exports.boolean().default(false).describe("Pin origins that still have critical or high findings. Only when the user explicitly accepts them."),
+      project_dir: external_exports.string().optional()
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }
+  },
+  async ({ origins, force, project_dir }) => {
+    const dir = project_dir ?? projectDir();
+    const r = pinContext(discoverContext(dir), dir, { only: origins, force });
+    return text(
+      [
+        "# Pinned agent context",
+        ...r.pinned.map((p) => `- \u{1F4CC} **${excerpt(p.key.startsWith("project:") ? "project" : p.key, 60)}**: ${p.files} file(s)${p.version ? `, version ${excerpt(p.version, 20)}` : ""}`),
+        ...r.skipped.map((s) => `- \u23ED\uFE0F **${excerpt(s.key.startsWith("project:") ? "project" : s.key, 60)}**: ${s.reason}`),
+        r.pinned.length ? `Saved to ${contextPinsPath()}` : "Nothing was pinned."
+      ].join("\n")
+    );
   }
 );
 var launchInput = {
@@ -42667,7 +42802,7 @@ server.registerResource(
   DASHBOARD_URI,
   { mimeType: DASHBOARD_MIME, description: "Interactive security dashboard (MCP App)." },
   async () => ({
-    contents: [{ uri: DASHBOARD_URI, mimeType: DASHBOARD_MIME, text: readFileSync7(new URL("./dashboard.html", import.meta.url), "utf8") }]
+    contents: [{ uri: DASHBOARD_URI, mimeType: DASHBOARD_MIME, text: readFileSync8(new URL("./dashboard.html", import.meta.url), "utf8") }]
   })
 );
 server.registerTool(

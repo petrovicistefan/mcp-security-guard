@@ -1,5 +1,7 @@
 import { fetchSurface, surfaceDefinitions } from "./client.js";
 import { discoverServers } from "./config.js";
+import { discoverContext } from "./context-files.js";
+import { contextDrift, loadContextPins } from "./context-pins.js";
 import { computeDrift, hasDrift, hashConfig, loadPins, pinKey } from "./pins.js";
 import { auditPolicy, loadPolicy } from "./policy.js";
 import { analyzeTools } from "./rules/tool-rules.js";
@@ -49,5 +51,11 @@ export async function sessionCheck(projectDir: string, mode: CheckMode, timeoutM
   const policyProblems = auditPolicy(servers, loadPolicy(projectDir))
     .filter((f) => f.severity === "critical" || f.severity === "high")
     .map((f) => `${f.server ? `"${excerpt(f.server, 50)}"` : "policy"}: ${f.title}`);
-  return { problems: [...results.filter((r): r is string => !!r), ...policyProblems], checked: pinned.length };
+
+  // Pinned skills, commands, agents and CLAUDE.md: local files only, nothing is launched.
+  const contextPins = loadContextPins();
+  const contextProblems = Object.keys(contextPins.origins).length
+    ? contextDrift(discoverContext(projectDir), projectDir, contextPins).findings.filter((f) => f.severity === "high" || f.severity === "critical").map((f) => `${f.title} (${f.location})`)
+    : [];
+  return { problems: [...results.filter((r): r is string => !!r), ...policyProblems, ...contextProblems.map((p) => excerpt(p, 240))], checked: pinned.length };
 }

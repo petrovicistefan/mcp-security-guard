@@ -12,7 +12,7 @@ It runs locally, needs no account and has no telemetry.
 - **Skills, commands and CLAUDE.md**: `audit_agent_context` scans the text Claude reads besides MCP tools (skills and their scripts, slash commands, subagents, rules, CLAUDE.md and the hooks of installed plugins) for injected instructions, hidden text, credential exfiltration, download-and-run and infostealer scripts. Read-only.
 - **Tools for Claude**: list and audit servers, scan tool, prompt and resource definitions, pin trusted servers, check packages on npm/PyPI/OSV, generate a team policy, apply fixes, query the audit log, open an interactive dashboard, and test your own server for command injection.
 - **Hooks that run automatically**:
-  - at session start: a one-time welcome, re-verification of pinned servers, and the project policy check;
+  - at session start: a one-time welcome, re-verification of pinned servers, pinned skills, commands, CLAUDE.md and plugin files (local files only), and the project policy check;
   - before each MCP tool call: asks you to confirm when the arguments contain a credential;
   - after each MCP tool call: warns Claude and you when a response contains injected instructions, hidden characters or a credential.
 
@@ -25,6 +25,7 @@ MCP configuration files: `~/.claude.json`, the project's `.mcp.json`, Claude Cod
 Only under `~/.claude/mcp-security/` (set `MCP_SECURITY_HOME` to move it):
 
 - `pins.json`: hashes of definitions you pinned;
+- `context-pins.json`: hashes of the skills, commands, agents, CLAUDE.md and hook files you pinned (never their content);
 - `audit.jsonl`: one line per MCP call with the server, tool, time, an input hash and sizes. Never arguments or outputs. Turn it off with `MCP_SECURITY_AUDIT_LOG=off`;
 - `backups/`: copies of files before an automatic fix;
 - a `welcomed` marker.
