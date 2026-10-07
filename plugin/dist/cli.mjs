@@ -22804,6 +22804,9 @@ var fleetInventory = (opts) => teamRequest(opts, "GET", "/v1/team/inventory");
 var pushPolicy = (opts, policy) => teamRequest(opts, "PUT", "/v1/team/policy", policy);
 var getSettings = (opts) => teamRequest(opts, "GET", "/v1/team/settings");
 var putSettings = (opts, patch) => teamRequest(opts, "PUT", "/v1/team/settings", patch);
+var listKeys = (opts) => teamRequest(opts, "GET", "/v1/team/keys");
+var createKey = (opts, label, role = "member") => teamRequest(opts, "POST", "/v1/team/keys", { label, role });
+var revokeKey = (opts, id) => teamRequest(opts, "POST", `/v1/team/keys/${encodeURIComponent(id)}/revoke`);
 async function teamSessionStart(projectDir, env = process.env, opts = teamOptionsFromEnv(env)) {
   if (!opts.apiKey || (env.MCP_SECURITY_TEAM_SYNC ?? "on").toLowerCase() === "off") return [];
   const notes = [];
@@ -22831,7 +22834,10 @@ var TEAM_USAGE = `Team plan (needs a team API key; MCP_SECURITY_API_KEY or the p
   admin: team approve ID [--note TEXT] | team reject ID [--note TEXT]
   admin: team inventory               the latest report of every member, with policy violations
   admin: team policy-push FILE        replace the central policy (a .mcp-security.json-style file)
-  admin: team settings [--fleet on|off] [--webhook URL|none]
+  admin: team keys                    list the organisation's keys and seats
+  admin: team keys create LABEL [--role member|admin]   a key for a developer (shown once; the service keeps only its hash)
+  admin: team keys revoke ID          revoke a key (not your own)
+  admin: team settings [--fleet on|off] [--webhook URL|none] [--email ADDRESS|none]
 Environment: MCP_SECURITY_TEAM_SYNC=off stops the session-start sync; MCP_SECURITY_TEAM_REPORT=on also reports at session start (default off).
 `;
 var violationLine = (v) => `  - ${v.kind} ${excerpt(v.name, 80)}: ${v.reason}`;
@@ -22891,6 +22897,21 @@ ${JSON.stringify(report2, null, 2)}`, code: 0 };
     }
     return out(await pushPolicy(opts, policy), (d) => [`Policy pushed: version ${d.version}. Members get it within the hour or at \`team sync\`.`]);
   }
+  if (sub === "keys") {
+    const [action, arg] = a.rest;
+    if (!action) return out(await listKeys(opts), (d) => [d.seats === null ? `${d.used} active key(s), no seat limit.` : `${d.used} of ${d.seats} seat(s) in use.`, ...d.keys.map((k) => `${k.id}  ${k.status.padEnd(8)} ${k.role.padEnd(6)} ${excerpt(k.label ?? "-", 40)}${k.expiresAt ? `  until ${k.expiresAt}` : ""}`)]);
+    if (action === "create") {
+      const label = a.rest.slice(1).join(" ").trim();
+      if (!label) return { text: "usage: team keys create LABEL [--role member|admin]", code: 2 };
+      if (a.role !== void 0 && a.role !== "member" && a.role !== "admin") return { text: "--role must be member or admin", code: 2 };
+      return out(await createKey(opts, label, a.role ?? "member"), (d) => [`Key for ${excerpt(d.label, 40)} (${d.role}, id ${d.id}). It is shown once and cannot be recovered:`, "", `  ${d.key}`, "", "Give it to them privately. They set it as MCP_SECURITY_API_KEY or in the plugin's settings."]);
+    }
+    if (action === "revoke") {
+      if (!arg) return { text: "usage: team keys revoke ID", code: 2 };
+      return out(await revokeKey(opts, arg), (d) => [`${d.id}: revoked.`]);
+    }
+    return { text: "usage: team keys [create LABEL | revoke ID]", code: 2 };
+  }
   if (sub === "settings") {
     const patch = {};
     if (a.fleet !== void 0) {
@@ -22898,8 +22919,9 @@ ${JSON.stringify(report2, null, 2)}`, code: 0 };
       patch.fleetVisibility = a.fleet === "on";
     }
     if (a.webhook !== void 0) patch.webhookUrl = a.webhook === "none" ? null : a.webhook;
+    if (a.email !== void 0) patch.alertEmail = a.email === "none" ? null : a.email;
     const r = Object.keys(patch).length ? await putSettings(opts, patch) : await getSettings(opts);
-    return out(r, (d) => [`Organisation: ${excerpt(d.name, 60)}`, `Fleet visibility: ${d.fleetVisibility ? "on" : "off"}`, `Alert webhook: ${d.webhookConfigured ? "set" : "not set"}`]);
+    return out(r, (d) => [`Organisation: ${excerpt(d.name, 60)}`, `Fleet visibility: ${d.fleetVisibility ? "on" : "off"}`, `Alert webhook: ${d.webhookConfigured ? "set" : "not set"}`, `Alert email: ${d.alertEmailConfigured ? "set" : d.emailAvailable === false ? "not available on this service" : "not set"}`, ...d.seats !== void 0 ? [`Seats: ${d.seats ?? "no limit"}`] : []]);
   }
   return { text: `team: unknown command "${excerpt(sub, 40)}"
 ${TEAM_USAGE}`, code: 2 };
@@ -23029,6 +23051,8 @@ async function main() {
       "dry-run": { type: "boolean", default: false },
       fleet: { type: "string" },
       webhook: { type: "string" },
+      email: { type: "string" },
+      role: { type: "string" },
       "supply-chain": { type: "boolean", default: false },
       "scan-images": { type: "boolean", default: false },
       server: { type: "string" },
@@ -23071,7 +23095,7 @@ async function main() {
     return exitCode(a.findings, values["fail-on"]);
   }
   if (command === "team") {
-    const r = await runTeam({ sub: positionals[0], rest: positionals.slice(1), project: projectDir, status: values.status, note: values.note, dryRun: values["dry-run"], fleet: values.fleet, webhook: values.webhook });
+    const r = await runTeam({ sub: positionals[0], rest: positionals.slice(1), project: projectDir, status: values.status, note: values.note, dryRun: values["dry-run"], fleet: values.fleet, webhook: values.webhook, email: values.email, role: values.role });
     (r.code === 0 ? process.stdout : process.stderr).write(r.text.endsWith("\n") ? r.text : `${r.text}
 `);
     return r.code;

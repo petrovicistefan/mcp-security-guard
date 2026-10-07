@@ -174,6 +174,8 @@ async function main(): Promise<number> {
       "dry-run": { type: "boolean", default: false },
       fleet: { type: "string" },
       webhook: { type: "string" },
+      email: { type: "string" },
+      role: { type: "string" },
       "supply-chain": { type: "boolean", default: false },
       "scan-images": { type: "boolean", default: false },
       server: { type: "string" },
@@ -219,7 +221,7 @@ async function main(): Promise<number> {
   }
 
   if (command === "team") {
-    const r = await runTeam({ sub: positionals[0], rest: positionals.slice(1), project: projectDir, status: values.status, note: values.note, dryRun: values["dry-run"], fleet: values.fleet, webhook: values.webhook });
+    const r = await runTeam({ sub: positionals[0], rest: positionals.slice(1), project: projectDir, status: values.status, note: values.note, dryRun: values["dry-run"], fleet: values.fleet, webhook: values.webhook, email: values.email, role: values.role });
     (r.code === 0 ? process.stdout : process.stderr).write(r.text.endsWith("\n") ? r.text : `${r.text}\n`);
     return r.code;
   }

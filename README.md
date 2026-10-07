@@ -73,6 +73,8 @@ With a team API key (`MCP_SECURITY_API_KEY`, or the key setting of the plugin) t
 - **Approved plugins.** `allowedPlugins` and `blockedPlugins` in a policy are enforced in audits, CI and at session start; a blocked plugin is `critical`, an unlisted one `high`.
 - **Fleet inventory, only with consent.** `team report` sends which servers and plugins you run: names, scopes, transport, package names and versions or remote hostnames, pinned or not. Never paths, arguments, environment, headers, query strings or secrets. Reports are refused until an admin turns fleet visibility on, `team report --dry-run` shows exactly what would be sent, and sending at session start needs `MCP_SECURITY_TEAM_REPORT=on`.
 - **Approval flow.** `team request server project:linear` asks the admin; `team approve` adds it to the policy's allow list for everyone. Alerts (new request, new violation, policy change) go to a Slack-compatible webhook.
+- **Keys and seats.** An admin creates a key per developer (`team keys create ana`, shown once; only its hash is stored) and revokes it (`team keys revoke`); a purchase sets the seat limit. The same admin actions are in the web dashboard (`/v1/team/dashboard` on the service: fleet, approvals, policy, keys, settings; the key is typed in, kept in the browser tab only, and every value from the service is written as text).
+- **Alerts by email** (`team settings --email you@example.com`) next to the Slack-compatible webhook; at most 20 a hour per organisation.
 - **Admin actions are CLI only** (`team approve`, `reject`, `policy-push`, `settings`, `inventory`), not MCP tools, so injected text cannot trigger them. The MCP tools `team_status`, `request_approval` and `team_report` ask for confirmation and cannot approve anything.
 
 ```
@@ -82,7 +84,8 @@ mcp-security-guard team request plugin some-plugin --note "for the docs site"
 mcp-security-guard team approvals --status pending      # admin
 mcp-security-guard team approve apr_… --note ok          # admin
 mcp-security-guard team policy-push policy.json          # admin
-mcp-security-guard team settings --fleet on --webhook https://hooks.slack.com/…   # admin
+mcp-security-guard team keys create ana                  # admin: a key for a developer, shown once
+mcp-security-guard team settings --fleet on --webhook https://hooks.slack.com/… --email alerts@acme.example   # admin
 ```
 
 ## Tools

@@ -200,8 +200,21 @@ export const decideApproval = (opts: TeamOptions, id: string, decision: "approve
 export const fleetInventory = (opts: TeamOptions) =>
   teamRequest<{ members: { label: string | null; reportedAt: string; servers: InventoryServer[]; plugins: InventoryPlugin[]; violations: Violation[] }[]; servers: { name: string; members: number }[]; violationCount: number }>(opts, "GET", "/v1/team/inventory");
 export const pushPolicy = (opts: TeamOptions, policy: Policy) => teamRequest<{ version: number; updatedAt: string }>(opts, "PUT", "/v1/team/policy", policy);
-export const getSettings = (opts: TeamOptions) => teamRequest<{ name: string; fleetVisibility: boolean; webhookConfigured: boolean }>(opts, "GET", "/v1/team/settings");
-export const putSettings = (opts: TeamOptions, patch: { fleetVisibility?: boolean; webhookUrl?: string | null }) => teamRequest<{ name: string; fleetVisibility: boolean; webhookConfigured: boolean }>(opts, "PUT", "/v1/team/settings", patch);
+export const getSettings = (opts: TeamOptions) => teamRequest<SettingsView>(opts, "GET", "/v1/team/settings");
+export const putSettings = (opts: TeamOptions, patch: { fleetVisibility?: boolean; webhookUrl?: string | null; alertEmail?: string | null }) => teamRequest<SettingsView>(opts, "PUT", "/v1/team/settings", patch);
+export const listKeys = (opts: TeamOptions) => teamRequest<{ seats: number | null; used: number; keys: { id: string; role: string; label: string | null; status: string; expiresAt: string | null }[] }>(opts, "GET", "/v1/team/keys");
+/** The new key is in the answer and is shown once; the service keeps only its hash. */
+export const createKey = (opts: TeamOptions, label: string, role: "member" | "admin" = "member") => teamRequest<{ key: string; id: string; label: string; role: string }>(opts, "POST", "/v1/team/keys", { label, role });
+export const revokeKey = (opts: TeamOptions, id: string) => teamRequest<{ id: string; status: string }>(opts, "POST", `/v1/team/keys/${encodeURIComponent(id)}/revoke`);
+
+export interface SettingsView {
+  name: string;
+  fleetVisibility: boolean;
+  webhookConfigured: boolean;
+  alertEmailConfigured?: boolean;
+  emailAvailable?: boolean;
+  seats?: number | null;
+}
 
 /** Session start: refreshes the policy at most hourly, and reports the inventory only if the user turned that on. Never throws. */
 export async function teamSessionStart(projectDir: string, env: NodeJS.ProcessEnv = process.env, opts: TeamOptions = teamOptionsFromEnv(env)): Promise<string[]> {

@@ -237,6 +237,10 @@ describe("team CLI against a stand-in backend", () => {
         if (req.url === "/v1/team/approvals/apr_000000000001/decision") return send(200, { id: "apr_000000000001", status: "approved", policyVersion: 5 });
         if (req.url === "/v1/team/inventory" && req.method === "POST") return send(200, { policyVersion: 4, violations: [{ kind: "server", name: "user:scraper", reason: "not-approved" }] });
         if (req.url === "/v1/team/policy" && req.method === "PUT") return send(200, { version: 5, updatedAt: "x" });
+        if (path === "/v1/team/keys" && req.method === "GET") return send(200, { seats: 5, used: 2, keys: [{ id: "62f3e9e408cd", role: "admin", label: "stefan", status: "active", expiresAt: null }] });
+        if (path === "/v1/team/keys" && req.method === "POST") return send(201, { key: "mcps_new_key_for_test", id: "aaaaaaaaaaaa", label: "bob", role: "member" });
+        if (path === "/v1/team/keys/aaaaaaaaaaaa/revoke") return send(200, { id: "aaaaaaaaaaaa", status: "revoked" });
+        if (path === "/v1/team/settings" && req.method === "PUT") return send(200, { name: "Acme", fleetVisibility: true, webhookConfigured: false, alertEmailConfigured: true, emailAvailable: true, seats: 5 });
         return send(404, { error: "not found" });
       });
     });
@@ -282,6 +286,20 @@ describe("team CLI against a stand-in backend", () => {
     writeFileSync(file, JSON.stringify({ allowedServers: ["github"] }));
     expect((await run(["team", "policy-push", file])).stdout).toContain("Policy pushed: version 5");
     expect(JSON.parse(seen.find((s) => s.method === "PUT")!.body)).toEqual({ allowedServers: ["github"] });
+  });
+
+  it("keys and settings --email talk to the right routes and show a new key once", async () => {
+    expect((await run(["team", "keys"])).stdout).toContain("2 of 5 seat(s) in use.");
+    const created = await run(["team", "keys", "create", "bob"]);
+    expect(created.stdout).toContain("mcps_new_key_for_test");
+    expect(created.stdout).toContain("shown once");
+    expect(JSON.parse(seen.find((s) => s.method === "POST" && s.url === "/v1/team/keys")!.body)).toEqual({ label: "bob", role: "member" });
+    expect((await run(["team", "keys", "revoke", "aaaaaaaaaaaa"])).stdout).toContain("aaaaaaaaaaaa: revoked.");
+    expect((await run(["team", "keys", "create"])).status).toBe(2);
+    expect((await run(["team", "keys", "create", "x", "--role", "root"])).status).toBe(2);
+    const settings = await run(["team", "settings", "--email", "alerts@acme.example"]);
+    expect(settings.stdout).toContain("Alert email: set");
+    expect(JSON.parse(seen.filter((s) => s.method === "PUT" && s.url === "/v1/team/settings").at(-1)!.body)).toEqual({ alertEmail: "alerts@acme.example" });
   });
 
   it("explains a missing key and a bad command", async () => {
