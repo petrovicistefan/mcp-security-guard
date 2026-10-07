@@ -67,7 +67,7 @@ The command line tool is the same package: `npx mcp-security-guard audit --proje
 
 ## Team plan (paid, opt-in)
 
-With a team API key (`MCP_SECURITY_API_KEY`, or the key setting of the plugin) the plugin can also work with your organisation. Everything below is off without a key, and the free plugin stays fully functional.
+Team keys are issued by hand for now: [write to me](mailto:hello@petrovicistefan.ro). With a team API key (`MCP_SECURITY_API_KEY`, or the key setting of the plugin) the plugin can also work with your organisation. Everything below is off without a key, and the free plugin stays fully functional.
 
 - **Central policy.** An admin pushes one policy (allowed and blocked servers, remote hosts, plugins, pinned versions). Every member's plugin fetches it at session start (at most hourly, cached, enforced even when offline) and enforces it **next to** their own and the project's policy: a repository's `.mcp-security.json` cannot loosen it.
 - **Approved plugins.** `allowedPlugins` and `blockedPlugins` in a policy are enforced in audits, CI and at session start; a blocked plugin is `critical`, an unlisted one `high`.
@@ -234,9 +234,9 @@ npm run bench      # false-positive gate on real servers (network; Docker images
 
 ## Pro & Team (early access)
 
-Everything above is free and stays free: it runs locally and needs no account. Paid plans add what needs a server: a daily threat feed of known malicious MCP servers and packages, alerts when a server you use ships changed tool descriptions, history, and team policies and dashboards. They are opt-in through `MCP_SECURITY_API_KEY`; see [PRIVACY.md](PRIVACY.md) for exactly what is sent.
+Everything above is free and stays free: it runs locally and needs no account. Paid plans add what needs a server: a daily threat feed of known malicious MCP servers, packages and skills, alerts when a server you use ships changed tool descriptions, history, and team policies, approvals and a dashboard. They are opt-in through `MCP_SECURITY_API_KEY`; see [PRIVACY.md](PRIVACY.md) for exactly what is sent.
 
-Interested? [Join the early access list](https://tally.so/r/dW5lZK). Early sign-ups get launch pricing, including a limited lifetime license.
+Paid plans are not on sale yet, and there is no checkout. If you or your team would like one, write to [hello@petrovicistefan.ro](mailto:hello@petrovicistefan.ro) or [join the early access list](https://tally.so/r/dW5lZK): I issue keys by hand for now, and early users get launch pricing, including a limited lifetime license.
 
 ## Security, privacy, license
 

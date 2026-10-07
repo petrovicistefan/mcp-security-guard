@@ -16,7 +16,7 @@ It runs locally, needs no account and has no telemetry.
   - before each MCP tool call: asks you to confirm when the arguments contain a credential;
   - after each MCP tool call: warns Claude and you when a response contains injected instructions, hidden characters or a credential.
 
-- **Team plan** (paid, opt-in): an organisation's central policy enforced next to your own, approved and blocked plugins, an opt-in fleet inventory and an approval flow (`mcp-security-guard team help`).
+- **Team plan** (paid, opt-in; keys are issued by hand for now, write to hello@petrovicistefan.ro): an organisation's central policy enforced next to your own, approved and blocked plugins, an opt-in fleet inventory and an approval flow (`mcp-security-guard team help`).
 
 ## What it reads
 
