@@ -416,11 +416,11 @@ var require_codegen = __commonJS({
         const rhs = this.rhs === void 0 ? "" : ` = ${this.rhs}`;
         return `${varKind} ${this.name}${rhs};` + _n;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants2) {
         if (!names[this.name.str])
           return;
         if (this.rhs)
-          this.rhs = optimizeExpr(this.rhs, names, constants);
+          this.rhs = optimizeExpr(this.rhs, names, constants2);
         return this;
       }
       get names() {
@@ -437,10 +437,10 @@ var require_codegen = __commonJS({
       render({ _n }) {
         return `${this.lhs} = ${this.rhs};` + _n;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants2) {
         if (this.lhs instanceof code_1.Name && !names[this.lhs.str] && !this.sideEffects)
           return;
-        this.rhs = optimizeExpr(this.rhs, names, constants);
+        this.rhs = optimizeExpr(this.rhs, names, constants2);
         return this;
       }
       get names() {
@@ -501,8 +501,8 @@ var require_codegen = __commonJS({
       optimizeNodes() {
         return `${this.code}` ? this : void 0;
       }
-      optimizeNames(names, constants) {
-        this.code = optimizeExpr(this.code, names, constants);
+      optimizeNames(names, constants2) {
+        this.code = optimizeExpr(this.code, names, constants2);
         return this;
       }
       get names() {
@@ -531,12 +531,12 @@ var require_codegen = __commonJS({
         }
         return nodes.length > 0 ? this : void 0;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants2) {
         const { nodes } = this;
         let i = nodes.length;
         while (i--) {
           const n = nodes[i];
-          if (n.optimizeNames(names, constants))
+          if (n.optimizeNames(names, constants2))
             continue;
           subtractNames(names, n.names);
           nodes.splice(i, 1);
@@ -589,12 +589,12 @@ var require_codegen = __commonJS({
           return void 0;
         return this;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants2) {
         var _a3;
-        this.else = (_a3 = this.else) === null || _a3 === void 0 ? void 0 : _a3.optimizeNames(names, constants);
-        if (!(super.optimizeNames(names, constants) || this.else))
+        this.else = (_a3 = this.else) === null || _a3 === void 0 ? void 0 : _a3.optimizeNames(names, constants2);
+        if (!(super.optimizeNames(names, constants2) || this.else))
           return;
-        this.condition = optimizeExpr(this.condition, names, constants);
+        this.condition = optimizeExpr(this.condition, names, constants2);
         return this;
       }
       get names() {
@@ -617,10 +617,10 @@ var require_codegen = __commonJS({
       render(opts) {
         return `for(${this.iteration})` + super.render(opts);
       }
-      optimizeNames(names, constants) {
-        if (!super.optimizeNames(names, constants))
+      optimizeNames(names, constants2) {
+        if (!super.optimizeNames(names, constants2))
           return;
-        this.iteration = optimizeExpr(this.iteration, names, constants);
+        this.iteration = optimizeExpr(this.iteration, names, constants2);
         return this;
       }
       get names() {
@@ -656,10 +656,10 @@ var require_codegen = __commonJS({
       render(opts) {
         return `for(${this.varKind} ${this.name} ${this.loop} ${this.iterable})` + super.render(opts);
       }
-      optimizeNames(names, constants) {
-        if (!super.optimizeNames(names, constants))
+      optimizeNames(names, constants2) {
+        if (!super.optimizeNames(names, constants2))
           return;
-        this.iterable = optimizeExpr(this.iterable, names, constants);
+        this.iterable = optimizeExpr(this.iterable, names, constants2);
         return this;
       }
       get names() {
@@ -701,11 +701,11 @@ var require_codegen = __commonJS({
         (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNodes();
         return this;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants2) {
         var _a3, _b;
-        super.optimizeNames(names, constants);
-        (_a3 = this.catch) === null || _a3 === void 0 ? void 0 : _a3.optimizeNames(names, constants);
-        (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNames(names, constants);
+        super.optimizeNames(names, constants2);
+        (_a3 = this.catch) === null || _a3 === void 0 ? void 0 : _a3.optimizeNames(names, constants2);
+        (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNames(names, constants2);
         return this;
       }
       get names() {
@@ -1006,7 +1006,7 @@ var require_codegen = __commonJS({
     function addExprNames(names, from) {
       return from instanceof code_1._CodeOrName ? addNames(names, from.names) : names;
     }
-    function optimizeExpr(expr, names, constants) {
+    function optimizeExpr(expr, names, constants2) {
       if (expr instanceof code_1.Name)
         return replaceName(expr);
       if (!canOptimize(expr))
@@ -1021,14 +1021,14 @@ var require_codegen = __commonJS({
         return items;
       }, []));
       function replaceName(n) {
-        const c = constants[n.str];
+        const c = constants2[n.str];
         if (c === void 0 || names[n.str] !== 1)
           return n;
         delete names[n.str];
         return c;
       }
       function canOptimize(e) {
-        return e instanceof code_1._Code && e._items.some((c) => c instanceof code_1.Name && names[c.str] === 1 && constants[c.str] !== void 0);
+        return e instanceof code_1._Code && e._items.some((c) => c instanceof code_1.Name && names[c.str] === 1 && constants2[c.str] !== void 0);
       }
     }
     function subtractNames(names, from) {
@@ -1067,10 +1067,10 @@ var require_util = __commonJS({
     var codegen_1 = require_codegen();
     var code_1 = require_code();
     function toHash(arr) {
-      const hash2 = {};
+      const hash3 = {};
       for (const item of arr)
-        hash2[item] = true;
-      return hash2;
+        hash3[item] = true;
+      return hash3;
     }
     exports.toHash = toHash;
     function alwaysValidSchema(it, schema) {
@@ -2990,7 +2990,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve6.call(this, root, ref);
+      let _sch = resolve7.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a3 = root.localRefs) === null || _a3 === void 0 ? void 0 : _a3[ref];
         const { schemaId } = this.opts;
@@ -3017,7 +3017,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve6(root, ref) {
+    function resolve7(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -3847,7 +3847,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve6(baseURI, relativeURI, options) {
+    function resolve7(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const {
         parsed: baseParsed,
@@ -3880,49 +3880,49 @@ var require_fast_uri = __commonJS({
       schemelessOptions.skipEscape = true;
       return serialize2(resolved, schemelessOptions);
     }
-    function resolveComponent(base, relative2, options, skipNormalization) {
+    function resolveComponent(base, relative3, options, skipNormalization) {
       const target = {};
       if (!skipNormalization) {
         base = parse3(serialize2(base, options), options);
-        relative2 = parse3(serialize2(relative2, options), options);
+        relative3 = parse3(serialize2(relative3, options), options);
       }
       options = options || {};
-      if (!options.tolerant && relative2.scheme) {
-        target.scheme = relative2.scheme;
-        target.userinfo = relative2.userinfo;
-        target.host = relative2.host;
-        target.port = relative2.port;
-        target.path = removeDotSegments(relative2.path || "");
-        target.query = relative2.query;
+      if (!options.tolerant && relative3.scheme) {
+        target.scheme = relative3.scheme;
+        target.userinfo = relative3.userinfo;
+        target.host = relative3.host;
+        target.port = relative3.port;
+        target.path = removeDotSegments(relative3.path || "");
+        target.query = relative3.query;
       } else {
-        if (relative2.userinfo !== void 0 || relative2.host !== void 0 || relative2.port !== void 0) {
-          target.userinfo = relative2.userinfo;
-          target.host = relative2.host;
-          target.port = relative2.port;
-          target.path = removeDotSegments(relative2.path || "");
-          target.query = relative2.query;
+        if (relative3.userinfo !== void 0 || relative3.host !== void 0 || relative3.port !== void 0) {
+          target.userinfo = relative3.userinfo;
+          target.host = relative3.host;
+          target.port = relative3.port;
+          target.path = removeDotSegments(relative3.path || "");
+          target.query = relative3.query;
         } else {
-          if (!relative2.path) {
+          if (!relative3.path) {
             target.path = base.path;
-            if (relative2.query !== void 0) {
-              target.query = relative2.query;
+            if (relative3.query !== void 0) {
+              target.query = relative3.query;
             } else {
               target.query = base.query;
             }
           } else {
-            if (relative2.path[0] === "/") {
-              target.path = removeDotSegments(relative2.path);
+            if (relative3.path[0] === "/") {
+              target.path = removeDotSegments(relative3.path);
             } else {
               if ((base.userinfo !== void 0 || base.host !== void 0 || base.port !== void 0) && !base.path) {
-                target.path = "/" + relative2.path;
+                target.path = "/" + relative3.path;
               } else if (!base.path) {
-                target.path = relative2.path;
+                target.path = relative3.path;
               } else {
-                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative2.path;
+                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative3.path;
               }
               target.path = removeDotSegments(target.path);
             }
-            target.query = relative2.query;
+            target.query = relative3.query;
           }
           target.userinfo = base.userinfo;
           target.host = base.host;
@@ -3930,7 +3930,7 @@ var require_fast_uri = __commonJS({
         }
         target.scheme = base.scheme;
       }
-      target.fragment = relative2.fragment;
+      target.fragment = relative3.fragment;
       return target;
     }
     function equal(uriA, uriB, options) {
@@ -4216,7 +4216,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve6,
+      resolve: resolve7,
       resolveComponent,
       equal,
       serialize: serialize2,
@@ -7299,12 +7299,12 @@ var require_isexe = __commonJS({
         if (typeof Promise !== "function") {
           throw new TypeError("callback not provided");
         }
-        return new Promise(function(resolve6, reject) {
+        return new Promise(function(resolve7, reject) {
           isexe(path, options || {}, function(er, is) {
             if (er) {
               reject(er);
             } else {
-              resolve6(is);
+              resolve7(is);
             }
           });
         });
@@ -7370,27 +7370,27 @@ var require_which = __commonJS({
         opt = {};
       const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt);
       const found = [];
-      const step = (i) => new Promise((resolve6, reject) => {
+      const step = (i) => new Promise((resolve7, reject) => {
         if (i === pathEnv.length)
-          return opt.all && found.length ? resolve6(found) : reject(getNotFoundError(cmd));
+          return opt.all && found.length ? resolve7(found) : reject(getNotFoundError(cmd));
         const ppRaw = pathEnv[i];
         const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw;
         const pCmd = path.join(pathPart, cmd);
         const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd : pCmd;
-        resolve6(subStep(p, i, 0));
+        resolve7(subStep(p, i, 0));
       });
-      const subStep = (p, i, ii) => new Promise((resolve6, reject) => {
+      const subStep = (p, i, ii) => new Promise((resolve7, reject) => {
         if (ii === pathExt.length)
-          return resolve6(step(i + 1));
+          return resolve7(step(i + 1));
         const ext = pathExt[ii];
         isexe(p + ext, { pathExt: pathExtExe }, (er, is) => {
           if (!er && is) {
             if (opt.all)
               found.push(p + ext);
             else
-              return resolve6(p + ext);
+              return resolve7(p + ext);
           }
-          return resolve6(subStep(p, i, ii + 1));
+          return resolve7(subStep(p, i, ii + 1));
         });
       });
       return cb ? step(0).then((res) => cb(null, res), cb) : step(0);
@@ -16464,7 +16464,7 @@ var recursive = /* @__PURE__ */ new WeakMap();
 var NONE = 0;
 var ASSUMED = 1;
 var PROVEN = 2;
-function isRecursive(inst, stack, resolve6) {
+function isRecursive(inst, stack, resolve7) {
   const cached2 = recursive.get(inst);
   if (cached2 !== void 0)
     return cached2 ? PROVEN : NONE;
@@ -16474,7 +16474,7 @@ function isRecursive(inst, stack, resolve6) {
   let result = NONE;
   const check2 = (child) => {
     if (result !== PROVEN && child?._zod) {
-      const answer = isRecursive(child, stack, resolve6);
+      const answer = isRecursive(child, stack, resolve7);
       if (answer > result)
         result = answer;
     }
@@ -16485,7 +16485,7 @@ function isRecursive(inst, stack, resolve6) {
       const desc = Object.getOwnPropertyDescriptor(sh, key);
       if (spread && !desc.enumerable)
         continue;
-      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve6) : NONE;
+      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve7) : NONE;
       if (child > answer)
         answer = child;
     }
@@ -16549,7 +16549,7 @@ function isRecursive(inst, stack, resolve6) {
       break;
     // `$ZodLazy` caches its inner on the def, so a resolved edge is followed exactly
     case "lazy": {
-      const inner = def._cachedInner ?? (resolve6 ? inst._zod.innerType : void 0);
+      const inner = def._cachedInner ?? (resolve7 ? inst._zod.innerType : void 0);
       merge2(inner ? isRecursive(inner, stack, false) : ASSUMED);
       break;
     }
@@ -34980,7 +34980,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve6) => setTimeout(resolve6, pollInterval));
+        await new Promise((resolve7) => setTimeout(resolve7, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error62) {
@@ -34997,7 +34997,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve6, reject) => {
+    return new Promise((resolve7, reject) => {
       const earlyReject = (error62) => {
         reject(error62);
       };
@@ -35075,7 +35075,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve6(parseResult.data);
+            resolve7(parseResult.data);
           }
         } catch (error62) {
           reject(error62);
@@ -35337,12 +35337,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve6, reject) => {
+    return new Promise((resolve7, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve6, interval);
+      const timeoutId = setTimeout(resolve7, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -36473,7 +36473,7 @@ var McpServer = class {
     let task = createTaskResult.task;
     const pollInterval = task.pollInterval ?? 5e3;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve6) => setTimeout(resolve6, pollInterval));
+      await new Promise((resolve7) => setTimeout(resolve7, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -37137,12 +37137,12 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve6) => {
+    return new Promise((resolve7) => {
       const json2 = serializeMessage(message);
       if (this._stdout.write(json2)) {
-        resolve6();
+        resolve7();
       } else {
-        this._stdout.once("drain", resolve6);
+        this._stdout.once("drain", resolve7);
       }
     });
   }
@@ -39455,7 +39455,7 @@ var SSEClientTransport = class {
     const baseFetch = this?._eventSourceInit?.fetch ?? this._fetch ?? fetch;
     const fetchImpl = this._followRedirects ? baseFetch : fetchWithinOrigin(baseFetch);
     let redirect;
-    return new Promise((resolve6, reject) => {
+    return new Promise((resolve7, reject) => {
       this._eventSource = new EventSource(this._url.href, {
         ...this._eventSourceInit,
         fetch: async (url2, init) => {
@@ -39477,7 +39477,7 @@ var SSEClientTransport = class {
       this._abortController = new AbortController();
       this._eventSource.onerror = (event) => {
         if (event.code === 401 && this._authProvider) {
-          this._authThenStart().then(resolve6, reject);
+          this._authThenStart().then(resolve7, reject);
           return;
         }
         const error62 = new SseError(event.code, redirect ?? event.message, event);
@@ -39499,7 +39499,7 @@ var SSEClientTransport = class {
           void this.close();
           return;
         }
-        resolve6();
+        resolve7();
       });
       this._eventSource.onmessage = (event) => {
         const messageEvent = event;
@@ -39639,7 +39639,7 @@ var StdioClientTransport = class {
     if (this._process) {
       throw new Error("StdioClientTransport already started! If using Client class, note that connect() calls start() automatically.");
     }
-    return new Promise((resolve6, reject) => {
+    return new Promise((resolve7, reject) => {
       this._process = (0, import_cross_spawn.default)(this._serverParams.command, this._serverParams.args ?? [], {
         // merge default env with server env because mcp server needs some env vars
         env: {
@@ -39656,7 +39656,7 @@ var StdioClientTransport = class {
         this.onerror?.(error62);
       });
       this._process.on("spawn", () => {
-        resolve6();
+        resolve7();
       });
       this._process.on("close", (_code) => {
         this._process = void 0;
@@ -39721,22 +39721,22 @@ var StdioClientTransport = class {
     if (this._process) {
       const processToClose = this._process;
       this._process = void 0;
-      const closePromise = new Promise((resolve6) => {
+      const closePromise = new Promise((resolve7) => {
         processToClose.once("close", () => {
-          resolve6();
+          resolve7();
         });
       });
       try {
         processToClose.stdin?.end();
       } catch {
       }
-      await Promise.race([closePromise, new Promise((resolve6) => setTimeout(resolve6, 2e3).unref())]);
+      await Promise.race([closePromise, new Promise((resolve7) => setTimeout(resolve7, 2e3).unref())]);
       if (processToClose.exitCode === null) {
         try {
           processToClose.kill("SIGTERM");
         } catch {
         }
-        await Promise.race([closePromise, new Promise((resolve6) => setTimeout(resolve6, 2e3).unref())]);
+        await Promise.race([closePromise, new Promise((resolve7) => setTimeout(resolve7, 2e3).unref())]);
       }
       if (processToClose.exitCode === null) {
         try {
@@ -39748,15 +39748,15 @@ var StdioClientTransport = class {
     this._readBuffer.clear();
   }
   send(message) {
-    return new Promise((resolve6) => {
+    return new Promise((resolve7) => {
       if (!this._process?.stdin) {
         throw new Error("Not connected");
       }
       const json2 = serializeMessage(message);
       if (this._process.stdin.write(json2)) {
-        resolve6();
+        resolve7();
       } else {
-        this._process.stdin.once("drain", resolve6);
+        this._process.stdin.once("drain", resolve7);
       }
     });
   }
@@ -41276,10 +41276,10 @@ function toFindings(entries, packages, servers, context) {
         out.push({ severity: e.severity, rule: "feed/package", title: e.title, location: `server "${p.server.name}" (${p.server.scope}) \u203A ${p.ecosystem} ${p.name}${p.version ? `@${p.version}` : ""}`, remediation, file: p.server.source, server: p.server.name });
       }
     } else {
-      const hash2 = e.match.hash;
+      const hash3 = e.match.hash;
       for (const s of servers)
         for (const t of s.tools)
-          if (hashTool(t) === hash2)
+          if (hashTool(t) === hash3)
             out.push({ severity: e.severity, rule: "feed/tool", title: e.title, location: `server "${s.server.name}" (${s.server.scope}) \u203A tool "${excerpt(t.name, 60)}"`, remediation, file: s.server.source, server: s.server.name });
     }
   }
@@ -42422,31 +42422,71 @@ function dashboardText(d) {
 }
 
 // src/fixes.ts
-import { chmodSync, existsSync as existsSync7, mkdirSync as mkdirSync4, readFileSync as readFileSync7, renameSync as renameSync4, rmSync as rmSync2, writeFileSync as writeFileSync4 } from "node:fs";
+import { closeSync, constants, fstatSync, lstatSync as lstatSync2, mkdirSync as mkdirSync4, mkdtempSync, openSync, readFileSync as readFileSync7, realpathSync, renameSync as renameSync4, rmSync as rmSync2, writeFileSync as writeFileSync4 } from "node:fs";
 import { createHash as createHash3 } from "node:crypto";
 import { homedir as homedir7 } from "node:os";
-import { basename as basename2, dirname as dirname5, join as join8 } from "node:path";
-function readJsonFile(path) {
-  return existsSync7(path) ? JSON.parse(readFileSync7(path, "utf8")) : {};
+import { basename as basename2, dirname as dirname5, isAbsolute as isAbsolute2, join as join8, relative as relative2, resolve as resolve5, sep as sep3 } from "node:path";
+function statIfPresent(path) {
+  try {
+    return lstatSync2(path);
+  } catch (error62) {
+    if (error62.code === "ENOENT") return void 0;
+    throw error62;
+  }
+}
+function checkTarget(root, path) {
+  if (realpathSync(root) !== root || !lstatSync2(root).isDirectory()) throw new Error("Project root changed or is not a real directory.");
+  const rel = relative2(root, resolve5(path));
+  if (isAbsolute2(rel) || rel === ".." || rel.startsWith(`..${sep3}`) || ![".mcp.json", join8(".claude", "settings.json")].includes(rel)) throw new Error("Fix target must be a supported file inside the project.");
+  const parts = rel.split(sep3);
+  let current = root;
+  for (let i = 0; i < parts.length; i++) {
+    current = join8(current, parts[i]);
+    const stat = statIfPresent(current);
+    if (!stat) continue;
+    if (stat.isSymbolicLink()) throw new Error("Refusing symlink in fix target path.");
+    if (i < parts.length - 1 ? !stat.isDirectory() : !stat.isFile()) throw new Error("Fix target path contains a non-regular file or directory.");
+  }
+}
+function reviewedBytes(root, path) {
+  checkTarget(root, path);
+  if (!statIfPresent(path)) return void 0;
+  const fd = openSync(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+  try {
+    const before = fstatSync(fd);
+    if (!before.isFile()) throw new Error("Fix target is not a regular file.");
+    const bytes = readFileSync7(fd);
+    checkTarget(root, path);
+    const after = lstatSync2(path);
+    if (before.dev !== after.dev || before.ino !== after.ino || before.size !== after.size || before.mtimeMs !== after.mtimeMs) throw new Error("Fix target changed while reading.");
+    return bytes;
+  } finally {
+    closeSync(fd);
+  }
+}
+var hash2 = (bytes) => bytes === void 0 ? null : createHash3("sha256").update(bytes).digest("hex");
+function review(projectDir2, file2) {
+  const projectRoot = realpathSync(projectDir2);
+  const path = join8(projectRoot, file2);
+  const bytes = reviewedBytes(projectRoot, path);
+  return { projectRoot, path, originalHash: hash2(bytes), data: bytes === void 0 ? {} : JSON.parse(bytes.toString("utf8")) };
 }
 var serialize = (data) => JSON.stringify(data, null, 2) + "\n";
 function planPermissions(projectDir2, ask) {
-  const path = join8(projectDir2, ".claude", "settings.json");
-  const settings = readJsonFile(path);
+  const { path, projectRoot, originalHash, data: settings } = review(projectDir2, join8(".claude", "settings.json"));
   const perms = settings.permissions ??= {};
   const existing = /* @__PURE__ */ new Set([...perms.ask ?? [], ...perms.deny ?? []]);
   const add = ask.filter((r) => !existing.has(r));
   if (!add.length) return { changes: [], notes: ask.length ? ["All recommended permission rules are already present."] : ["No tools need an approval rule."] };
   perms.ask = [...perms.ask ?? [], ...add];
-  return { changes: [{ path, edits: add.map((r) => `permissions.ask += "${r}"`), content: serialize(settings) }], notes: [] };
+  return { changes: [{ path, projectRoot, originalHash, edits: add.map((r) => `permissions.ask += "${r}"`), content: serialize(settings) }], notes: [] };
 }
 async function planPinVersions(projectDir2, servers, fetcher = fetch) {
-  const path = join8(projectDir2, ".mcp.json");
-  if (!existsSync7(path)) return { changes: [], notes: ["No project .mcp.json."] };
-  const data = readJsonFile(path);
+  const { path, projectRoot, originalHash, data } = review(projectDir2, ".mcp.json");
+  if (originalHash === null) return { changes: [], notes: ["No project .mcp.json."] };
   const notes = [];
   const edits = [];
-  for (const s of servers.filter((x) => x.source === path)) {
+  for (const s of servers.filter((x) => resolve5(x.source) === resolve5(join8(projectDir2, ".mcp.json")))) {
     const [pkg] = packagesOf(s);
     if (!pkg || pkg.version) continue;
     const raw = data.mcpServers?.[s.name];
@@ -42471,12 +42511,11 @@ async function planPinVersions(projectDir2, servers, fetcher = fetch) {
     edits.push(`server "${excerpt(s.name, 40)}": ${excerpt(args[idx], 60)} \u2192 ${pinned}`);
     args[idx] = pinned;
   }
-  return { changes: edits.length ? [{ path, edits, content: serialize(data) }] : [], notes: edits.length || notes.length ? notes : ["Every npx/uvx package in .mcp.json is already pinned."] };
+  return { changes: edits.length ? [{ path, projectRoot, originalHash, edits, content: serialize(data) }] : [], notes: edits.length || notes.length ? notes : ["Every npx/uvx package in .mcp.json is already pinned."] };
 }
 function planEnvRefs(projectDir2) {
-  const path = join8(projectDir2, ".mcp.json");
-  if (!existsSync7(path)) return { changes: [], notes: ["No project .mcp.json."] };
-  const data = readJsonFile(path);
+  const { path, projectRoot, originalHash, data } = review(projectDir2, ".mcp.json");
+  if (originalHash === null) return { changes: [], notes: ["No project .mcp.json."] };
   const edits = [];
   const notes = [];
   for (const [name, raw] of Object.entries(data.mcpServers ?? {})) {
@@ -42492,32 +42531,67 @@ function planEnvRefs(projectDir2) {
       }
     }
   }
-  return { changes: edits.length ? [{ path, edits, content: serialize(data), backupHoldsSecrets: true }] : [], notes: edits.length ? notes : ["No literal secrets in .mcp.json."] };
+  return { changes: edits.length ? [{ path, projectRoot, originalHash, edits, content: serialize(data), backupHoldsSecrets: true }] : [], notes: edits.length ? notes : ["No literal secrets in .mcp.json."] };
 }
 function backupPath(file2) {
-  const dir = join8(process.env.MCP_SECURITY_HOME ?? join8(homedir7(), ".claude", "mcp-security"), "backups");
-  mkdirSync4(dir, { recursive: true, mode: 448 });
+  const home = process.env.MCP_SECURITY_HOME;
+  const base = home ? resolve5(home) : realpathSync(homedir7());
+  const suffix = home ? ["backups"] : [".claude", "mcp-security", "backups"];
+  const baseStat = statIfPresent(base);
+  if (baseStat?.isSymbolicLink() || baseStat && !baseStat.isDirectory()) throw new Error("Backup home must be a real directory.");
+  mkdirSync4(base, { recursive: true, mode: 448 });
+  let dir = realpathSync(base);
+  for (const part of suffix) {
+    dir = join8(dir, part);
+    const stat = statIfPresent(dir);
+    if (stat && (stat.isSymbolicLink() || !stat.isDirectory())) throw new Error("Backup path must not contain symlinks or non-directories.");
+    if (!stat) mkdirSync4(dir, { mode: 448 });
+  }
   const id = createHash3("sha256").update(file2).digest("hex").slice(0, 8);
-  return join8(dir, `${basename2(file2)}-${id}-${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-")}`);
+  return join8(mkdtempSync(join8(dir, `${basename2(file2)}-${id}-`)), "original");
 }
 function applyPlan(plan) {
   const written = [];
   const backups = [];
   const backupOf = {};
+  const seen = /* @__PURE__ */ new Set();
   for (const c of plan.changes) {
-    mkdirSync4(dirname5(c.path), { recursive: true });
-    if (existsSync7(c.path)) {
-      const backup = backupPath(c.path);
-      rmSync2(backup, { force: true });
-      writeFileSync4(backup, readFileSync7(c.path), { mode: c.backupHoldsSecrets ? 384 : 420, flag: "wx" });
-      if (c.backupHoldsSecrets) chmodSync(backup, 384);
-      backups.push(backup);
-      backupOf[c.path] = backup;
+    if (typeof c.projectRoot !== "string" || !(c.originalHash === null || typeof c.originalHash === "string")) throw new Error("Fix plan lacks a reviewed project boundary or version; replan.");
+    checkTarget(c.projectRoot, c.path);
+    if (seen.has(c.path)) throw new Error("Duplicate fix target in plan.");
+    seen.add(c.path);
+    if (hash2(reviewedBytes(c.projectRoot, c.path)) !== c.originalHash) throw new Error("Fix conflict: file changed after planning; replan.");
+  }
+  for (const c of plan.changes) {
+    checkTarget(c.projectRoot, c.path);
+    mkdirSync4(dirname5(c.path), { recursive: true, mode: 448 });
+    checkTarget(c.projectRoot, c.path);
+    const lock = `${c.path}.mcpsec-lock`;
+    const lockFd = openSync(lock, "wx", 384);
+    let tempDir;
+    try {
+      const original = reviewedBytes(c.projectRoot, c.path);
+      if (hash2(original) !== c.originalHash) throw new Error("Fix conflict: file changed after planning; replan.");
+      if (original !== void 0) {
+        const backup = backupPath(c.path);
+        writeFileSync4(backup, original, { mode: 384, flag: "wx" });
+        backups.push(backup);
+        backupOf[c.path] = backup;
+      }
+      checkTarget(c.projectRoot, c.path);
+      tempDir = mkdtempSync(join8(dirname5(c.path), ".mcpsec-"));
+      const tmp = join8(tempDir, "content");
+      writeFileSync4(tmp, c.content, { mode: 384, flag: "wx" });
+      checkTarget(c.projectRoot, c.path);
+      if (hash2(reviewedBytes(c.projectRoot, c.path)) !== c.originalHash) throw new Error("Fix conflict: file changed during apply; replan.");
+      renameSync4(tmp, c.path);
+      written.push(c.path);
+    } finally {
+      closeSync(lockFd);
+      checkTarget(c.projectRoot, c.path);
+      rmSync2(lock, { force: true });
+      if (tempDir) rmSync2(tempDir, { recursive: true, force: true });
     }
-    const tmp = `${c.path}.mcpsec-tmp`;
-    writeFileSync4(tmp, c.content);
-    renameSync4(tmp, c.path);
-    written.push(c.path);
   }
   return { written, backups, backupOf };
 }
@@ -42624,7 +42698,7 @@ async function scanImages(servers, run = defaultRunner) {
 }
 
 // src/runtime.ts
-import { appendFileSync, existsSync as existsSync8, mkdirSync as mkdirSync5, readFileSync as readFileSync8, renameSync as renameSync5, statSync as statSync2 } from "node:fs";
+import { appendFileSync, existsSync as existsSync7, mkdirSync as mkdirSync5, readFileSync as readFileSync8, renameSync as renameSync5, statSync as statSync2 } from "node:fs";
 import { homedir as homedir8 } from "node:os";
 import { dirname as dirname6, join as join9 } from "node:path";
 var MAX_SCAN_BYTES = 256 * 1024;
@@ -42633,7 +42707,7 @@ function auditLogPath() {
   return join9(process.env.MCP_SECURITY_HOME ?? join9(homedir8(), ".claude", "mcp-security"), "audit.jsonl");
 }
 function readAudit(path = auditLogPath()) {
-  if (!existsSync8(path)) return [];
+  if (!existsSync7(path)) return [];
   return readFileSync8(path, "utf8").split("\n").filter(Boolean).flatMap((l) => {
     try {
       return [JSON.parse(l)];
@@ -42664,7 +42738,7 @@ function summarizeAudit(entries, sinceHours) {
 
 // src/team.ts
 import { homedir as homedir9 } from "node:os";
-import { resolve as resolve5 } from "node:path";
+import { resolve as resolve6 } from "node:path";
 var SYNC_TTL_MS = 60 * 60 * 1e3;
 var RETRY_AFTER_FAILURE_MS = 15 * 60 * 1e3;
 var NOT_TEAM_TTL_MS = 24 * 60 * 60 * 1e3;
@@ -42759,7 +42833,7 @@ function buildInventory(projectDir2, home) {
       pinned: !!pins.servers[pinKey(s.scope, s.name)]
     };
   });
-  const plugins = pluginRoots(resolve5(projectDir2), home ?? homedir9(), []).map((p) => ({ name: safeLabel(p.name), ...p.version ? { version: p.version } : {} }));
+  const plugins = pluginRoots(resolve6(projectDir2), home ?? homedir9(), []).map((p) => ({ name: safeLabel(p.name), ...p.version ? { version: p.version } : {} }));
   return { client: { name: "mcp-security-guard", version: VERSION }, servers: out.slice(0, 500), plugins: plugins.slice(0, 500) };
 }
 async function reportInventory(opts, report2) {
