@@ -1,0 +1,33 @@
+---
+description: MCP product family architecture, commercial boundary, and shared conventions
+alwaysApply: true
+---
+
+# MCP Family
+
+| Piece | Role | Maturity |
+| --- | --- | --- |
+| `mcp-control-plane` | Shared HTTP accounts/keys/quotas API (not an MCP server) | MVP |
+| `mcp-security-guard` | Audit MCP servers / agent context; Claude plugin + CLI + Action | **Shipped ~0.8.x** — reference product |
+| Other tool products | Local-first analysis MCP servers | Early MVP (~0.1.0) |
+
+Control-plane product IDs: `security-guard`, `dependency-doctor`, `api-guardian`, `database-doctor`, `cost-optimizer`, `seo-auditor`.
+
+## Commercial boundary
+
+- Local MIT tools stay fully useful **without** a key. Never add bypassable local counters as paid enforcement.
+- **security-guard paid path today:** opt-in `MCP_SECURITY_API_KEY` → `mcp-security-cloud` (threat feed + Team). Keys issued by hand / Lemon Squeezy; free plugin unchanged.
+- **Family-wide quotas (control-plane):** for trusted hosted billable ops via `/v1/usage/consume`. Do not conflate with security-guard’s cloud unless deliberately unifying later.
+- Admin-set control-plane `paid` ≠ payment proof. Document README prices as hypotheses until live.
+
+## Privacy defaults
+
+- No telemetry. Network only on explicit opt-in (supply-chain, threat feed, Team, live probes).
+- Never send paths, args, env, headers, tool bodies, file content, or secrets in cloud payloads.
+- Findings are review prompts; state coverage limits.
+
+## Engineering
+
+- Prefer matching the **sibling’s existing stack** (security-guard: TS + SDK + vitest; many MVPs: zero-dep Node ESM + `node:test`).
+- Do not claim `npx` / Registry listing until actually published (security-guard already is).
+- Protocol claims must match code; no fake “complete validator” wording.

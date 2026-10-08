@@ -1,0 +1,11 @@
+---
+description: MVP tool-server conventions — defer to mcp-security-guard rule in this repo
+globs: src/**/*.{ts,js},bin/**/*.{js,mjs},plugin/**/*
+alwaysApply: false
+---
+
+# Note for this repo
+
+`mcp-security-guard` is **not** an early zero-dep MVP sibling. Follow `.cursor/rules/mcp-security-guard.mdc` and `PRIVACY.md`.
+
+When adding tools: register in the existing SDK server, keep confirm gates, update README tools table + CHANGELOG, add vitest coverage, and never weaken fail-open / minimal-egress cloud contracts.

@@ -1,0 +1,33 @@
+---
+description: Conventions for the shipped mcp-security-guard product (plugin, CLI, cloud, Team)
+alwaysApply: true
+---
+
+# mcp-security-guard (shipped)
+
+This is the **reference** family product (~0.8.x): published on npm + MCP Registry, Claude Code plugin, CLI, GitHub Action, runtime hooks, OWASP-mapped rules.
+
+Stack: TypeScript → esbuild bundle in `plugin/dist/`, `@modelcontextprotocol/sdk` + zod, vitest. State under `~/.claude/mcp-security/` (override `MCP_SECURITY_HOME`).
+
+## Product invariants
+
+- Free local path stays fully functional with **no** API key.
+- Network only opt-in: supply-chain registries, threat feed, Team, remote server scan, image scanners.
+- Cloud client **fails open** (timeout/error → local audit continues).
+- Threat feed / Team payloads: hashes, package/plugin names & versions, server inventory names — **never** paths, args, env, headers, query strings, definitions, file content, secrets.
+- Team admin (`approve`, `reject`, `policy-push`, `keys`, `settings`, …) = **CLI only**. MCP tools that touch Team need confirmation and must not approve.
+- Org policy enforces **next to** user/project policy; repo `.mcp-security.json` cannot loosen org policy.
+- Launching servers / calling tools / network checks require explicit confirm flags where established (`confirm_launch`, `confirm_network`, `i_own_this_server`, …).
+
+## Paid backends (not control-plane)
+
+- Default cloud: `mcp-security-cloud.petrovicistefan.workers.dev` (`MCP_SECURITY_API_URL` override).
+- Keys: `MCP_SECURITY_API_KEY` / plugin feed key (empty default so Cowork loads). Hand-issued Team keys for now.
+- Contracts live in `src/cloud.ts` and `src/team.ts` — treat as public API; keep PRIVACY.md in sync.
+
+## Do not
+
+- Rewrite onto zero-dep hand-rolled JSON-RPC “like api-guardian” without a deliberate migration.
+- Gate core audit features on a key.
+- Add telemetry or contentful audit logs (audit log is content-free by design).
+- Document unpaid control-plane quotas as this product’s Team billing.
