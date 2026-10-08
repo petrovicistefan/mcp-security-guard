@@ -21,3 +21,17 @@ Detection gaps that are already documented in [bench/RESULTS.md](bench/RESULTS.m
 ## Supported versions
 
 Only the latest release receives fixes.
+
+## Local automatic fixes
+
+Fix planning records the canonical project root and SHA-256 of the reviewed target bytes.
+Applying a plan refuses symlink targets/directories, paths other than `.mcp.json` and
+`.claude/settings.json`, non-regular files, duplicate targets and changed contents.
+Targets and backups are written with owner-only permissions. Temporary files live in
+unique private directories; an exclusive per-target lock serializes cooperating writers.
+A leftover `.mcpsec-lock` after process termination requires inspection before manual removal.
+
+These portable Node filesystem checks are not OS-level isolation from another hostile
+process that can continuously replace project directories between system calls. Run
+fixes only while the project is quiescent and under a trusted filesystem owner. A batch
+is preflighted, but individual file replacements are atomic rather than a multi-file transaction.

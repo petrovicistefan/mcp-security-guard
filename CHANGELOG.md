@@ -1,3 +1,10 @@
+## Unreleased
+
+- Reject symlink/out-of-project automatic fix targets and private backup redirection.
+- Use exclusive locks, unique private temporary files and owner-only target/backup permissions.
+- Reject stale fix plans by comparing reviewed SHA-256 hashes before applying.
+- Add regression coverage for directory/file escapes, prepared temporary symlinks and conflicts.
+
 # Changelog
 
 ## 0.8.1
