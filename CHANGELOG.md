@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Agent bill of materials** (`export_bom`, `bom`): a CycloneDX 1.6 inventory of MCP servers (with package URLs or remote hostnames), plugins, skills, commands, subagents, CLAUDE.md and hook configs, with SHA-256 per file, pin status, score and grade per server, finding counts and OWASP MCP Top 10 ids. `bom --format markdown` is an evidence summary for audits and compliance reviews. Static and local; no paths, arguments, environment, URL paths or file contents
+
 ## 0.8.1
 
 - **Loads in Cowork as well as Claude Code**: the optional threat feed key now has an empty default, because Cowork ignores a local MCP server that references a `userConfig` option without a default. Nothing changes for Claude Code (the key stays optional and the server connects without it)

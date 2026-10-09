@@ -96,6 +96,7 @@ mcp-security-guard team settings --fleet on --webhook https://hooks.slack.com/â€
 | `audit_mcp_config` | No |
 | `audit_server_tools` | Yes, after explicit `confirm_launch: true`. Sends only `initialize` and list requests (tools, prompts, resources); never calls a tool, renders a prompt or reads a resource |
 | `pin_tools` | Yes (same as above). Writes `~/.claude/mcp-security/pins.json` |
+| `export_bom` | No. Writes nothing and launches nothing: an inventory of servers, plugins, skills, commands, subagents and `CLAUDE.md` as a CycloneDX 1.6 agent bill of materials or a Markdown summary with OWASP MCP Top 10 evidence |
 | `audit_agent_context` | No. Reads skills, commands, subagents, rules, `CLAUDE.md` and plugin hooks (user, project and installed plugins); `project_only` limits it to the repository |
 | `team_status`, `request_approval`, `team_report` | Network, after confirmation. Team plan: sync the organisation's policy, ask the admin to approve a server or plugin, preview and send a fleet report (see above) |
 | `pin_context` | No. Writes `~/.claude/mcp-security/context-pins.json` (SHA-256 per skill, command, subagent, rule, CLAUDE.md, hook config and script, per origin). Skips origins with critical or high findings unless `force` |

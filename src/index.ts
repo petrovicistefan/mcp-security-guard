@@ -4,6 +4,7 @@ import { z } from "zod";
 import { adversarialTest } from "./adversarial.js";
 import { readFileSync } from "node:fs";
 import { auditConfig } from "./audit.js";
+import { bomSummary, buildBom } from "./bom.js";
 import { auditContext, contextSummary, feedCheckContext } from "./context-audit.js";
 import { discoverContext } from "./context-files.js";
 import { contextPinsPath, pinContext } from "./context-pins.js";
@@ -426,6 +427,25 @@ server.registerTool(
     const r = await reportInventory(teamOptionsFromEnv(), report);
     if (!r.ok) return text(`Not sent: ${r.reason}.`);
     return text([`Reported ${report.servers.length} server(s) and ${report.plugins.length} plugin(s); policy version ${r.data.policyVersion}.`, r.data.violations.length ? `${r.data.violations.length} policy violation(s):\n${r.data.violations.map((v) => `- ${excerpt(v.kind, 10)} ${excerpt(v.name, 80)}: ${v.reason}`).join("\n")}` : "No policy violations."].join("\n\n"));
+  },
+);
+
+server.registerTool(
+  "export_bom",
+  {
+    title: "Export the agent bill of materials",
+    description:
+      "Inventory of everything the agent can run or read here: MCP servers, plugins, skills, commands, subagents, CLAUDE.md and hook configs, with SHA-256, pin status, scores and OWASP MCP Top 10 evidence. format=summary is a Markdown overview for audits; format=cyclonedx is a CycloneDX 1.6 JSON document. Static and local: nothing is launched or sent, and it holds no paths, arguments, environment or secrets.",
+    inputSchema: {
+      format: z.enum(["summary", "cyclonedx"]).default("summary"),
+      project_only: z.boolean().default(false).describe("Only the project's own servers and files."),
+      project_dir: z.string().optional(),
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  },
+  async ({ format, project_only, project_dir }) => {
+    const { bom, findings } = buildBom(project_dir ?? projectDir(), { projectOnly: project_only });
+    return text(format === "cyclonedx" ? JSON.stringify(bom, null, 2) : bomSummary(bom, findings));
   },
 );
 

@@ -10,6 +10,7 @@ It runs locally, needs no account and has no telemetry.
 
 - **`/mcp-audit`**: a guided audit with fixes. Claude asks before anything is started or sent over the network.
 - **Skills, commands and CLAUDE.md**: `audit_agent_context` scans the text Claude reads besides MCP tools (skills and their scripts, slash commands, subagents, rules, CLAUDE.md and the hooks of installed plugins) for injected instructions, hidden text, credential exfiltration, download-and-run and infostealer scripts. Read-only.
+- **Bill of materials**: `export_bom` (and `mcp-security-guard bom`) lists the MCP servers, plugins, skills, commands, subagents, CLAUDE.md and hook configs on the machine as a CycloneDX 1.6 document or a Markdown summary, with SHA-256 per file, pin status, scores and OWASP MCP Top 10 evidence, for audits and inventories. Static and local; it holds names, versions, package coordinates, remote hostnames and hashes, never paths, arguments, environment, URL paths or file contents.
 - **Tools for Claude**: list and audit servers, scan tool, prompt and resource definitions, pin trusted servers, check packages on npm/PyPI/OSV, generate a team policy, apply fixes, query the audit log, open an interactive dashboard, and test your own server for command injection.
 - **Hooks that run automatically**:
   - at session start: a one-time welcome, re-verification of pinned servers, pinned skills, commands, CLAUDE.md and plugin files (local files only), and the project policy check;

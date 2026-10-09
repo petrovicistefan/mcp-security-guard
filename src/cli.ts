@@ -10,6 +10,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { adversarialTest } from "./adversarial.js";
 import { auditConfig } from "./audit.js";
+import { bomSummary, buildBom } from "./bom.js";
 import { auditContext, contextSummary, feedCheckContext } from "./context-audit.js";
 import { discoverContext } from "./context-files.js";
 import { contextPinsPath, pinContext } from "./context-pins.js";
@@ -36,6 +37,7 @@ const USAGE = `mcp-security-guard ${VERSION}
 Usage:
   mcp-security-guard audit [--project DIR] [--project-only] [--supply-chain] [--scan-images] [--format markdown|json|sarif|html] [--output FILE] [--fail-on SEVERITY]
   mcp-security-guard audit-context [--project DIR] [--project-only] [--format markdown|json|sarif|html] [--output FILE] [--fail-on SEVERITY]
+  mcp-security-guard bom [--project DIR] [--project-only] [--format markdown|json] [--output FILE]
   mcp-security-guard pin-context [--project DIR] [--origin NAME]... [--force]
   mcp-security-guard analyze-tools FILE [--name NAME] [--format markdown|json|sarif|html] [--output FILE] [--fail-on SEVERITY]
   mcp-security-guard adversarial FILE --server NAME --i-own-this-server --confirm-launch [--canary-dir DIR] [--host-canary-dir DIR] [--include-destructive]
@@ -47,6 +49,9 @@ Usage:
   audit-context    scans skills, slash commands, subagents, rules, CLAUDE.md, plugin hooks and skill scripts
                    (user, project and installed plugins) for injected instructions, hidden text and
                    credential exfiltration. Reads files only; --project-only limits it to the repository
+  bom              writes an agent bill of materials: servers, plugins, skills, commands, subagents and CLAUDE.md with
+                   SHA-256, pin status, scores and OWASP MCP Top 10 evidence. --format json is CycloneDX 1.6; markdown is
+                   a summary for audits. Static and local: nothing is launched or sent
   pin-context      records a SHA-256 of every skill, command, subagent, rule, CLAUDE.md, plugin hook config and
                    script, so later audit-context runs and the session-start check report what changed
                    (a plugin that changes files under the same version is the rug-pull pattern). Origins
@@ -218,6 +223,15 @@ async function main(): Promise<number> {
     a.findings.push(...feed.findings);
     emit("Agent context audit (skills, commands, agents, CLAUDE.md, hooks)", a.findings, projectDir, values.format!, values.output, [...contextSummary(a), feed.note ?? ""]);
     return exitCode(a.findings, values["fail-on"]!);
+  }
+
+  if (command === "bom") {
+    if (!["markdown", "json"].includes(values.format!)) throw new Error("bom supports --format markdown or json (CycloneDX 1.6)");
+    const { bom, findings } = buildBom(projectDir, { projectOnly: values["project-only"] });
+    const body = values.format === "json" ? JSON.stringify(bom, null, 2) : bomSummary(bom, findings);
+    if (values.output) writeFileSync(values.output, body + "\n");
+    else process.stdout.write(body + "\n");
+    return 0;
   }
 
   if (command === "team") {
