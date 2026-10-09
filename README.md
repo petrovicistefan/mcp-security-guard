@@ -75,6 +75,7 @@ Team keys are issued by hand for now: [write to me](mailto:hello@petrovicistefan
 - **Approval flow.** `team request server project:linear` asks the admin; `team approve` adds it to the policy's allow list for everyone. Alerts (new request, new violation, policy change) go to a Slack-compatible webhook.
 - **Keys and seats.** An admin creates a key per developer (`team keys create ana`, shown once; only its hash is stored) and revokes it (`team keys revoke`); a purchase sets the seat limit. The same admin actions are in the web dashboard (`/v1/team/dashboard` on the service: fleet, approvals, policy, keys, settings; the key is typed in, kept in the browser tab only, and every value from the service is written as text).
 - **Alerts by email** (`team settings --email you@example.com`) next to the Slack-compatible webhook; at most 20 a hour per organisation.
+- **Compliance evidence.** `team compliance --output report.md` (admin) writes a Markdown report from the policy, the latest fleet reports and the approval log: controls mapped to the OWASP MCP Top 10, each met or gap with its evidence, plus violations, stale reports and pending approvals. Together with `bom` (agent bill of materials) it is what an auditor asks for.
 - **Admin actions are CLI only** (`team approve`, `reject`, `policy-push`, `settings`, `inventory`), not MCP tools, so injected text cannot trigger them. The MCP tools `team_status`, `request_approval` and `team_report` ask for confirmation and cannot approve anything.
 
 ```

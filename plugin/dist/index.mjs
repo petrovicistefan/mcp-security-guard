@@ -40450,7 +40450,7 @@ function transportOf(s) {
 }
 
 // src/version.ts
-var VERSION = "0.8.1";
+var VERSION = "0.9.0";
 
 // src/client.ts
 function expand(value) {

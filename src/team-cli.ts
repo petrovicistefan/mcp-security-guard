@@ -9,6 +9,8 @@ import {
   fleetInventory,
   createKey,
   getSettings,
+  teamRequest,
+  type TeamPolicyAnswer,
   listApprovals,
   listKeys,
   pushPolicy,
@@ -23,6 +25,7 @@ import {
   type Violation,
 } from "./team.js";
 import { readTeamCache } from "./team-cache.js";
+import { complianceReport } from "./team-compliance.js";
 
 export interface TeamArgs {
   sub: string | undefined;
@@ -45,6 +48,7 @@ export const TEAM_USAGE = `Team plan (needs a team API key; MCP_SECURITY_API_KEY
   team approvals [--status pending|approved|rejected]
   admin: team approve ID [--note TEXT] | team reject ID [--note TEXT]
   admin: team inventory               the latest report of every member, with policy violations
+  admin: team compliance [--output FILE]   an evidence report (Markdown): policy, fleet, violations, approvals, mapped to the OWASP MCP Top 10
   admin: team policy-push FILE        replace the central policy (a .mcp-security.json-style file)
   admin: team keys                    list the organisation's keys and seats
   admin: team keys create LABEL [--role member|admin]   a key for a developer (shown once; the service keeps only its hash)
@@ -105,6 +109,22 @@ export async function runTeam(a: TeamArgs, opts: TeamOptions = teamOptionsFromEn
       d.servers.length ? "Servers by number of members using them:" : "",
       ...d.servers.slice(0, 20).map((s: any) => `  ${s.members}  ${excerpt(s.name, 80)}`),
     ].filter(Boolean));
+  }
+
+  if (sub === "compliance") {
+    const [fleet, approvals, pol, keys, settings] = await Promise.all([fleetInventory(opts), listApprovals(opts), teamRequest<TeamPolicyAnswer>(opts, "GET", "/v1/team/policy"), listKeys(opts), getSettings(opts)]);
+    if (!fleet.ok) return { text: `team: ${fleet.reason}`, code: 1 };
+    if (!approvals.ok) return { text: `team: ${approvals.reason}`, code: 1 };
+    if (!pol.ok) return { text: `team: ${pol.reason}`, code: 1 };
+    const text = complianceReport({
+      org: settings.ok ? settings.data.name : (pol.data.org?.name ?? "organisation"),
+      policy: pol.data,
+      members: fleet.data.members,
+      approvals: approvals.data.approvals,
+      ...(keys.ok ? { seatsUsed: keys.data.used, seats: keys.data.seats } : {}),
+      now: new Date(),
+    });
+    return { text, code: 0 };
   }
 
   if (sub === "policy-push") {

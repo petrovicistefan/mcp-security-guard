@@ -1,7 +1,7 @@
 {
   "name": "mcp-security-guard",
   "displayName": "MCP Security Guard: Tool Poisoning and Rug Pull Scanner",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "Security for the MCP servers, skills, commands and plugins you use, mapped to the OWASP MCP Top 10: tool poisoning, rug pulls, injected instructions, secrets, supply chain, runtime guards and policy. Runs locally; optional paid threat feed and team policy.",
   "author": {
     "name": "Stefan Petrovici"

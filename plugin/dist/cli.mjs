@@ -20429,7 +20429,7 @@ function transportOf(s) {
 }
 
 // src/version.ts
-var VERSION = "0.8.1";
+var VERSION = "0.9.0";
 
 // src/client.ts
 function expand(value) {
@@ -22970,6 +22970,61 @@ async function teamSessionStart(projectDir, env = process.env, opts = teamOption
   return notes;
 }
 
+// src/team-compliance.ts
+var DAY2 = 864e5;
+var pct = (n, d) => d ? `${Math.round(n / d * 100)}%` : "n/a";
+var cell = (s, n = 60) => excerpt(s, n).replace(/\|/g, "/");
+function complianceReport(i) {
+  const { policy: pa, members: members2, approvals, now } = i;
+  const p = pa.policy;
+  const age = (m) => Math.floor((now.getTime() - Date.parse(m.reportedAt)) / DAY2);
+  const stale = members2.filter((m) => age(m) > 30);
+  const servers = members2.flatMap((m) => m.servers);
+  const pinned = servers.filter((s) => s.pinned).length;
+  const pkgs = servers.filter((s) => s.package);
+  const unpinnedPkgs = pkgs.filter((s) => !s.package.version);
+  const violations = members2.flatMap((m) => m.violations.map((v) => ({ ...v, who: m.label ?? "unnamed" })));
+  const byReason = (r) => violations.filter((v) => v.reason === r).length;
+  const status = (s) => approvals.filter((a) => a.status === s);
+  const pending = status("pending");
+  const state = (ok) => ok ? "met" : "gap";
+  const controls = [
+    ["MCP09", "Shadow MCP servers", p?.allowedServers?.length ? state(byReason("not-approved") === 0) : "gap", p?.allowedServers?.length ? `${p.allowedServers.length} allowed pattern(s); ${byReason("not-approved")} unapproved server(s) in use` : "No allow list in the central policy"],
+    ["MCP09", "Blocked servers and plugins", p?.blockedServers?.length || p?.blockedPlugins?.length ? state(byReason("blocked") === 0) : "info", `${p?.blockedServers?.length ?? 0} blocked server pattern(s), ${p?.blockedPlugins?.length ?? 0} blocked plugin(s); ${byReason("blocked")} in use`],
+    ["MCP07", "Approved remote hosts", p?.allowedRemoteHosts?.length ? state(byReason("host-not-allowed") === 0) : "gap", p?.allowedRemoteHosts?.length ? `${p.allowedRemoteHosts.length} allowed host(s); ${byReason("host-not-allowed")} server(s) on other hosts` : "No host allow list"],
+    ["MCP04", "Pinned package versions", state(unpinnedPkgs.length === 0 && pkgs.length > 0), `${pkgs.length - unpinnedPkgs.length} of ${pkgs.length} npm/PyPI server(s) pinned to a version${p?.requirePinnedVersions ? "; required by policy" : "; not required by policy"}`],
+    ["MCP03", "Rug-pull detection (tool pinning)", state(servers.length > 0 && pinned === servers.length), `${pinned} of ${servers.length} server entries pinned (${pct(pinned, servers.length)})`],
+    ["-", "Fleet reporting is current", state(members2.length > 0 && stale.length === 0), `${members2.length} member(s) reported; ${stale.length} report(s) older than 30 days`],
+    ["-", "Approval requests decided", state(pending.length === 0), `${pending.length} pending, ${status("approved").length} approved, ${status("rejected").length} rejected`]
+  ];
+  const lines = [
+    `# MCP security compliance evidence: ${cell(i.org, 80)}`,
+    "",
+    `Generated ${now.toISOString()} by mcp-security-guard from the organisation's policy (version ${pa.version}, updated ${pa.updatedAt ?? "never"}), the latest report of each member and the approval log. Fleet data is what members reported with their consent: server and plugin names and versions only. This is evidence of configuration, not a certification.`,
+    "",
+    "## Summary",
+    "",
+    `- Fleet visibility: **${pa.fleetVisibility ? "on" : "off"}**${pa.fleetVisibility ? "" : " (no member reports are accepted, so the sections below are empty)"}`,
+    `- Members reporting: **${members2.length}**${i.seatsUsed !== void 0 ? ` of ${i.seatsUsed} active key(s)${i.seats ? `, ${i.seats} seat(s)` : ""}` : ""}`,
+    `- Distinct servers in use: **${new Set(servers.map((s) => `${s.scope}:${s.name}`)).size}**, plugins: **${new Set(members2.flatMap((m) => m.plugins.map((x) => x.name))).size}**`,
+    `- Policy violations: **${violations.length}**`,
+    "",
+    "## Controls",
+    "",
+    "| OWASP | Control | Status | Evidence |",
+    "|---|---|---|---|",
+    ...controls.map(([id, name, st, ev]) => `| ${id} | ${name} | ${st} | ${cell(ev, 160)} |`)
+  ];
+  if (violations.length) {
+    lines.push("", "## Violations", "", "| Member | Kind | Name | Reason |", "|---|---|---|---|", ...violations.slice(0, 100).map((v) => `| ${cell(v.who, 40)} | ${v.kind} | ${cell(v.name, 60)} | ${v.reason} |`));
+    if (violations.length > 100) lines.push("", `\u2026 and ${violations.length - 100} more.`);
+  }
+  if (stale.length) lines.push("", "## Members that have not reported in 30 days", "", ...stale.map((m) => `- ${cell(m.label ?? "unnamed", 40)}: ${age(m)} days ago`));
+  if (pending.length) lines.push("", "## Pending approvals", "", ...pending.map((a) => `- ${a.kind} ${cell(a.identity, 80)}, requested ${a.createdAt.slice(0, 10)}${a.requestedBy ? ` by ${cell(a.requestedBy, 40)}` : ""}`));
+  lines.push("");
+  return lines.join("\n");
+}
+
 // src/team-cli.ts
 var TEAM_USAGE = `Team plan (needs a team API key; MCP_SECURITY_API_KEY or the plugin's settings):
   team status                         sync and show your organisation, role and policy version
@@ -22979,6 +23034,7 @@ var TEAM_USAGE = `Team plan (needs a team API key; MCP_SECURITY_API_KEY or the p
   team approvals [--status pending|approved|rejected]
   admin: team approve ID [--note TEXT] | team reject ID [--note TEXT]
   admin: team inventory               the latest report of every member, with policy violations
+  admin: team compliance [--output FILE]   an evidence report (Markdown): policy, fleet, violations, approvals, mapped to the OWASP MCP Top 10
   admin: team policy-push FILE        replace the central policy (a .mcp-security.json-style file)
   admin: team keys                    list the organisation's keys and seats
   admin: team keys create LABEL [--role member|admin]   a key for a developer (shown once; the service keeps only its hash)
@@ -23031,6 +23087,21 @@ ${JSON.stringify(report2, null, 2)}`, code: 0 };
       d.servers.length ? "Servers by number of members using them:" : "",
       ...d.servers.slice(0, 20).map((s) => `  ${s.members}  ${excerpt(s.name, 80)}`)
     ].filter(Boolean));
+  }
+  if (sub === "compliance") {
+    const [fleet, approvals, pol, keys, settings] = await Promise.all([fleetInventory(opts), listApprovals(opts), teamRequest(opts, "GET", "/v1/team/policy"), listKeys(opts), getSettings(opts)]);
+    if (!fleet.ok) return { text: `team: ${fleet.reason}`, code: 1 };
+    if (!approvals.ok) return { text: `team: ${approvals.reason}`, code: 1 };
+    if (!pol.ok) return { text: `team: ${pol.reason}`, code: 1 };
+    const text = complianceReport({
+      org: settings.ok ? settings.data.name : pol.data.org?.name ?? "organisation",
+      policy: pol.data,
+      members: fleet.data.members,
+      approvals: approvals.data.approvals,
+      ...keys.ok ? { seatsUsed: keys.data.used, seats: keys.data.seats } : {},
+      now: /* @__PURE__ */ new Date()
+    });
+    return { text, code: 0 };
   }
   if (sub === "policy-push") {
     const file = a.rest[0];
@@ -23085,7 +23156,7 @@ Usage:
   mcp-security-guard adversarial FILE --server NAME --i-own-this-server --confirm-launch [--canary-dir DIR] [--host-canary-dir DIR] [--include-destructive]
   mcp-security-guard fix [--permissions --confirm-launch] [--pin-versions] [--env-refs] [--write] [--project DIR]
   mcp-security-guard policy-init [--project DIR] [--force]
-  mcp-security-guard team <status|sync|report|request|approvals|approve|reject|inventory|policy-push|settings> [...]   (Team plan; see \`team help\`)
+  mcp-security-guard team <status|sync|report|request|approvals|approve|reject|inventory|compliance|policy-push|settings> [...]   (Team plan; see \`team help\`)
   mcp-security-guard scan FILE --confirm-launch [--timeout SECONDS] [--format ...] [--output FILE] [--fail-on SEVERITY]
 
   audit-context    scans skills, slash commands, subagents, rules, CLAUDE.md, plugin hooks and skill scripts
@@ -23254,6 +23325,11 @@ async function main() {
   }
   if (command === "team") {
     const r = await runTeam({ sub: positionals[0], rest: positionals.slice(1), project: projectDir, status: values.status, note: values.note, dryRun: values["dry-run"], fleet: values.fleet, webhook: values.webhook, email: values.email, role: values.role });
+    if (r.code === 0 && positionals[0] === "compliance" && values.output) {
+      writeFileSync5(values.output, r.text.endsWith("\n") ? r.text : `${r.text}
+`);
+      return 0;
+    }
     (r.code === 0 ? process.stdout : process.stderr).write(r.text.endsWith("\n") ? r.text : `${r.text}
 `);
     return r.code;

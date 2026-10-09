@@ -43,7 +43,7 @@ Usage:
   mcp-security-guard adversarial FILE --server NAME --i-own-this-server --confirm-launch [--canary-dir DIR] [--host-canary-dir DIR] [--include-destructive]
   mcp-security-guard fix [--permissions --confirm-launch] [--pin-versions] [--env-refs] [--write] [--project DIR]
   mcp-security-guard policy-init [--project DIR] [--force]
-  mcp-security-guard team <status|sync|report|request|approvals|approve|reject|inventory|policy-push|settings> [...]   (Team plan; see \`team help\`)
+  mcp-security-guard team <status|sync|report|request|approvals|approve|reject|inventory|compliance|policy-push|settings> [...]   (Team plan; see \`team help\`)
   mcp-security-guard scan FILE --confirm-launch [--timeout SECONDS] [--format ...] [--output FILE] [--fail-on SEVERITY]
 
   audit-context    scans skills, slash commands, subagents, rules, CLAUDE.md, plugin hooks and skill scripts
@@ -236,6 +236,10 @@ async function main(): Promise<number> {
 
   if (command === "team") {
     const r = await runTeam({ sub: positionals[0], rest: positionals.slice(1), project: projectDir, status: values.status, note: values.note, dryRun: values["dry-run"], fleet: values.fleet, webhook: values.webhook, email: values.email, role: values.role });
+    if (r.code === 0 && positionals[0] === "compliance" && values.output) {
+      writeFileSync(values.output, r.text.endsWith("\n") ? r.text : `${r.text}\n`);
+      return 0;
+    }
     (r.code === 0 ? process.stdout : process.stderr).write(r.text.endsWith("\n") ? r.text : `${r.text}\n`);
     return r.code;
   }

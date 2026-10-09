@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.9.0
+
+- **Team compliance report** (`team compliance [--output FILE]`, admin only, CLI only): an evidence report in Markdown built from what the service already holds: the central policy, each member's latest fleet report and the approval log. Controls mapped to the OWASP MCP Top 10 (shadow servers, blocked items, approved remote hosts, pinned package versions, tool pinning), each marked met or gap with its evidence, plus violations, stale reports and pending approvals. Needs no backend change; nothing new is collected and the service stores no report
 
 - **Agent bill of materials** (`export_bom`, `bom`): a CycloneDX 1.6 inventory of MCP servers (with package URLs or remote hostnames), plugins, skills, commands, subagents, CLAUDE.md and hook configs, with SHA-256 per file, pin status, score and grade per server, finding counts and OWASP MCP Top 10 ids. `bom --format markdown` is an evidence summary for audits and compliance reviews. Static and local; no paths, arguments, environment, URL paths or file contents
 
