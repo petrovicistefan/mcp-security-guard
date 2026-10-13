@@ -1,0 +1,51 @@
+[
+  {
+    "date": "2026-10-13",
+    "npm": {
+      "downloads24h": 16,
+      "downloads7d": 659,
+      "version": "0.9.0",
+      "publishedAt": "2026-10-09T12:16:40.572Z"
+    },
+    "github": {
+      "stars": 0,
+      "forks": 0,
+      "watchers": 0,
+      "openIssues": 0,
+      "openPullRequests": 0,
+      "contributors": 1,
+      "contributorsMayBeTruncated": false,
+      "recentCommits": [
+        {
+          "sha": "bdfbe355c1684193631f1ea96b61b37345f29936",
+          "date": "2026-10-13T14:42:41Z",
+          "message": "fix(metrics): use official npm registry metadata endpoint"
+        },
+        {
+          "sha": "ecf2d1a9cc37deafaff14a1cd70955e05354b783",
+          "date": "2026-10-13T14:37:02Z",
+          "message": "feat(metrics): add automated daily npm and GitHub adoption tracking"
+        },
+        {
+          "sha": "d47cf6dc05d2d99bebc234be298e458e05d9dcb0",
+          "date": "2026-10-13T14:36:59Z",
+          "message": "feat(metrics): add automated daily npm and GitHub adoption tracking"
+        },
+        {
+          "sha": "db2010c77a9278950139f7fd4e98fe39e3dfb47b",
+          "date": "2026-10-09T11:42:31Z",
+          "message": "0.9.0: team compliance report, agent bill of materials"
+        },
+        {
+          "sha": "fa83c2313ca97a45f79f7a739c8ffdcb31f06abd",
+          "date": "2026-10-09T11:07:11Z",
+          "message": "Agent bill of materials: CycloneDX 1.6 export of servers, plugins and agent context (export_bom, bom), with OWASP MCP Top 10 evidence"
+        }
+      ],
+      "latestRelease": {
+        "tag": "v0.9.0",
+        "publishedAt": "2026-10-09T12:13:42Z"
+      }
+    }
+  }
+]
