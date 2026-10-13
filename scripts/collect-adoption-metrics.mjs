@@ -14,7 +14,7 @@ const npm = path => get(`https://api.npmjs.org${path}`);
 const [day, week, metadata, repository, issues, pulls, commits, contributors, releases] = await Promise.all([
   npm(`/downloads/point/last-day/${pkg}`),
   npm(`/downloads/point/last-week/${pkg}`),
-  npm(`/registry/${pkg}`),
+  get(`https://registry.npmjs.org/${pkg}`),
   gh(''),
   gh('/issues?state=open&per_page=100'),
   gh('/pulls?state=open&per_page=100'),
