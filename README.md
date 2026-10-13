@@ -256,3 +256,11 @@ I build web applications end to end, frontend, backend, APIs and deployment, and
 I also build WordPress and WooCommerce plugins, available at [pluginsforstores.com](https://pluginsforstores.com).
 
 If your team is hiring, write to me at [hello@petrovicistefan.ro](mailto:hello@petrovicistefan.ro).
+
+---
+
+## ⭐ Support this project
+
+**Found this MCP useful? [Star this repository](https://github.com/petrovicistefan/mcp-security-guard)!**
+
+A GitHub star helps other developers discover the project and lets you save it for later. Thanks for supporting open source!
