@@ -1,0 +1,19 @@
+{
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Returns the forecast for the requested city.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "city"
+        ]
+      }
+    }
+  ]
+}
