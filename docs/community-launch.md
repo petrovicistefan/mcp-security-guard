@@ -15,7 +15,7 @@ Explain what the scanner checks and its limits. Do not present a clean report as
 | LinkedIn | 30–60 second demonstration and one reproducible example | Try the demo; report unclear output |
 | DEV Community or Hashnode | Tutorial: "Review MCP tool descriptions locally without an API key" | Reproduce the two scans |
 | Relevant MCP community showcase channels | Concise project introduction following that community's rules | Give feedback or choose a small issue |
-| GitHub Discussions Q&A | One real design question at a time from discussion-questions.md | Provide an example and explain the expected behavior |
+| GitHub Discussions Q&A | Real project design questions | Provide an example and explain the expected behavior |
 | Relevant curated tool lists | Submission following the list's contribution rules | Discover the project through a precise description |
 
 Check existing MCP Registry/directory listings before submitting duplicates. Do not promote the project in unrelated support questions.
