@@ -40,6 +40,7 @@ jobs:
       - name: Committed plugin/dist/ matches the source
         run: git diff --exit-code -- plugin/dist/
       - run: npm test
+      - run: npm run demo
 
   dogfood:
     runs-on: ubuntu-latest
