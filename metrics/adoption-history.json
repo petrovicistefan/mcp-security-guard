@@ -47,5 +47,54 @@
         "publishedAt": "2026-10-09T12:13:42Z"
       }
     }
+  },
+  {
+    "date": "2026-10-14",
+    "npm": {
+      "downloads24h": 13,
+      "downloads7d": 672,
+      "version": "0.9.0",
+      "publishedAt": "2026-10-09T12:16:40.572Z"
+    },
+    "github": {
+      "stars": 0,
+      "forks": 0,
+      "watchers": 0,
+      "openIssues": 0,
+      "openPullRequests": 0,
+      "contributors": 2,
+      "contributorsMayBeTruncated": false,
+      "recentCommits": [
+        {
+          "sha": "45a948859f7ca10af5a62dcaae9a431d7fd00fed",
+          "date": "2026-10-13T15:04:11Z",
+          "message": "docs: invite users to star and bookmark the project"
+        },
+        {
+          "sha": "35b20da6c762e9004dec64a6d09f34e8f05d4ebd",
+          "date": "2026-10-13T14:43:08Z",
+          "message": "chore(metrics): record daily adoption snapshot"
+        },
+        {
+          "sha": "bdfbe355c1684193631f1ea96b61b37345f29936",
+          "date": "2026-10-13T14:42:41Z",
+          "message": "fix(metrics): use official npm registry metadata endpoint"
+        },
+        {
+          "sha": "ecf2d1a9cc37deafaff14a1cd70955e05354b783",
+          "date": "2026-10-13T14:37:02Z",
+          "message": "feat(metrics): add automated daily npm and GitHub adoption tracking"
+        },
+        {
+          "sha": "d47cf6dc05d2d99bebc234be298e458e05d9dcb0",
+          "date": "2026-10-13T14:36:59Z",
+          "message": "feat(metrics): add automated daily npm and GitHub adoption tracking"
+        }
+      ],
+      "latestRelease": {
+        "tag": "v0.9.0",
+        "publishedAt": "2026-10-09T12:13:42Z"
+      }
+    }
   }
 ]
