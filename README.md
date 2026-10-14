@@ -4,6 +4,24 @@
 
 A Claude Code plugin that audits the **MCP servers you have installed**. Your code is covered by other tools. This one checks the servers that inject text into Claude's context.
 
+## Try it in one minute
+
+Requires Node.js 20+. Clone the repository and run a synthetic offline comparison; no account, API key, dependency installation, or MCP server launch is needed.
+
+```sh
+git clone https://github.com/petrovicistefan/mcp-security-guard.git
+cd mcp-security-guard
+node scripts/offline-demo.mjs
+```
+
+The demo checks two saved tool descriptions: one produces an instruction-override and sensitive-path finding; the clean counterpart produces no findings. [Run the scans yourself and generate an HTML report](examples/offline-demo/README.md).
+
+## Help improve detection and compatibility
+
+A useful first contribution can be a small JSON/TypeScript sample, not a new feature. Help reduce false positives, add synthetic detection cases, test client configurations, or improve an example.
+
+[Contribution guide](CONTRIBUTING.md) · [Open tasks](https://github.com/petrovicistefan/mcp-security-guard/issues) · [Report a false positive](https://github.com/petrovicistefan/mcp-security-guard/issues/new?template=false-positive.md)
+
 | Check | What it catches |
 |---|---|
 | Tool poisoning | Instruction overrides, "don't tell the user", `<IMPORTANT>` tags, directives to read secrets (`~/.ssh`, `.env`), conversation harvesting, exfiltration via URLs, parameters and Markdown images, HTML comments, encoded payloads |
