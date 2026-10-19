@@ -1,143 +1,251 @@
-# mcp-security-guard
+# MCP Security Guard
 
-<p align="center"><img src="plugin/assets/logo-wide.png" alt="mcp-security-guard logo" width="520"></p>
+<p align="center"><img src="plugin/assets/logo-wide.png" alt="MCP Security Guard logo" width="520"></p>
 
-A Claude Code plugin that audits the **MCP servers you have installed**. Your code is covered by other tools. This one checks the servers that inject text into Claude's context.
+**Find out if the MCP servers you installed are lying to your AI.**
 
-## Try it in one minute
+Local audit for tool poisoning, rug pulls, tool shadowing, hidden Unicode and leaked secrets, mapped to the OWASP MCP Top 10. Nothing leaves your machine unless you opt in.
 
-Requires Node.js 20+. Clone the repository and run a synthetic offline comparison; no account, API key, dependency installation, or MCP server launch is needed.
+[![npm version](https://img.shields.io/npm/v/mcp-security-guard?color=blue)](https://www.npmjs.com/package/mcp-security-guard)
+[![npm downloads](https://img.shields.io/npm/dm/mcp-security-guard)](https://www.npmjs.com/package/mcp-security-guard)
+[![CI status](https://github.com/petrovicistefan/mcp-security-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/petrovicistefan/mcp-security-guard/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![OWASP MCP Top 10](https://img.shields.io/badge/OWASP-MCP%20Top%2010-orange)](https://owasp.org/www-project-mcp-top-10/)
 
-```sh
-git clone https://github.com/petrovicistefan/mcp-security-guard.git
-cd mcp-security-guard
-node scripts/offline-demo.mjs
-```
+---
 
-The demo checks two saved tool descriptions: one produces an instruction-override and sensitive-path finding; the clean counterpart produces no findings. [Run the scans yourself and generate an HTML report](examples/offline-demo/README.md).
+## ⚡ Quickstart
 
-## Help improve detection and compatibility
-
-A useful first contribution can be a small JSON/TypeScript sample, not a new feature. Help reduce false positives, add synthetic detection cases, test client configurations, or improve an example.
-
-[Contribution guide](CONTRIBUTING.md) · [Open tasks](https://github.com/petrovicistefan/mcp-security-guard/issues) · [Report a false positive](https://github.com/petrovicistefan/mcp-security-guard/issues/new?template=false-positive.md)
-
-| Check | What it catches |
-|---|---|
-| Tool poisoning | Instruction overrides, "don't tell the user", `<IMPORTANT>` tags, directives to read secrets (`~/.ssh`, `.env`), conversation harvesting, exfiltration via URLs, parameters and Markdown images, HTML comments, encoded payloads |
-| Full-schema poisoning | The same checks on parameter names, descriptions, defaults, enums, `required`, plus non-schema text in `type` |
-| Hidden text | Zero-width, bidi-control and Unicode-tag characters, ANSI terminal escapes, homoglyph tool names |
-| Tool shadowing | A server whose descriptions reference another server's tools, and tool-name collisions between servers |
-| Rug pulls | Tool definitions or launch commands that changed after you pinned them (SHA-256 per tool), and skills, commands, subagents, CLAUDE.md and hooks of a plugin or repository that changed after you pinned them (a plugin that changes files under the same version is flagged `high`). Re-checked automatically at every session start |
-| Capabilities & score | Per-tool classification (execute, delete, write, egress), unauthenticated remote write access, 0–100 score and A–F grade per server, recommended permission rules |
-| Supply chain | OSV vulnerabilities and malicious versions, typosquats, missing or brand-new packages, install scripts, publisher changes (opt-in network check) |
-| Runtime | Hooks on every MCP call: ask before credentials are sent, warn on injected instructions or credentials in outputs, content-free audit log |
-| Policy | `.mcp-security.json` approved/blocked servers and hosts, enforced in audits, CI and at session start |
-| Toxic flows | Servers that hold all three legs of the "lethal trifecta" (untrusted input, private data, a way to send data out), on their own or together, with the tools to put behind approval. A posture note (`low` or `info`), not a defect |
-| Agent context | The text Claude reads besides MCP tools: skills and their scripts, slash commands, subagents, rules, `CLAUDE.md` and plugin hooks. Instruction overrides, "don't tell the user", invisible text, HTML comments addressed to the model, directives to read credential files, commands that upload credentials, download-and-run, encoded execution, infostealer scripts, pre-approved unrestricted `Bash` |
-| Configuration | Plaintext secrets in env/headers/args/URLs, plain-HTTP remotes, unpinned `npx`/`uvx` packages, privileged or unpinned Docker images, pipe-to-shell launches, duplicate names across scopes |
-
-It discovers servers from every place Claude Code and Claude Desktop load them: user, local and project scope, **servers shipped inside installed plugins and plugins synced from your claude.ai account** (named `<plugin>:<server>`), `claude_desktop_config.json` and **Claude Desktop extensions**, the organisation-managed `managed-mcp.json`, other clients on the machine (**Cursor, VS Code, Windsurf**, user and project configs), and the **claude.ai connectors** you have used (names only: their configuration lives in your account).
-
-It scans everything a server puts into Claude's context, not only tools: **server instructions, prompts, resources and resource templates** go through the same poisoning checks and are pinned for rug-pull detection.
-
-Everything runs locally. Nothing is sent anywhere.
-
-## OWASP MCP Top 10 coverage
-
-Every finding is tagged with its [OWASP MCP Top 10](https://owasp.org/www-project-mcp-top-10/) id, in reports and in SARIF.
-
-| ID | Risk | Covered by |
-|---|---|---|
-| MCP01 | Token Mismanagement & Secret Exposure | ✅ Plaintext secrets in env, headers, args and URLs. At runtime, asks before a credential is sent to an MCP server and warns when one comes back. |
-| MCP02 | Privilege Escalation via Scope Creep | ✅ Capability inventory (execute, delete, write, egress), ready-to-paste `permissions.ask` rules, privileged or broadly mounted containers |
-| MCP03 | Tool Poisoning | ✅ 26/27 published techniques detected, including full-schema poisoning, shadowing and name collisions, plus rug-pull pinning |
-| MCP04 | Supply Chain Attacks | ✅ Unpinned packages, images and git sources; OSV vulnerabilities and malicious versions; typosquats; new packages; install scripts; publisher changes |
-| MCP05 | Command Injection & Execution | ✅ Flags tools that can execute commands; `adversarial_test` finds injectable parameters in servers you own |
-| MCP06 | Prompt Injection via Contextual Payloads | ✅ In tool metadata and, at runtime, in tool outputs (English patterns) |
-| MCP07 | Insufficient AuthN/AuthZ | ✅ Plain-HTTP remotes; remote servers exposing write or exec tools without authentication; OAuth detection |
-| MCP08 | Lack of Audit and Telemetry | ✅ Local, content-free audit log of every MCP call, with `query_audit_log` |
-| MCP09 | Shadow MCP Servers | ✅ Discovery across user, project, local, plugin and Claude Desktop configs; approved-server policy enforced in audits, CI and at session start |
-| MCP10 | Context Injection & Over-Sharing | ✅ Conversation and system-prompt harvesting, Markdown-image exfiltration, credentials in outputs, network-egress inventory |
-
-What a local tool cannot do (planned for a hosted Team plan): org-wide discovery and audit aggregation, and OAuth scope review.
-
-**Measured:** detects 26/27 attacks from a corpus of publicly documented techniques, with 0 false positives on 13 hard benign samples and on 17 real servers (83 tools). See [bench/RESULTS.md](bench/RESULTS.md).
-
-## Install
+### Claude Code Plugin (recommended)
 
 ```
 /plugin marketplace add petrovicistefan/mcp-security-guard
 /plugin install mcp-security-guard@mcp-security-guard
 ```
 
-Then run `/mcp-audit`, or ask Claude *"are my MCP servers safe?"*.
+Then run `/mcp-audit` or ask Claude *"are my MCP servers safe?"*
 
-### Other MCP clients (Cursor, VS Code, Windsurf, Claude Desktop, Cline, ...)
+### Any MCP Client (one command, no install)
 
-The same server is published on npm and runs with no install step:
+Add to your MCP config (Cursor, VS Code, Windsurf, Claude Desktop, Cline):
 
 ```json
-{ "mcpServers": { "mcp-security-guard": { "command": "npx", "args": ["-y", "mcp-security-guard"] } } }
+{
+  "mcpServers": {
+    "mcp-security-guard": {
+      "command": "npx",
+      "args": ["-y", "mcp-security-guard"]
+    }
+  }
+}
 ```
 
-The command line tool is the same package: `npx mcp-security-guard audit --project-only`. It is also listed in the official MCP Registry as `io.github.petrovicistefan/mcp-security-guard`.
+### Command Line
 
-## Team plan (paid, opt-in)
-
-Team keys are issued by hand for now: [write to me](mailto:hello@petrovicistefan.ro). With a team API key (`MCP_SECURITY_API_KEY`, or the key setting of the plugin) the plugin can also work with your organisation. Everything below is off without a key, and the free plugin stays fully functional.
-
-- **Central policy.** An admin pushes one policy (allowed and blocked servers, remote hosts, plugins, pinned versions). Every member's plugin fetches it at session start (at most hourly, cached, enforced even when offline) and enforces it **next to** their own and the project's policy: a repository's `.mcp-security.json` cannot loosen it.
-- **Approved plugins.** `allowedPlugins` and `blockedPlugins` in a policy are enforced in audits, CI and at session start; a blocked plugin is `critical`, an unlisted one `high`.
-- **Fleet inventory, only with consent.** `team report` sends which servers and plugins you run: names, scopes, transport, package names and versions or remote hostnames, pinned or not. Never paths, arguments, environment, headers, query strings or secrets. Reports are refused until an admin turns fleet visibility on, `team report --dry-run` shows exactly what would be sent, and sending at session start needs `MCP_SECURITY_TEAM_REPORT=on`.
-- **Approval flow.** `team request server project:linear` asks the admin; `team approve` adds it to the policy's allow list for everyone. Alerts (new request, new violation, policy change) go to a Slack-compatible webhook.
-- **Keys and seats.** An admin creates a key per developer (`team keys create ana`, shown once; only its hash is stored) and revokes it (`team keys revoke`); a purchase sets the seat limit. The same admin actions are in the web dashboard (`/v1/team/dashboard` on the service: fleet, approvals, policy, keys, settings; the key is typed in, kept in the browser tab only, and every value from the service is written as text).
-- **Alerts by email** (`team settings --email you@example.com`) next to the Slack-compatible webhook; at most 20 a hour per organisation.
-- **Compliance evidence.** `team compliance --output report.md` (admin) writes a Markdown report from the policy, the latest fleet reports and the approval log: controls mapped to the OWASP MCP Top 10, each met or gap with its evidence, plus violations, stale reports and pending approvals. Together with `bom` (agent bill of materials) it is what an auditor asks for.
-- **Admin actions are CLI only** (`team approve`, `reject`, `policy-push`, `settings`, `inventory`), not MCP tools, so injected text cannot trigger them. The MCP tools `team_status`, `request_approval` and `team_report` ask for confirmation and cannot approve anything.
-
+```bash
+npx mcp-security-guard audit --project-only
 ```
-mcp-security-guard team status
-mcp-security-guard team report --dry-run
-mcp-security-guard team request plugin some-plugin --note "for the docs site"
-mcp-security-guard team approvals --status pending      # admin
-mcp-security-guard team approve apr_… --note ok          # admin
-mcp-security-guard team policy-push policy.json          # admin
-mcp-security-guard team keys create ana                  # admin: a key for a developer, shown once
-mcp-security-guard team settings --fleet on --webhook https://hooks.slack.com/… --email alerts@acme.example   # admin
+
+**⭐ Star this repository to support the project and stay updated!** → [Give a star](https://github.com/petrovicistefan/mcp-security-guard)
+
+---
+
+<!-- TODO: Add demo GIF showing an audit in action
+<p align="center">
+  <img src="docs/demo.gif" alt="MCP Security Guard demo" width="800">
+</p>
+-->
+
+## 📋 Table of Contents
+
+- [Why MCP Security Guard?](#why-mcp-security-guard)
+- [Use Cases](#use-cases)
+- [What It Checks](#what-it-checks)
+- [OWASP MCP Top 10 Coverage](#owasp-mcp-top-10-coverage)
+- [Quick Demo (1 Minute)](#quick-demo-1-minute)
+- [Tools](#tools)
+- [CI / GitHub Action](#ci--github-action)
+- [Interactive Dashboard](#interactive-dashboard)
+- [Runtime Hooks](#runtime-hooks)
+- [Team Plan](#team-plan-paid-opt-in)
+- [Benchmark Results](#benchmark-results)
+- [Development](#development)
+- [Contributing](#contributing)
+- [Security & Privacy](#security--privacy)
+- [About the Author](#about-the-author)
+
+---
+
+## Why MCP Security Guard?
+
+Your code is covered by other tools. **This one checks the MCP servers that inject text into your AI's context.**
+
+MCP Security Guard audits every MCP server Claude (and other AI clients) can reach: servers you configured, servers that plugins bring, and servers from Claude Desktop and other clients on your machine.
+
+### How It Compares
+
+*As of October 2026. Corrections welcome.*
+
+| Feature | MCP Security Guard | snyk/agent-scan | cisco-ai-defense/mcp-scanner | riseandignite/mcp-shield |
+|---------|-------------------|-----------------|------------------------------|-------------------------|
+| **Claude Code native plugin** | ✅ | ❌ | ❌ | ❌ |
+| **Runtime hooks** (pre/post tool-use) | ✅ | ❌ | ❌ | ❌ |
+| **Rug-pull pinning** (SHA-256) | ✅ Tools, skills, CLAUDE.md | Limited | ❌ | ❌ |
+| **OWASP MCP Top 10 mapping** | ✅ Every finding | ❌ | ❌ | ❌ |
+| **SARIF output** | ✅ GitHub Action | ❌ | ❌ | ❌ |
+| **CycloneDX BOM export** | ✅ Agent inventory | ❌ | ❌ | ❌ |
+| **Fully local** (zero network) | ✅ Default | Varies | Varies | Varies |
+| **Supply-chain checks** | ✅ OSV, npm, PyPI | Varies | Varies | Varies |
+| **Tool poisoning detection** | ✅ 26/27 attacks | Varies | Varies | Varies |
+| **License** | MIT | Apache 2.0 | MIT | MIT |
+
+**Our differentiators:**
+- **Native Claude Code integration** with a `/mcp-audit` slash command and runtime protection
+- **Comprehensive rug-pull protection**: pins and verifies tool definitions, skills, commands, subagents, and CLAUDE.md files
+- **Every finding mapped to OWASP MCP Top 10** for compliance and remediation guidance
+- **GitHub Action with SARIF** for code scanning alerts on pull requests
+- **Agent Bill of Materials (BOM)** in CycloneDX 1.6 format for audits and compliance
+- **Privacy-first**: everything runs locally by default; network access is explicit opt-in
+
+---
+
+## Use Cases
+
+### 1. Individual Developers
+
+**Protect your local AI setup.**
+
+- Audit MCP servers before and after installation
+- Get warned if a server's tool definitions change (rug pulls)
+- Runtime protection: block credentials from being sent, detect poisoned outputs
+- Pin trusted servers and skills for continuous verification
+
+```bash
+# Scan before installing a new server
+npx mcp-security-guard scan server-config.json --confirm-launch
+
+# Pin your reviewed servers
+npx mcp-security-guard pin
+
+# Check everything is still safe
+npx mcp-security-guard audit
 ```
+
+### 2. Pull Request CI Checks
+
+**Block risky MCP servers and poisoned skills in code review.**
+
+Fail PRs that add:
+- MCP servers with tool poisoning, unpinned packages, or privileged Docker images
+- Skills or CLAUDE.md files with instruction overrides or credential exfiltration
+- Vulnerable dependencies or typosquatted packages
+
+Findings appear in GitHub's code scanning interface with OWASP MCP Top 10 references.
+
+```yaml
+- uses: petrovicistefan/mcp-security-guard@main
+  with:
+    fail-on: high
+```
+
+### 3. Teams and Enterprises
+
+**Central security policy for your organization.**
+
+With the [Team plan](#team-plan-paid-opt-in):
+- Admins publish one policy (allowed/blocked servers, plugins, pinned versions)
+- Everyone's plugin enforces it automatically, even offline
+- Approval flow: developers request, admins approve
+- Fleet inventory: see what MCP servers your team runs (opt-in with consent)
+- Compliance evidence: OWASP MCP Top 10 coverage report for audits
+
+---
+
+## What It Checks
+
+MCP Security Guard discovers servers from every place AI clients load them: user, local and project scope, **servers shipped inside installed plugins**, `claude_desktop_config.json`, Claude Desktop extensions, organization-managed `managed-mcp.json`, **other clients on the machine (Cursor, VS Code, Windsurf)**, and **claude.ai connectors** you've used.
+
+It scans everything a server puts into the AI's context: **tools, server instructions, prompts, resources and resource templates**.
+
+| Check | What It Catches |
+|-------|-----------------|
+| **Tool poisoning** | Instruction overrides, "don't tell the user", `<IMPORTANT>` tags, directives to read secrets (`~/.ssh`, `.env`), conversation harvesting, exfiltration via URLs/parameters/Markdown images, HTML comments, encoded payloads |
+| **Full-schema poisoning** | Same checks on parameter names, descriptions, defaults, enums, `required`, plus non-schema text in `type` |
+| **Hidden text** | Zero-width, bidi-control and Unicode-tag characters, ANSI terminal escapes, homoglyph tool names |
+| **Tool shadowing** | Server descriptions referencing another server's tools, tool-name collisions between servers |
+| **Rug pulls** | Tool definitions or launch commands that changed after you pinned them (SHA-256 per tool). Skills, commands, subagents, CLAUDE.md and hooks of a plugin that changed after pinning (plugins changing files under the same version are flagged `high`). Re-checked automatically at every session start |
+| **Capabilities & score** | Per-tool classification (execute, delete, write, egress), unauthenticated remote write access, 0–100 score and A–F grade per server, recommended permission rules |
+| **Supply chain** | OSV vulnerabilities and malicious versions, typosquats, missing or brand-new packages, install scripts, publisher changes (opt-in network check) |
+| **Runtime** | Hooks on every MCP call: ask before credentials are sent, warn on injected instructions or credentials in outputs, content-free audit log |
+| **Policy** | `.mcp-security.json` approved/blocked servers and hosts, enforced in audits, CI and at session start |
+| **Toxic flows** | Servers holding all three legs of the "lethal trifecta" (untrusted input, private data, egress capability), on their own or together. A posture note (`low` or `info`), not a defect |
+| **Agent context** | Skills and their scripts, slash commands, subagents, rules, `CLAUDE.md` and plugin hooks: instruction overrides, "don't tell the user", invisible text, HTML comments addressed to the model, directives to read credential files, commands that upload credentials, download-and-run, encoded execution, infostealer scripts, pre-approved unrestricted `Bash` |
+| **Configuration** | Plaintext secrets in env/headers/args/URLs, plain-HTTP remotes, unpinned `npx`/`uvx` packages, privileged or unpinned Docker images, pipe-to-shell launches, duplicate names across scopes |
+
+**Everything runs locally. Nothing is sent anywhere unless you opt in.**
+
+---
+
+## OWASP MCP Top 10 Coverage
+
+Every finding is tagged with its [OWASP MCP Top 10](https://owasp.org/www-project-mcp-top-10/) id, in reports and in SARIF.
+
+| ID | Risk | Coverage |
+|----|------|----------|
+| **MCP01** | Token Mismanagement & Secret Exposure | ✅ Plaintext secrets in env, headers, args and URLs. At runtime, asks before a credential is sent to an MCP server and warns when one comes back |
+| **MCP02** | Privilege Escalation via Scope Creep | ✅ Capability inventory (execute, delete, write, egress), ready-to-paste `permissions.ask` rules, privileged or broadly mounted containers |
+| **MCP03** | Tool Poisoning | ✅ 26/27 published techniques detected, including full-schema poisoning, shadowing and name collisions, plus rug-pull pinning |
+| **MCP04** | Supply Chain Attacks | ✅ Unpinned packages, images and git sources; OSV vulnerabilities and malicious versions; typosquats; new packages; install scripts; publisher changes |
+| **MCP05** | Command Injection & Execution | ✅ Flags tools that can execute commands; `adversarial_test` finds injectable parameters in servers you own |
+| **MCP06** | Prompt Injection via Contextual Payloads | ✅ In tool metadata and, at runtime, in tool outputs (English patterns) |
+| **MCP07** | Insufficient AuthN/AuthZ | ✅ Plain-HTTP remotes; remote servers exposing write or exec tools without authentication; OAuth detection |
+| **MCP08** | Lack of Audit and Telemetry | ✅ Local, content-free audit log of every MCP call, with `query_audit_log` |
+| **MCP09** | Shadow MCP Servers | ✅ Discovery across user, project, local, plugin and Claude Desktop configs; approved-server policy enforced in audits, CI and at session start |
+| **MCP10** | Context Injection & Over-Sharing | ✅ Conversation and system-prompt harvesting, Markdown-image exfiltration, credentials in outputs, network-egress inventory |
+
+**What a local tool cannot do** (planned for hosted Team plan): org-wide discovery and audit aggregation, OAuth scope review.
+
+---
+
+## Quick Demo (1 Minute)
+
+Try a synthetic offline comparison with no dependencies, account, or API key needed:
+
+```bash
+git clone https://github.com/petrovicistefan/mcp-security-guard.git
+cd mcp-security-guard
+node scripts/offline-demo.mjs
+```
+
+The demo checks two saved tool descriptions: one produces instruction-override and sensitive-path findings; the clean counterpart produces no findings. [Run the scans yourself and generate an HTML report](examples/offline-demo/README.md).
+
+---
 
 ## Tools
 
-| Tool | Launches servers? |
-|---|---|
-| `list_mcp_servers` | No |
-| `audit_mcp_config` | No |
-| `audit_server_tools` | Yes, after explicit `confirm_launch: true`. Sends only `initialize` and list requests (tools, prompts, resources); never calls a tool, renders a prompt or reads a resource |
-| `pin_tools` | Yes (same as above). Writes `~/.claude/mcp-security/pins.json` |
-| `export_bom` | No. Writes nothing and launches nothing: an inventory of servers, plugins, skills, commands, subagents and `CLAUDE.md` as a CycloneDX 1.6 agent bill of materials or a Markdown summary with OWASP MCP Top 10 evidence |
-| `audit_agent_context` | No. Reads skills, commands, subagents, rules, `CLAUDE.md` and plugin hooks (user, project and installed plugins); `project_only` limits it to the repository |
-| `team_status`, `request_approval`, `team_report` | Network, after confirmation. Team plan: sync the organisation's policy, ask the admin to approve a server or plugin, preview and send a fleet report (see above) |
-| `pin_context` | No. Writes `~/.claude/mcp-security/context-pins.json` (SHA-256 per skill, command, subagent, rule, CLAUDE.md, hook config and script, per origin). Skips origins with critical or high findings unless `force` |
-| `analyze_tool_definitions` | No. Offline analysis of a `tools/list` payload, for MCP server authors |
-| `check_supply_chain` | No. Sends package names and versions to npm, PyPI and OSV after `confirm_network: true` |
-| `apply_fixes` | Only for the `permissions` fix. Dry run by default; with `write: true` it edits the project's `.mcp.json` / `.claude/settings.json` after a backup to `~/.claude/mcp-security/backups/` |
-| `security_dashboard` | Only with `scan: "full"` and `confirm_launch: true`. Interactive dashboard (MCP App) |
-| `generate_policy` | No. Returns a `.mcp-security.json` approving the current servers |
-| `query_audit_log` | No. Summarises the runtime audit log |
-| `adversarial_test` | Yes, and **calls tools** with injection payloads. Only for servers you own; needs `i_own_this_server` and `confirm_launch`; skips destructive tools |
+| Tool | Launches Servers? | Description |
+|------|-------------------|-------------|
+| `list_mcp_servers` | No | Lists all discovered MCP servers |
+| `audit_mcp_config` | No | Audits configuration only |
+| `audit_server_tools` | Yes, after `confirm_launch: true` | Sends only `initialize` and list requests; never calls tools |
+| `pin_tools` | Yes (same as above) | Writes `~/.claude/mcp-security/pins.json` |
+| `export_bom` | No | CycloneDX 1.6 agent bill of materials or Markdown summary |
+| `audit_agent_context` | No | Reads skills, commands, subagents, rules, `CLAUDE.md`, plugin hooks |
+| `team_status`, `request_approval`, `team_report` | Network, after confirmation | Team plan: sync policy, request approval, send fleet report |
+| `pin_context` | No | Writes `~/.claude/mcp-security/context-pins.json` |
+| `analyze_tool_definitions` | No | Offline analysis of a `tools/list` payload (for MCP server authors) |
+| `check_supply_chain` | No | Sends package names/versions to npm, PyPI, OSV after `confirm_network: true` |
+| `apply_fixes` | Only for `permissions` fix | Edits project's `.mcp.json` after backup (dry run by default) |
+| `security_dashboard` | Only with `scan: "full"` and `confirm_launch: true` | Interactive dashboard (MCP App) |
+| `generate_policy` | No | Returns a `.mcp-security.json` approving current servers |
+| `query_audit_log` | No | Summarizes the runtime audit log |
+| `adversarial_test` | Yes, **calls tools** | For servers you own; needs `i_own_this_server` and `confirm_launch` |
 
-## Session-start check
-
-A `SessionStart` hook re-verifies **only the servers you have pinned** (pinning is your consent to launch them) and stays silent unless something changed. Control it with `MCP_SECURITY_SESSION_CHECK`:
-
-- `full` (default): compare launch configs and re-list tools
-- `config`: compare launch configs only, launch nothing
-- `off`: disable the check
+---
 
 ## CI / GitHub Action
 
-Fail pull requests that add risky MCP servers to `.mcp.json`, and show the findings in GitHub code scanning:
+Fail pull requests that add risky MCP servers to `.mcp.json`, and show findings in GitHub code scanning:
 
 ```yaml
 name: MCP security
@@ -160,116 +268,178 @@ jobs:
           sarif_file: ${{ steps.mcp.outputs.sarif-file }}
 ```
 
-To also fail pull requests that add a poisoned skill, command or `CLAUDE.md` to the repository, set `context: true` on the action (second SARIF file in `context-sarif-file`). The same checks run locally without Claude:
+To also fail PRs that add poisoned skills, commands or `CLAUDE.md`, set `context: true` (second SARIF file in `context-sarif-file`).
 
-```
-node plugin/dist/cli.mjs audit --project-only --format sarif --output mcp.sarif
-node plugin/dist/cli.mjs analyze-tools tools.json --name my-server   # for MCP server authors: a saved tools/list result
-```
+**Command line:**
 
-Scan the skills, commands, subagents and `CLAUDE.md` files next to your servers (add `--project-only` for a repository you are about to trust):
+```bash
+# Audit project-level MCP servers
+npx mcp-security-guard audit --project-only --format sarif --output mcp.sarif
 
-```
-node plugin/dist/cli.mjs audit-context --project-only --fail-on high
-```
+# For MCP server authors: analyze a saved tools/list result
+npx mcp-security-guard analyze-tools tools.json --name my-server
 
-Pin what you have reviewed with `node plugin/dist/cli.mjs pin-context` (or ask Claude to run `pin_context`); from then on `audit-context` and the session-start check report any pinned plugin, skill, command or `CLAUDE.md` that changed.
+# Scan skills, commands, subagents and CLAUDE.md
+npx mcp-security-guard audit-context --project-only --fail-on high
 
-Quoted attack phrases inside examples or fenced code are reported as `medium` (documentation), install snippets such as `curl … | sh` as `low`; the same patterns in scripts, hooks and inline `!` commands are `high`.
+# Pin what you've reviewed
+npx mcp-security-guard pin-context
 
-Check a server **before installing it** (launches it, sends only `initialize` and `tools/list`):
+# Scan a server before installing it
+npx mcp-security-guard scan server-config.json --confirm-launch
 
-```
-node plugin/dist/cli.mjs scan some-server.mcp.json --confirm-launch
-```
+# Test your own server for command injection (calls tools)
+npx mcp-security-guard adversarial my-server.mcp.json --server my-server --i-own-this-server --confirm-launch
 
-Test your own server for command injection and path traversal (it **calls** the tools; run a test instance, ideally in a container):
+# Fix what the audit found
+npx mcp-security-guard fix --pin-versions            # npx pkg → pkg@x.y.z
+npx mcp-security-guard fix --env-refs --write        # secrets → ${VAR} references
+npx mcp-security-guard fix --permissions --confirm-launch --write
 
-```
-node plugin/dist/cli.mjs adversarial my-server.mcp.json --server my-server --i-own-this-server --confirm-launch
-```
-
-Fix what the audit found (dry run first, then `--write`):
-
-```
-node plugin/dist/cli.mjs fix --pin-versions            # npx pkg → pkg@x.y.z, uvx pkg → pkg==x.y.z (looks up npm/PyPI)
-node plugin/dist/cli.mjs fix --env-refs --write        # literal secrets in .mcp.json → ${VAR} references
-node plugin/dist/cli.mjs fix --permissions --confirm-launch --write   # permissions.ask rules for risky tools
+# Generate a team policy from current configuration
+npx mcp-security-guard policy-init && git add .mcp-security.json
 ```
 
-Start a team policy from the servers configured today:
+**Output formats:** `--format markdown|json|sarif|html` (HTML is a self-contained report file).
 
+**Exit codes:** `0` clean, `1` findings at or above `--fail-on`, `2` usage error.
+
+---
+
+## Interactive Dashboard
+
+`security_dashboard` is an [MCP App](https://modelcontextprotocol.io/docs/extensions/apps) that hosts supporting MCP Apps (Claude Desktop, claude.ai, VS Code Copilot) render inline.
+
+Shows every server with its score and grade, findings filterable by severity and server, OWASP MCP Top 10 breakdown, recommended permission rules, and **Full scan** and **Pin** buttons.
+
+To use in Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "mcp-security-guard": {
+      "command": "node",
+      "args": ["/path/to/mcp-security-guard/plugin/dist/index.mjs"]
+    }
+  }
+}
 ```
-node plugin/dist/cli.mjs policy-init && git add .mcp-security.json
+
+Ask Claude to *"open the MCP security dashboard"*.
+
+Develop locally: `npm run dashboard:dev -- /path/to/project`
+
+---
+
+## Runtime Hooks
+
+| Hook | What It Does | Setting |
+|------|-------------|---------|
+| `PreToolUse` on `mcp__*` | Asks for confirmation when arguments contain credentials | `MCP_SECURITY_SECRET_GUARD=ask` (default), `deny`, or `off` |
+| `PostToolUse` on `mcp__*` | Warns when output contains injected instructions, hidden characters, exfiltration markup, or credentials | Always on |
+| Audit log | `~/.claude/mcp-security/audit.jsonl`: server, tool, time, input hash and sizes. Never arguments or outputs. Rotates at 10 MB | `MCP_SECURITY_AUDIT_LOG=off` to disable |
+
+Hooks add ~40ms per MCP call.
+
+**Session-start check** re-verifies pinned servers and stays silent unless something changed:
+
+- `MCP_SECURITY_SESSION_CHECK=full` (default): compare configs and re-list tools
+- `MCP_SECURITY_SESSION_CHECK=config`: compare configs only, launch nothing
+- `MCP_SECURITY_SESSION_CHECK=off`: disable
+
+---
+
+## Team Plan (paid, opt-in)
+
+Team keys are issued by hand for now: [write to me](mailto:hello@petrovicistefan.ro).
+
+With a team API key (`MCP_SECURITY_API_KEY` or plugin key setting), you get:
+
+- **Central policy** pushed by admin, enforced next to user/project policy (repository cannot loosen it)
+- **Approved plugins** (`allowedPlugins`, `blockedPlugins`) enforced in audits, CI, and at session start
+- **Fleet inventory** (opt-in with consent): names, versions, scopes, transport, packages/hostnames — never paths, args, env, secrets
+- **Approval flow**: `team request`, `team approve`, Slack-compatible webhook alerts
+- **Keys and seats**: admin creates/revokes per-developer keys; purchase sets seat limit
+- **Web dashboard** at `/v1/team/dashboard`: fleet, approvals, policy, keys, settings
+- **Email alerts** (up to 20/hour per org) next to webhook
+- **Compliance evidence**: `team compliance` writes Markdown report with OWASP MCP Top 10 controls, evidence, violations, and pending approvals
+
+**Admin actions are CLI only** (not MCP tools), so injected text cannot trigger them.
+
+```bash
+mcp-security-guard team status
+mcp-security-guard team report --dry-run
+mcp-security-guard team request plugin some-plugin --note "for docs site"
+mcp-security-guard team approvals --status pending      # admin
+mcp-security-guard team approve apr_… --note ok         # admin
+mcp-security-guard team policy-push policy.json         # admin
+mcp-security-guard team keys create ana                 # admin
+mcp-security-guard team settings --fleet on --webhook https://hooks.slack.com/… --email alerts@acme.example
 ```
 
-Any command takes `--format markdown|json|sarif|html`. The HTML report is a single self-contained file you can open in a browser or attach to a ticket.
+Everything above stays free. Free plugin is fully functional. See [PRIVACY.md](PRIVACY.md) for what is sent.
 
-Exit codes: `0` clean, `1` findings at or above `--fail-on`, `2` usage error.
+---
+
+## Benchmark Results
+
+**Measured:** detects **26/27 attacks** from a corpus of publicly documented techniques, with **0 false positives** on 13 hard benign samples and on 17 real servers (83 tools).
+
+Techniques covered: tool poisoning and `<IMPORTANT>` tags (Invariant Labs), line jumping and ANSI escape deception (Trail of Bits), full-schema poisoning (CyberArk), tool shadowing, name collisions, zero-width/Unicode-tag/bidi smuggling, homoglyph names, base64 payloads, HTML comments, exfiltration via URLs/parameters/Markdown images.
+
+See [bench/RESULTS.md](bench/RESULTS.md) for full methodology and results.
+
+---
+
+## Development
+
+```bash
+npm install
+npm run build      # bundles to plugin/dist/ (committed, so plugin runs without npm install)
+npm test
+npm run bench      # false-positive gate on real servers (network; Docker images optional)
+```
+
+`test/fixtures/poisoned-server.mjs` is a deliberately malicious server used by the end-to-end test.
+
+---
+
+## Contributing
+
+Small, reproducible contributions are welcome: benign regression samples, synthetic detection cases, client configuration tests, and clearer examples.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+[Contribution guide](CONTRIBUTING.md) · [Open tasks](https://github.com/petrovicistefan/mcp-security-guard/issues) · [Report a false positive](https://github.com/petrovicistefan/mcp-security-guard/issues/new?template=false-positive.md)
+
+---
+
+## Security & Privacy
+
+- **Found a vulnerability?** See [SECURITY.md](SECURITY.md)
+- **What is read, written and sent:** [PRIVACY.md](PRIVACY.md)
+- **Changes:** [CHANGELOG.md](CHANGELOG.md)
+- **License:** MIT (see [LICENSE](LICENSE))
+
+**Trust model:**
+- Read-only (except pin files, audit log, and policy-init)
+- Network only with explicit opt-in
+- Secrets masked in all output
+- Static checks reduce risk but don't prove a server safe
+
+---
 
 ## Limitations
 
 Remote servers that require OAuth (most hosted MCP servers) cannot be scanned at the tool level: the scanner cannot reuse Claude Code's tokens. Their configuration is still audited.
 
-## Interactive dashboard (MCP App)
+---
 
-`security_dashboard` is an [MCP App](https://modelcontextprotocol.io/docs/extensions/apps): hosts that support MCP Apps (Claude Desktop, claude.ai, VS Code Copilot…) render it inline. It shows every server with its score and grade, findings filterable by severity and server, the OWASP MCP Top 10 breakdown, recommended permission rules, and **Full scan** and **Pin** buttons. Selecting a server tells Claude what you are looking at, so follow-up questions have context. Claude Code in a terminal gets the text summary instead.
+## About the Author
 
-To use it in Claude Desktop, add the server to `claude_desktop_config.json` and ask Claude to *"open the MCP security dashboard"*:
+I'm Stefan Petrovici: passionate about IT, a husband and a father. I built MCP Security Guard on my own. **I'm looking for a job.**
 
-```json
-{ "mcpServers": { "mcp-security-guard": { "command": "node", "args": ["/path/to/mcp-security-guard/plugin/dist/index.mjs"] } } }
-```
-
-The UI is a single self-contained HTML file. Server-supplied text reaches the page only as text (never as HTML), and the host's sandbox applies. Develop it with a local host that drives the real server: `npm run dashboard:dev -- /path/to/project`.
-
-## Runtime hooks
-
-| Hook | What it does | Setting |
-|---|---|---|
-| `PreToolUse` on `mcp__*` | Asks for confirmation when a call's arguments contain a credential | `MCP_SECURITY_SECRET_GUARD=ask` (default), `deny` or `off` |
-| `PostToolUse` on `mcp__*` | Warns Claude and you when an output contains injected instructions, hidden characters, exfiltration markup or a credential | always on |
-| Audit log | `~/.claude/mcp-security/audit.jsonl`: server, tool, time, input hash and sizes. Never arguments or outputs. Rotates at 10 MB. | `MCP_SECURITY_AUDIT_LOG=off` |
-
-The hooks add about 40 ms per MCP call.
-
-## Trust model
-
-- Read-only, apart from the pin file, the audit log, and `policy-init` (which writes a file you asked for).
-- Network only when you opt in: `check_supply_chain` / `--supply-chain` send package names and versions to npm, PyPI and OSV. The `adversarial_test` tool is the only one that calls tools.
-- Evidence from scanned servers is sanitised (invisible characters revealed, length capped) and labelled as untrusted data.
-- Secrets are masked in all output.
-- Static checks reduce risk. They do not prove a server safe: malicious behaviour in tool *responses* or server code is out of scope.
-
-## Development
-
-```
-npm install
-npm run build      # bundles to plugin/dist/ (committed, so the plugin runs without npm install)
-npm test
-npm run bench      # false-positive gate on real servers (network; Docker images optional, see bench/RESULTS.md)
-```
-
-`test/fixtures/poisoned-server.mjs` is a deliberately malicious server used by the end-to-end test.
-
-## Pro & Team (early access)
-
-Everything above is free and stays free: it runs locally and needs no account. Paid plans add what needs a server: a daily threat feed of known malicious MCP servers, packages and skills, alerts when a server you use ships changed tool descriptions, history, and team policies, approvals and a dashboard. They are opt-in through `MCP_SECURITY_API_KEY`; see [PRIVACY.md](PRIVACY.md) for exactly what is sent.
-
-Paid plans are not on sale yet, and there is no checkout. If you or your team would like one, write to [hello@petrovicistefan.ro](mailto:hello@petrovicistefan.ro) or [join the early access list](https://tally.so/r/dW5lZK): I issue keys by hand for now, and early users get launch pricing, including a limited lifetime license.
-
-## Security, privacy, license
-
-- Found a vulnerability? See [SECURITY.md](SECURITY.md).
-- What is read, written and sent: [PRIVACY.md](PRIVACY.md).
-- Changes: [CHANGELOG.md](CHANGELOG.md).
-- MIT, see [LICENSE](LICENSE).
-
-## About the author
-
-I'm Stefan Petrovici: passionate about IT, a husband and a father. I built mcp-security-guard on my own. **I'm looking for a job.**
-
-I build web applications end to end, frontend, backend, APIs and deployment, and I'm happy to work on anything else that needs building. This repository shows how I work: tests, CI, careful documentation and attention to security.
+I build web applications end to end—frontend, backend, APIs and deployment—and I'm happy to work on anything else that needs building. This repository shows how I work: tests, CI, careful documentation and attention to security.
 
 I also build WordPress and WooCommerce plugins, available at [pluginsforstores.com](https://pluginsforstores.com).
 
@@ -277,8 +447,12 @@ If your team is hiring, write to me at [hello@petrovicistefan.ro](mailto:hello@p
 
 ---
 
-## ⭐ Support this project
+## ⭐ Support This Project
 
-**Found this MCP useful? [Star this repository](https://github.com/petrovicistefan/mcp-security-guard)!**
+**Found this useful? [Star this repository](https://github.com/petrovicistefan/mcp-security-guard)!**
 
 A GitHub star helps other developers discover the project and lets you save it for later. Thanks for supporting open source!
+
+---
+
+*MCP Security Guard is not affiliated with Anthropic, Snyk, Cisco, or any other security vendor mentioned in this document.*
