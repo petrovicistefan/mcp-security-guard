@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.1
+
+- **README rewritten for conversion optimization**: compelling hook ("Find out if the MCP servers you installed are lying to your AI"), badges (npm version, downloads, CI, license, OWASP MCP Top 10), quickstart moved to top with Claude Code plugin and npx commands, star CTA, comparison table vs competitors (snyk/agent-scan, cisco-ai-defense/mcp-scanner, riseandignite/mcp-shield), use cases section (individual devs, CI/PR checks, teams), table of contents, improved structure (quickstart first, team plan moved lower). All existing accurate content preserved. VHS tape file added for future demo GIF generation
+
 ## 0.9.0
 
 - **Team compliance report** (`team compliance [--output FILE]`, admin only, CLI only): an evidence report in Markdown built from what the service already holds: the central policy, each member's latest fleet report and the approval log. Controls mapped to the OWASP MCP Top 10 (shadow servers, blocked items, approved remote hosts, pinned package versions, tool pinning), each marked met or gap with its evidence, plus violations, stale reports and pending approvals. Needs no backend change; nothing new is collected and the service stores no report
