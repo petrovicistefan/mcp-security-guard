@@ -8,15 +8,37 @@ Local audit for tool poisoning, rug pulls, tool shadowing, hidden Unicode and le
 
 [![npm version](https://img.shields.io/npm/v/mcp-security-guard?color=blue)](https://www.npmjs.com/package/mcp-security-guard)
 [![npm downloads](https://img.shields.io/npm/dm/mcp-security-guard)](https://www.npmjs.com/package/mcp-security-guard)
+[![Glama](https://glama.ai/mcp/servers/petrovicistefan/mcp-security-guard/badges/score.svg)](https://glama.ai/mcp/servers/petrovicistefan/mcp-security-guard)
 [![CI status](https://github.com/petrovicistefan/mcp-security-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/petrovicistefan/mcp-security-guard/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OWASP MCP Top 10](https://img.shields.io/badge/OWASP-MCP%20Top%2010-orange)](https://owasp.org/www-project-mcp-top-10/)
 
 ---
 
-## ⚡ Quickstart
+## 🚀 Quick Install
 
-### Claude Code Plugin (recommended)
+### Cursor
+
+[![Add to Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=mcp-security-guard&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIm1jcC1zZWN1cml0eS1ndWFyZCJdfQ==)
+
+Click the button above, or use this deep link: `cursor://anysphere.cursor-deeplink/mcp/install?name=mcp-security-guard&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIm1jcC1zZWN1cml0eS1ndWFyZCJdfQ==`
+
+Or manually add to `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "mcp-security-guard": {
+      "command": "npx",
+      "args": ["-y", "mcp-security-guard"]
+    }
+  }
+}
+```
+
+### Claude Code
+
+#### Via Plugin (recommended)
 
 ```
 /plugin marketplace add petrovicistefan/mcp-security-guard
@@ -25,9 +47,32 @@ Local audit for tool poisoning, rug pulls, tool shadowing, hidden Unicode and le
 
 Then run `/mcp-audit` or ask Claude *"are my MCP servers safe?"*
 
-### Any MCP Client (one command, no install)
+#### Via CLI
 
-Add to your MCP config (Cursor, VS Code, Windsurf, Claude Desktop, Cline):
+```bash
+claude mcp add mcp-security-guard -- npx -y mcp-security-guard
+```
+
+### Claude Desktop
+
+Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS, `%APPDATA%\Claude\claude_desktop_config.json` on Windows):
+
+```json
+{
+  "mcpServers": {
+    "mcp-security-guard": {
+      "command": "npx",
+      "args": ["-y", "mcp-security-guard"]
+    }
+  }
+}
+```
+
+### VS Code
+
+[![Add to VS Code](https://img.shields.io/badge/Add%20to-VS%20Code-blue?style=for-the-badge&logo=visualstudiocode)](https://insiders.vscode.dev/redirect/mcp/install?name=mcp-security-guard&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22mcp-security-guard%22%5D%7D)
+
+Click the button above, or manually add to `.vscode/mcp.json`:
 
 ```json
 {
@@ -43,18 +88,18 @@ Add to your MCP config (Cursor, VS Code, Windsurf, Claude Desktop, Cline):
 ### Command Line
 
 ```bash
-npx mcp-security-guard audit --project-only
+npx -y mcp-security-guard audit --project-only
 ```
 
 **⭐ Star this repository to support the project and stay updated!** → [Give a star](https://github.com/petrovicistefan/mcp-security-guard)
 
 ---
 
-<!-- TODO: Add demo GIF showing an audit in action
 <p align="center">
   <img src="docs/demo.gif" alt="MCP Security Guard demo" width="800">
 </p>
--->
+
+---
 
 ## 📋 Table of Contents
 
@@ -223,23 +268,25 @@ The demo checks two saved tool descriptions: one produces instruction-override a
 
 ## Tools
 
-| Tool | Launches Servers? | Description |
-|------|-------------------|-------------|
-| `list_mcp_servers` | No | Lists all discovered MCP servers |
-| `audit_mcp_config` | No | Audits configuration only |
-| `audit_server_tools` | Yes, after `confirm_launch: true` | Sends only `initialize` and list requests; never calls tools |
-| `pin_tools` | Yes (same as above) | Writes `~/.claude/mcp-security/pins.json` |
-| `export_bom` | No | CycloneDX 1.6 agent bill of materials or Markdown summary |
-| `audit_agent_context` | No | Reads skills, commands, subagents, rules, `CLAUDE.md`, plugin hooks |
-| `team_status`, `request_approval`, `team_report` | Network, after confirmation | Team plan: sync policy, request approval, send fleet report |
-| `pin_context` | No | Writes `~/.claude/mcp-security/context-pins.json` |
-| `analyze_tool_definitions` | No | Offline analysis of a `tools/list` payload (for MCP server authors) |
-| `check_supply_chain` | No | Sends package names/versions to npm, PyPI, OSV after `confirm_network: true` |
-| `apply_fixes` | Only for `permissions` fix | Edits project's `.mcp.json` after backup (dry run by default) |
-| `security_dashboard` | Only with `scan: "full"` and `confirm_launch: true` | Interactive dashboard (MCP App) |
-| `generate_policy` | No | Returns a `.mcp-security.json` approving current servers |
-| `query_audit_log` | No | Summarizes the runtime audit log |
-| `adversarial_test` | Yes, **calls tools** | For servers you own; needs `i_own_this_server` and `confirm_launch` |
+| Tool | Network | Launches | Description |
+|------|---------|----------|-------------|
+| `list_mcp_servers` | ❌ | ❌ | Lists every MCP server configured for this project (user, local and project scope in Claude Code, plus Claude Desktop) with its transport. Read-only; launches nothing. |
+| `audit_mcp_config` | ❌ | ❌ | Static audit of MCP server configuration: plaintext secrets in env/headers/args/URLs, plain-HTTP remote servers, unpinned npx/uvx packages, unpinned or privileged Docker containers, pipe-to-shell launch commands, and duplicate server names. Read-only; launches nothing. |
+| `audit_server_tools` | ❌ | ✅ Confirm | Connects to selected MCP servers, lists their tools, and checks every name, description and schema for tool poisoning, cross-server tool shadowing, and rug pulls. Never calls the scanned tools. Requires `confirm_launch: true`. |
+| `pin_tools` | ❌ | ✅ Confirm | Records a SHA-256 hash of every tool definition in `~/.claude/mcp-security/pins.json` for rug-pull detection. Pin only after reviewing an audit. Requires `confirm_launch: true`. |
+| `audit_agent_context` | ❌ | ❌ | Scans CLAUDE.md, skills, slash commands, subagents, rules and plugin hooks for instruction overrides, requests to hide things from users, invisible text, credential exfiltration, and encoded execution. Read-only; launches nothing. |
+| `pin_context` | ❌ | ❌ | Records SHA-256 of every skill, command, subagent, rule, CLAUDE.md and plugin hook config in `~/.claude/mcp-security/context-pins.json` for rug-pull detection in plugins. Pin only after reviewing an audit. |
+| `analyze_tool_definitions` | ❌ | ❌ | Offline analysis of tool definitions you provide (e.g., `tools/list` output from a server you're developing). Useful in CI or before publishing. Never connects to anything. |
+| `check_supply_chain` | ✅ Confirm | ❌ | For npx/uvx servers, checks packages on npm/PyPI and OSV database: vulnerabilities, malicious versions, typosquats, install scripts, deprecation, publisher changes. Sends package names and versions only. Requires `confirm_network: true`. |
+| `apply_fixes` | Conditional | Conditional | Fixes findings in project files: adds `permissions.ask` rules (needs `confirm_launch`), pins unpinned packages (needs `confirm_network`), or replaces literal secrets with `${VAR}` references. Dry run by default; backs up files before writing. |
+| `security_dashboard` | ❌ | Conditional | Opens interactive dashboard with scores, grades, findings by severity, OWASP MCP Top 10 breakdown, and pin buttons. `scan="config"` is read-only; `scan="full"` requires `confirm_launch: true`. MCP App hosts render it inline. |
+| `generate_policy` | ❌ | ❌ | Returns a `.mcp-security.json` policy that approves exactly the currently configured servers. Commit it to flag shadow servers in CI and audits. Read-only; does not write the file. |
+| `team_status` | ✅ Confirm | ❌ | Syncs organization policy from team backend and shows org name, role, policy version, and fleet reporting status. Requires team API key and `confirm_network: true`. |
+| `request_approval` | ✅ Confirm | ❌ | Creates an approval request for a blocked server or plugin when the team policy requires it. Admin decides via CLI. Requires `confirm_network: true`. |
+| `team_report` | ✅ Confirm | ❌ | Shows what a fleet report would send (server/plugin names, versions, transports; never paths, args, env, secrets). With `confirm_send: true`, sends it if admin enabled fleet visibility. |
+| `export_bom` | ❌ | ❌ | Agent bill of materials: inventory of MCP servers, plugins, skills, commands, subagents, CLAUDE.md and hooks with SHA-256, pin status, scores and OWASP evidence. CycloneDX 1.6 JSON or Markdown summary. Static; launches nothing. |
+| `query_audit_log` | ❌ | ❌ | Summarizes the local runtime audit log: MCP tool calls per server/tool, and calls where credentials were sent/returned or outputs contained injected instructions. Log stores hashes and sizes only, never arguments or outputs. |
+| `adversarial_test` | ❌ | ✅ Confirm | **Calls tools** with command-injection and path-traversal payloads to find vulnerable parameters. Only for servers you own/operate. Requires `i_own_this_server: true` and `confirm_launch: true`. Destructive tools skipped by default. |
 
 ---
 
@@ -419,13 +466,40 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 - **Found a vulnerability?** See [SECURITY.md](SECURITY.md)
 - **What is read, written and sent:** [PRIVACY.md](PRIVACY.md)
 - **Changes:** [CHANGELOG.md](CHANGELOG.md)
-- **License:** MIT (see [LICENSE](LICENSE))
 
 **Trust model:**
 - Read-only (except pin files, audit log, and policy-init)
 - Network only with explicit opt-in
 - Secrets masked in all output
 - Static checks reduce risk but don't prove a server safe
+
+---
+
+## License
+
+MIT License
+
+Copyright (c) 2026 Stefan Petrovici
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+See [LICENSE](LICENSE) for the complete license text.
 
 ---
 
