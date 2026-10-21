@@ -19,9 +19,9 @@ Local audit for tool poisoning, rug pulls, tool shadowing, hidden Unicode and le
 
 ### Cursor
 
-[![Add to Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=mcp-security-guard&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIm1jcC1zZWN1cml0eS1ndWFyZCJdfQo=)
+[![Add to Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=mcp-security-guard&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIm1jcC1zZWN1cml0eS1ndWFyZCJdfQ==)
 
-Click the button above, or use this deep link: `cursor://anysphere.cursor-deeplink/mcp/install?name=mcp-security-guard&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIm1jcC1zZWN1cml0eS1ndWFyZCJdfQo=`
+Click the button above, or use this deep link: `cursor://anysphere.cursor-deeplink/mcp/install?name=mcp-security-guard&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIm1jcC1zZWN1cml0eS1ndWFyZCJdfQ==`
 
 Or manually add to `.cursor/mcp.json`:
 
