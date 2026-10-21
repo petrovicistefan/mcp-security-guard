@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "mcp-security-guard": {
+      "command": "npx",
+      "args": ["-y", "mcp-security-guard"]
+    }
+  }
+}
