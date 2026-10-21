@@ -95,6 +95,12 @@ npx -y mcp-security-guard audit --project-only
 
 ---
 
+<p align="center">
+  <img src="docs/demo.gif" alt="MCP Security Guard demo" width="800">
+</p>
+
+---
+
 ## 📋 Table of Contents
 
 - [Why MCP Security Guard?](#why-mcp-security-guard)
