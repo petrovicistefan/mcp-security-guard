@@ -390,5 +390,54 @@
         "publishedAt": "2026-10-19T10:59:51Z"
       }
     }
+  },
+  {
+    "date": "2026-10-21",
+    "npm": {
+      "downloads24h": 14,
+      "downloads7d": 59,
+      "version": "0.9.1",
+      "publishedAt": "2026-10-19T11:02:17.935Z"
+    },
+    "github": {
+      "stars": 0,
+      "forks": 0,
+      "watchers": 0,
+      "openIssues": 3,
+      "openPullRequests": 0,
+      "contributors": 3,
+      "contributorsMayBeTruncated": false,
+      "recentCommits": [
+        {
+          "sha": "7cb9331e4f42d1befa2a7e948cc23d8607f0efb1",
+          "date": "2026-10-21T07:40:21Z",
+          "message": "Improve discoverability: add install buttons, badges, and comprehensive documentation (#9)"
+        },
+        {
+          "sha": "c9d262c3c81ff6d99475047300e470888acff7d9",
+          "date": "2026-10-20T12:41:48Z",
+          "message": "chore(metrics): record daily adoption snapshot"
+        },
+        {
+          "sha": "21bea82fc624df09c310fb0a8a13f79953d5f998",
+          "date": "2026-10-19T14:38:36Z",
+          "message": "chore(metrics): record daily adoption snapshot"
+        },
+        {
+          "sha": "32f040cc84c6da5e9bbb37901ff8c11bbe644608",
+          "date": "2026-10-19T10:57:58Z",
+          "message": "Complete version bump to 0.9.1 - update all version references"
+        },
+        {
+          "sha": "4aa6cff9995ffa54d616cb60f0e94e4a328fb64c",
+          "date": "2026-10-19T10:57:54Z",
+          "message": "Bump version to 0.9.1 for README improvements release"
+        }
+      ],
+      "latestRelease": {
+        "tag": "v0.9.1",
+        "publishedAt": "2026-10-19T10:59:51Z"
+      }
+    }
   }
 ]
