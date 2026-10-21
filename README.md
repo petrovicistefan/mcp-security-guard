@@ -70,7 +70,9 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 
 ### VS Code
 
-Install the [MCP extension](https://marketplace.visualstudio.com/items?itemName=VisualStudioCode.mcp), then add to `.vscode/mcp.json`:
+[![Add to VS Code](https://img.shields.io/badge/Add%20to-VS%20Code-blue?style=for-the-badge&logo=visualstudiocode)](https://insiders.vscode.dev/redirect/mcp/install?name=mcp-security-guard&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22mcp-security-guard%22%5D%7D)
+
+Click the button above, or manually add to `.vscode/mcp.json`:
 
 ```json
 {
