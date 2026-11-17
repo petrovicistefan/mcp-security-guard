@@ -2,3 +2,4 @@ node_modules/
 *.tmp
 bench/*.result.json
 .claude/settings.local.json
+.check-rules-tmp/

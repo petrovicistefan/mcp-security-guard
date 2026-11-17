@@ -17,8 +17,10 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "build": "esbuild src/index.ts src/cli.ts src/hook.ts --bundle --platform=node --format=esm --target=node20 --outdir=plugin/dist --out-extension:.js=.mjs --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\" && node scripts/build-app.mjs",
+    "build": "node scripts/build.mjs && node scripts/build-app.mjs",
     "typecheck": "tsc --noEmit",
+    "check:rules": "node scripts/check-rules.mjs",
+    "prepublishOnly": "npm run typecheck && npm run check:rules && npm test && npm run build",
     "test": "vitest run",
     "bench": "npm run build && node bench/check.mjs",
     "sbom": "npm sbom --omit=dev --sbom-format cyclonedx > sbom.cdx.json",

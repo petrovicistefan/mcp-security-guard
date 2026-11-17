@@ -20429,7 +20429,7 @@ function transportOf(s) {
 }
 
 // src/version.ts
-var VERSION = "0.9.1";
+var VERSION = true ? "0.9.1" : readPackageVersion();
 
 // src/client.ts
 function expand(value) {
