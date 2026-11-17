@@ -94,6 +94,8 @@ jobs:
           registry-url: https://registry.npmjs.org
       # Trusted Publishing needs npm 11.5.1 or newer.
       - run: npm install -g npm@latest
+      # prepublishOnly runs typecheck/test/build; install deps (including typescript).
+      - run: npm ci
       - name: Versions agree
         run: |
           p=$(node -p 'require("./package.json").version')
