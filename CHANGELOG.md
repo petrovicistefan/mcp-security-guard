@@ -1,5 +1,9 @@
 ## Unreleased
 
+# Changelog
+
+## 0.9.2
+
 - Make `package.json` the single source of truth for the version: `src/version.ts` reads it (bundles inline it at build time via `scripts/build.mjs`) instead of hardcoding it.
 - Add `scripts/check-rules.mjs` (`npm run check:rules`): fails when `package.json`, `server.json`, the plugin manifest and the loaded `src/version.ts` export disagree, or when `src/version.ts` hardcodes the version.
 - Add `test/version.test.ts` and a `prepublishOnly` script (typecheck, check:rules, test, build).
@@ -8,8 +12,6 @@
 - Use exclusive locks, unique private temporary files and owner-only target/backup permissions.
 - Reject stale fix plans by comparing reviewed SHA-256 hashes before applying.
 - Add regression coverage for directory/file escapes, prepared temporary symlinks and conflicts.
-
-# Changelog
 
 ## 0.9.1
 
