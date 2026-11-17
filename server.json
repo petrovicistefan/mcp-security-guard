@@ -8,13 +8,13 @@
     "url": "https://github.com/petrovicistefan/mcp-security-guard",
     "source": "github"
   },
-  "version": "0.9.1",
+  "version": "0.9.2",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "mcp-security-guard",
-      "version": "0.9.1",
+      "version": "0.9.2",
       "transport": {
         "type": "stdio"
       }
