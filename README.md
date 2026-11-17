@@ -2,9 +2,9 @@
 
 <p align="center"><img src="plugin/assets/logo-wide.png" alt="MCP Security Guard logo" width="520"></p>
 
-**Find out if the MCP servers you installed are lying to your AI.**
+**MCP security scanner: find out if the MCP servers you installed are lying to your AI — tool poisoning, rug pulls, tool shadowing and prompt injection, mapped to the OWASP MCP Top 10.**
 
-Local audit for tool poisoning, rug pulls, tool shadowing, hidden Unicode and leaked secrets, mapped to the OWASP MCP Top 10. Nothing leaves your machine unless you opt in.
+MCP Security Guard is a local audit tool for Claude Code, Cursor and other MCP clients. It inspects the tool descriptions, configuration, skills and supply chain of every MCP server your AI can reach, flags hidden Unicode and leaked secrets, and pins reviewed tool definitions so silent changes (rug pulls) are caught. Nothing leaves your machine unless you opt in.
 
 [![npm version](https://img.shields.io/npm/v/mcp-security-guard?color=blue)](https://www.npmjs.com/package/mcp-security-guard)
 [![npm downloads](https://img.shields.io/npm/dm/mcp-security-guard)](https://www.npmjs.com/package/mcp-security-guard)
@@ -12,6 +12,8 @@ Local audit for tool poisoning, rug pulls, tool shadowing, hidden Unicode and le
 [![CI status](https://github.com/petrovicistefan/mcp-security-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/petrovicistefan/mcp-security-guard/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OWASP MCP Top 10](https://img.shields.io/badge/OWASP-MCP%20Top%2010-orange)](https://owasp.org/www-project-mcp-top-10/)
+
+> **Part of the [petrovicistefan MCP suite](https://github.com/petrovicistefan/mcp-marketplace)** — local-first guardrails for AI coding agents (Claude Code, Cursor, Codex).
 
 ---
 
@@ -109,6 +111,7 @@ npx -y mcp-security-guard audit --project-only
 - [OWASP MCP Top 10 Coverage](#owasp-mcp-top-10-coverage)
 - [Quick Demo (1 Minute)](#quick-demo-1-minute)
 - [Tools](#tools)
+- [Example Prompts](#example-prompts)
 - [CI / GitHub Action](#ci--github-action)
 - [Interactive Dashboard](#interactive-dashboard)
 - [Runtime Hooks](#runtime-hooks)
@@ -117,6 +120,7 @@ npx -y mcp-security-guard audit --project-only
 - [Development](#development)
 - [Contributing](#contributing)
 - [Security & Privacy](#security--privacy)
+- [More MCP Servers by the Author](#more-mcp-servers-by-the-author)
 - [About the Author](#about-the-author)
 
 ---
@@ -287,6 +291,19 @@ The demo checks two saved tool descriptions: one produces instruction-override a
 | `export_bom` | ❌ | ❌ | Agent bill of materials: inventory of MCP servers, plugins, skills, commands, subagents, CLAUDE.md and hooks with SHA-256, pin status, scores and OWASP evidence. CycloneDX 1.6 JSON or Markdown summary. Static; launches nothing. |
 | `query_audit_log` | ❌ | ❌ | Summarizes the local runtime audit log: MCP tool calls per server/tool, and calls where credentials were sent/returned or outputs contained injected instructions. Log stores hashes and sizes only, never arguments or outputs. |
 | `adversarial_test` | ❌ | ✅ Confirm | **Calls tools** with command-injection and path-traversal payloads to find vulnerable parameters. Only for servers you own/operate. Requires `i_own_this_server: true` and `confirm_launch: true`. Destructive tools skipped by default. |
+
+---
+
+## Example Prompts
+
+Ask your AI agent in Claude Code or Cursor:
+
+- "Audit my installed MCP servers for tool poisoning and rug pulls."
+- "Is this MCP server safe to install? Scan it before I add it."
+- "Pin the MCP servers I just reviewed so I notice if their tools change."
+- "Check my `.mcp.json` for plaintext secrets and unpinned npx packages."
+- "Scan my CLAUDE.md, skills and slash commands for hidden instructions."
+- "Export an agent bill of materials (CycloneDX) for my MCP setup."
 
 ---
 
@@ -506,6 +523,23 @@ See [LICENSE](LICENSE) for the complete license text.
 ## Limitations
 
 Remote servers that require OAuth (most hosted MCP servers) cannot be scanned at the tool level: the scanner cannot reuse Claude Code's tokens. Their configuration is still audited.
+
+---
+
+## More MCP Servers by the Author
+
+**Part of the petrovicistefan MCP suite** — local-first guardrails for AI coding agents.
+
+| Server | Purpose | Link |
+| --- | --- | --- |
+| 🌐 **MCP API Guardian** | OpenAPI contract checks and breaking-change detection | [GitHub](https://github.com/petrovicistefan/mcp-api-guardian) |
+| 💰 **MCP Cost Optimizer** | LLM cost analysis and model-switch savings estimates | [GitHub](https://github.com/petrovicistefan/mcp-cost-optimizer) |
+| 🗄️ **MCP Database Doctor** | PostgreSQL migration linting, query analysis and EXPLAIN review | [GitHub](https://github.com/petrovicistefan/mcp-database-doctor) |
+| 📦 **MCP Dependency Doctor** | Read-only npm dependency audit and health | [GitHub](https://github.com/petrovicistefan/mcp-dependency-doctor) |
+| 🔍 **MCP SEO Auditor** | On-page SEO audits and bounded crawling | [GitHub](https://github.com/petrovicistefan/mcp-seo-auditor) |
+| 🏪 **MCP Marketplace** | Browse and install the full suite | [GitHub](https://github.com/petrovicistefan/mcp-marketplace) |
+
+**[Explore all MCP servers →](https://github.com/petrovicistefan/mcp-marketplace)**
 
 ---
 

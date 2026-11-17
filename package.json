@@ -1,7 +1,7 @@
 {
   "name": "mcp-security-guard",
   "version": "0.9.2",
-  "description": "Security scanner for MCP servers in Claude Code: tool poisoning, shadowing, rug pulls and risky configuration.",
+  "description": "MCP security scanner: audit installed MCP servers for tool poisoning, rug pulls, tool shadowing, prompt injection and supply-chain risk (OWASP MCP Top 10). Claude Code, Cursor.",
   "mcpName": "io.github.petrovicistefan/mcp-security-guard",
   "main": "plugin/dist/index.mjs",
   "bin": {
@@ -59,13 +59,23 @@
   "keywords": [
     "mcp",
     "mcp-server",
+    "model-context-protocol",
+    "mcp-security",
     "security",
+    "security-scanner",
     "owasp",
+    "owasp-mcp-top-10",
     "tool-poisoning",
+    "tool-shadowing",
     "rug-pull",
     "prompt-injection",
     "supply-chain",
+    "sarif",
     "audit",
-    "claude-code"
+    "local-first",
+    "ai-agents",
+    "claude",
+    "claude-code",
+    "cursor"
   ]
 }
