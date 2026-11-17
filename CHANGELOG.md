@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Make `package.json` the single source of truth for the version: `src/version.ts` reads it (bundles inline it at build time via `scripts/build.mjs`) instead of hardcoding it.
+- Add `scripts/check-rules.mjs` (`npm run check:rules`): fails when `package.json`, `server.json`, the plugin manifest and the loaded `src/version.ts` export disagree, or when `src/version.ts` hardcodes the version.
+- Add `test/version.test.ts` and a `prepublishOnly` script (typecheck, check:rules, test, build).
+- Add `AGENTS.md` and `docs/PRODUCT.md`.
 - Reject symlink/out-of-project automatic fix targets and private backup redirection.
 - Use exclusive locks, unique private temporary files and owner-only target/backup permissions.
 - Reject stale fix plans by comparing reviewed SHA-256 hashes before applying.
